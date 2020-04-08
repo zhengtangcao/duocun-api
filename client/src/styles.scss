@@ -144,6 +144,8 @@ a[href^="https://maps.google.com/maps"]{display:none !important}
    font-weight:300;
 }
 
+
+
 * {
   /* So 100% means 100% */
   box-sizing: border-box;
@@ -151,6 +153,15 @@ a[href^="https://maps.google.com/maps"]{display:none !important}
 
 html{
   height: 100%;
+}
+
+.loading-spinner{
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 9999;
 }
 
 body{
@@ -338,30 +349,76 @@ body{
   
 }// end of body
 
+$content-padding: 300px;
+
+.banner{
+  padding: 30px $content-padding;
+
+  app-location-list{
+    padding: 5px 0px;
+  }
+}
+
+.map-block{
+  padding: 0px $content-padding;
+}
+
+.dialog-head{
+  height: 60px;
+  width: 100%;
+}
+
+.phone-verify-dialog{
+  position: absolute !important;
+  top: 20%;
+  left: $content-padding;
+  width: calc(100% - #{$content-padding} - #{$content-padding}) !important;
+  height: 60%;
+  max-width: none !important;
+
+  .mat-dialog-container{
+    padding: 0px !important;
+    // width: 100%;
+    // max-width: none !important;
+  }
+}
+
+.footer{
+  left: $content-padding;
+  width: calc(100% - #{$content-padding} - #{$content-padding});
+}
 
 .page{
-  // margin-top:$navbar-height;
-  margin: 0px;
-  padding: 0px;
-  min-height: 560px;
+  margin: auto;
+  padding: 0px $content-padding;
+  width: 100%;
 
   .row{
     margin: 0px;
   }
+
+  .title-block{
+    width: calc(100% - #{$content-padding} - #{$content-padding});
+  }
   
-  .title-row{
+  .title-block{
     padding: 15px 15px 10px 15px;
     text-align: center;
     border-bottom: solid 1px #eee;
     position: fixed;
     top: 0px;
-    width: 100%;
+    
     height: 60px;
     margin: 0px;
     background-color: white;
     z-index: 10;
   }
-  
+
+  .content-block{
+    left: $content-padding;
+    width: calc(100% - #{$content-padding} - #{$content-padding});
+  }
+
   .option-list{
     margin-top: 46px;
     padding: 10px;
@@ -466,14 +523,43 @@ select:not([multiple]) {
   }
 
   @media #{$tablet}{
+    $dialog-w: 400px;
+    $dialog-h: 560px;
 
-   }
+    .phone-verify-dialog{
+      top:0;
+      left:0;
+      position: relative !important;
+      margin-left: auto;
+      margin-right: auto;
+      width: $dialog-w !important;
+      height: $dialog-h;
+      max-width: none !important;
+    
+      .mat-dialog-container{
+        padding: 0px !important;
+        // width: 100%;
+        // max-width: none !important;
+      }
+    }
+  }
 
   @media #{$mobile}{
+    .footer{
+      left: 0px;
+      width: 100%;
+    }
+    app-location-list{
+      padding: 80px 0px;
+    }
     .page{
-      margin-top:0px;
-      // min-height:500px;
+      padding: 0px;
+      margin-top: 0px;
       padding-bottom: $bottom-bar-height;
+
+      .title-block, .content-block{
+        width: 100%;
+      }
     }
 
     .auth-form{
@@ -481,6 +567,21 @@ select:not([multiple]) {
 
       .btn{
         width:100%;
+      }
+    }
+
+    .phone-verify-dialog{
+      position: absolute !important;
+      top: 2%;
+      left: 2%;
+      width: 96% !important;
+      height: 96%;
+      max-width: none !important;
+    
+      .mat-dialog-container{
+        padding: 0px !important;
+        // width: 100%;
+        // max-width: none !important;
       }
     }
   }
@@ -491,21 +592,44 @@ select:not([multiple]) {
       padding-right:0px;
     }
 
+    .footer{
+      left: 0px;
+      width: 100%;
+    }
+    app-location-list{
+      padding: 5px 0px;
+    }
     .page{
+      padding: 0px;
       margin-top:0px;
-      min-height:460px;
+      .title-block, .content-block{
+        width: 100%;
+      }
     }
     .auth-form{
       width:100%;
+    }
+
+    .phone-verify-dialog{
+      position: absolute !important;
+      top: 2%;
+      left: 2%;
+      width: 96% !important;
+      height: 96%;
+      max-width: none !important;
+    
+      .mat-dialog-container{
+        padding: 0px !important;
+        // width: 100%;
+        // max-width: none !important;
+      }
     }
   }
 
   @media only screen
   and (max-width: 767px)
   and (orientation: landscape) {
-    .container{
-      max-width: 760px;
-    }
+
   }
 
 /* iphone XR 1792x828px at 326ppi */

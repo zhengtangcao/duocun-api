@@ -1,40 +1,25 @@
+@import '../../../base';
 
+$header-bar-height: 60px;
+$bottom-bar-height: 68px;
 $toggle-btn-height: 40px;
-$blue: #4285F3;
 
-.page{
-  padding: 0px 0px 60px 0px;
-  
-  #contact-form{
-    padding: 0px 15px;
-    margin-top: 60px; 
-  }
-
-  #payment-form{
-    margin-top: 13px;
-
-    .form-row{
-      margin: 0px;
-    }
-
-    label.label-sm{
-      margin-bottom: 0px;
-    }
-  }
+#order-form{
+  padding: 0px 15px;
+  margin-top: $header-bar-height;
+  margin-bottom: $bottom-bar-height;
 }
 
+
 .restaurant{
-  padding: 10px 0px 0px 0px;
+  padding: 6px 0px 0px 0px;
+  font-size: 16px;
 }
 
 .contact-block{
   padding: 10px 0px;
   border-bottom: solid 1px #eee;
 
-  .label{
-    width: 70px;
-    float: left;
-  }
   .row{
     margin: 0px;
     padding-bottom: 0px;
@@ -42,10 +27,15 @@ $blue: #4285F3;
   .phone-col{
     padding-left: 15px;
   }
+
   .title-md {
     padding-top: 0px;
-    font-size: 14px;
-    line-height: 22px;
+    font-size: 13px;
+    line-height: 20px;
+    .label{
+      width: 84px;
+      float: left;
+    }
   }
 
   .address-text{
@@ -78,6 +68,17 @@ $blue: #4285F3;
   margin: 0px;
   .row{
     padding: 0px;
+  }
+}
+
+.payment-icon{
+  float: left;
+}
+
+.warning-block{
+  .text-warning{
+    color: #d41a09 !important;
+    padding-bottom: 5px;
   }
 }
 
@@ -151,48 +152,15 @@ mat-button-toggle-group{
     // }
   }
 }
-/**
- * The CSS shown here will not be introduced in the Quickstart guide, but shows
- * how you can use CSS to style your Element's container.
- */
- .StripeElement {
-  box-sizing: border-box;
 
-  height: 40px;
-
-  padding: 10px 12px;
-
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background-color: white;
-
-  box-shadow: 0 1px 3px 0 #e6ebf1;
-  -webkit-transition: box-shadow 150ms ease;
-  transition: box-shadow 150ms ease;
-}
-
-.StripeElement--focus {
-  box-shadow: 0 1px 3px 0 #cfd7df;
-}
-
-.StripeElement--invalid {
-  border-color: #fa755a;
-}
-
-.StripeElement--webkit-autofill {
-  background-color: #fefde5 !important;
-}
-
-#card-element{
-  width: 100%;
-  border: 1px solid #ddd;
-}
 
 .order-detail{
-  padding-top: 8px;
+  padding-top: 6px;
+
   .items-col{
     padding-left: 0px;
-    padding-right: 8px;
+    padding-right: 10px;
+    margin-right: 0px;
 
     .item-row{
       padding-bottom: 3px;
@@ -222,16 +190,16 @@ mat-button-toggle-group{
     }
 
     .title-xs{
-      width: 80px;
+      width: 73px;
       float: left;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
     }
 
     .text-xs{
       float: left;
       font-size: 13px;
-      margin-left: 8px;
+      margin-left: 4px;
     }
 
     .total-row{
@@ -261,5 +229,37 @@ mat-button-toggle-group{
     float: left;
     font-size: 14px;
     margin-left: 8px;
+  }
+}
+
+.cash-note{
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+
+@media #{$tablet}{
+  $bottom-bar-h: 60px;
+  $padding-w: 100px;
+
+  .page{
+    padding: 0px $padding-w;
+  }
+}
+
+@media #{$mobile}{
+  #order-form{
+    padding: 0px 12px;
+  }
+
+  .order-detail{
+    .total-col{
+      font-size: 12px;
+
+      .text-xs{
+        font-size: 12px;
+        margin-left: 2px;
+      }
+    }
   }
 }

@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AccountService } from '../../account/account.service';
 import { OrderService } from '../../order/order.service';
 import { SharedService } from '../../shared/shared.service';
-import { Order, IOrder } from '../order.model';
+import { IOrder, OrderType, OrderStatus } from '../order.model';
 // import { SocketService } from '../../shared/socket.service';
 import { NgRedux } from '@angular-redux/store';
 import { IAppState } from '../../store';
@@ -17,6 +17,9 @@ import { takeUntil } from '../../../../node_modules/rxjs/operators';
 import { Subject } from '../../../../node_modules/rxjs';
 import * as moment from 'moment';
 import { DeliveryActions } from '../../delivery/delivery.actions';
+import { environment } from '../../../environments/environment';
+import { LocationService } from '../../location/location.service';
+import { ILocation } from '../../location/location.model';
 
 @Component({
   selector: 'app-order-history',
@@ -26,58 +29,46 @@ import { DeliveryActions } from '../../delivery/delivery.actions';
 export class OrderHistoryComponent implements OnInit, OnDestroy {
   onDestroy$ = new Subject();
   account;
-  restaurant;
   orders = [];
   loading = true;
   highlightedOrderId = 0;
+  currentPageNumber = 1;
+  itemsPerPage = 10;
+  nOrders = 0;
+  lang = environment.language;
+  OrderTypes = OrderType;
 
   constructor(
     private accountSvc: AccountService,
     private orderSvc: OrderService,
     private sharedSvc: SharedService,
+    private locationSvc: LocationService,
     private rx: NgRedux<IAppState>,
     private router: Router,
     public dialog: MatDialog
   ) {
     this.rx.dispatch({
       type: PageActions.UPDATE_URL,
-      payload: {name: 'order-history'}
+      payload: { name: 'order-history' }
     });
   }
 
   ngOnInit() {
     const self = this;
-    this.accountSvc.getCurrent().pipe(takeUntil(this.onDestroy$)).subscribe(account => {
+    this.loading = true;
+    this.accountSvc.getCurrentAccount().pipe(takeUntil(this.onDestroy$)).subscribe(account => {
       self.account = account;
-      if (account && account.id) {
-        self.reload(account.id);
+      if (account && account._id) {
+        self.OnPageChange(this.currentPageNumber);
       } else {
         self.orders = []; // should never be here.
+        this.loading = false;
       }
     });
 
-    // this.socketSvc.on('updateOrders', x => {
-    //   // self.onFilterOrders(this.selectedRange);
-    //   if (x.clientId === self.account.id) {
-    //     const index = self.orders.findIndex(i => i.id === x.id);
-    //     if (index !== -1) {
-    //       self.orders[index] = x;
-    //     } else {
-    //       self.orders.push(x);
-    //     }
-    //     self.orders.sort((a: Order, b: Order) => {
-    //       if (this.sharedSvc.compareDateTime(a.created, b.created)) {
-    //         return -1;
-    //       } else {
-    //         return 1;
-    //       }
-    //     });
-    //   }
-    // });
-
     this.rx.select<ICommand>('cmd').pipe(takeUntil(this.onDestroy$)).subscribe((x: ICommand) => {
       if (x.name === 'reload-orders') {
-        self.reload(this.account.id);
+        self.OnPageChange(this.currentPageNumber);
       }
     });
   }
@@ -88,83 +79,90 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   }
 
   reload(clientId) {
-    const self = this;
-    const query = { clientId: clientId, status: { $nin: ['del', 'bad', 'tmp'] } };
-    self.orderSvc.find(query).pipe(takeUntil(this.onDestroy$)).subscribe((orders: IOrder[]) => {
-      orders.map((order: IOrder) => {
-        let subTotal = 0;
-        subTotal = order.price + order.deliveryCost;
-        order.tax = Math.ceil(subTotal * 13) / 100;
-        order.productTotal = order.price;
-      });
+    // const self = this;
+    // const query = { clientId: clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
+    // self.orderSvc.find(query).pipe(takeUntil(this.onDestroy$)).subscribe((orders: IOrder[]) => {
+    //   orders.map((order: IOrder) => {
+    //     let subTotal = 0;
+    //     subTotal = order.price + order.deliveryCost;
+    //     order.tax = Math.ceil(subTotal * 13) / 100;
+    //     order.price = order.price;
+    //   });
 
-      orders.sort((a: IOrder, b: IOrder) => {
-        const ma = moment(a.delivered).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-        const mb = moment(b.delivered).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-        if (ma.isAfter(mb)) {
-          return -1;
-        } else if (mb.isAfter(ma)) {
-          return 1;
-        } else {
-          const ca = moment(a.created);
-          const cb = moment(b.created);
-          if (ca.isAfter(cb)) {
-            return -1;
-          } else {
-            return 1;
-          }
-        }
-      });
-      self.orders = orders;
-      self.loading = false;
+    //   orders.sort((a: IOrder, b: IOrder) => {
+    //     const ma = moment(a.delivered).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+    //     const mb = moment(b.delivered).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+    //     if (ma.isAfter(mb)) {
+    //       return -1;
+    //     } else if (mb.isAfter(ma)) {
+    //       return 1;
+    //     } else {
+    //       const ca = moment(a.created);
+    //       const cb = moment(b.created);
+    //       if (ca.isAfter(cb)) {
+    //         return -1;
+    //       } else {
+    //         return 1;
+    //       }
+    //     }
+    //   });
+    //   self.orders = orders;
+    //   self.loading = false;
 
-      self.highlightedOrderId = self.orders[0] ? self.orders[0]._id : null;
-    });
+    //   self.highlightedOrderId = self.orders[0] ? self.orders[0]._id : null;
+    // });
   }
 
+  // deprecated
   canChange(order: IOrder) {
     const allowDateTime = moment(order.delivered).set({ hour: 9, minute: 30, second: 0, millisecond: 0 });
     return allowDateTime.isAfter(moment());
   }
 
+  // deprecated
   changeOrder(order: IOrder) {
-    this.rx.dispatch({ type: OrderActions.UPDATE, payload: order });
-    this.rx.dispatch({
-      type: CartActions.UPDATE_FROM_CHANGE_ORDER,
-      payload: {
-        items: order.items,
-        merchantId: order.merchantId,
-        merchantName: order.merchantName,
-        deliveryCost: order.deliveryCost,
-        deliveryDiscount: order.deliveryDiscount,
-      }
-    });
-    this.rx.dispatch({
-      type: DeliveryActions.UPDATE_FROM_CHANGE_ORDER,
-      payload: {
-        origin: order.location,
-        date: moment(order.delivered)
-      }
-    });
-    this.router.navigate(['merchant/list/' + order.merchantId]);
+    // this.rx.dispatch({ type: OrderActions.UPDATE_ORDER, payload: order });
+    // this.rx.dispatch({
+    //   type: CartActions.UPDATE_FROM_CHANGE_ORDER,
+    //   payload: {
+    //     items: order.items,
+    //     merchantId: order.merchantId,
+    //     merchantName: order.merchantName,
+    //     deliveryCost: order.deliveryCost,
+    //     deliveryDiscount: order.deliveryDiscount,
+    //   }
+    // });
+    // this.rx.dispatch({
+    //   type: DeliveryActions.UPDATE_FROM_CHANGE_ORDER,
+    //   payload: {
+    //     origin: order.location,
+    //     date: moment(order.delivered)
+    //   }
+    // });
+    // this.router.navigate(['merchant/list/' + order.merchantId]);
   }
 
   deleteOrder(order: IOrder) {
-    this.openDialog(this.account.id, order._id, order.total, order.paymentMethod, order.transactionId, order.chargeId);
+    const accountId = this.account._id;
+    this.openDialog(accountId, order._id, order.total, order.paymentMethod, order.transactionId, order.chargeId);
   }
 
   openDialog(accountId: string, orderId: string, total: number, paymentMethod: string,
     transactionId: string, chargeId: string): void {
     const dialogRef = this.dialog.open(RemoveOrderDialogComponent, {
       width: '300px',
-      data: { title: '提示', content: '确认要删除该订单吗？', buttonTextNo: '取消', buttonTextYes: '删除',
-      accountId: accountId,
-      orderId: orderId,
-      total: total,
-      paymentMethod: paymentMethod,
-      transactionId: transactionId,
-      chargeId: chargeId
-     },
+      data: {
+        title: this.lang === 'en' ? 'Hint' : '提示',
+        content: this.lang === 'en' ? 'Are you sure to remove this order ?' : '确认要删除该订单吗？',
+        buttonTextNo: this.lang === 'en' ? 'Cancel' : '取消',
+        buttonTextYes: this.lang === 'en' ? 'Remove' : '删除',
+        accountId: accountId,
+        orderId: orderId,
+        total: total,
+        paymentMethod: paymentMethod,
+        transactionId: transactionId,
+        chargeId: chargeId
+      },
     });
 
     dialogRef.afterClosed().pipe(takeUntil(this.onDestroy$)).subscribe(result => {
@@ -174,7 +172,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
 
   onSelect(order) {
     // this.select.emit({ order: c });
-    this.highlightedOrderId = order.id;
+    this.highlightedOrderId = order._id;
   }
 
   toDateTimeString(s) {
@@ -185,25 +183,51 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
     return s ? this.sharedSvc.toDateString(s) : '';
   }
 
-  // takeOrder(order) {
-  //   const self = this;
-  //   order.workerStatus = 'process';
-  //   this.orderSvc.replace(order).pipe(
-  //   takeUntil(this.onDestroy$)
-  // ).subscribe(x => {
-  //     // self.afterSave.emit({name: 'OnUpdateOrder'});
-  //     self.reload(self.account.id);
-  //   });
-  // }
+  getDescription(order) {
+    const d = order.delivered.split('T')[0];
+    // const y = +(d.split('-')[0]);
+    const m = +(d.split('-')[1]);
+    const prevMonth = m === 1 ? 12 : (m - 1);
 
-  // sendForDeliver(order) {
-  //   const self = this;
-  //   order.workerStatus = 'done';
-  //   this.orderSvc.replace(order).pipe(
-  //   takeUntil(this.onDestroy$)
-  // ).subscribe(x => {
-  //     // self.afterSave.emit({name: 'OnUpdateOrder'});
-  //     self.reload(self.account.id);
-  //   });
-  // }
+    const product = order.items[0].product;
+    const productName = this.lang === 'en' ? product.name : product.nameEN;
+    const range = prevMonth + '/27 ~ ' + m + '/26';
+
+    if (order.type === 'MM') {
+      return range + (this.lang === 'en' ? ' Phone monthly fee' : ' 电话月费');
+    // } else if (order.type === 'MS') {
+    //   return (this.lang === 'en' ? ' Phone setup fee' : ' 电话安装费');
+    } else {
+      return '';
+    }
+  }
+
+  OnPageChange(pageNumber) {
+    const accountId = this.account._id;
+    const itemsPerPage = this.itemsPerPage;
+
+    this.loading = true;
+    this.currentPageNumber = pageNumber;
+    const query = { clientId: accountId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
+    this.orderSvc.loadPage(query, pageNumber, itemsPerPage).pipe(takeUntil(this.onDestroy$)).subscribe((ret: any) => {
+      ret.orders.map(order => {
+        order.description = this.getDescription(order);
+        if (environment.language === 'en') {
+          order.merchantName = order.merchant ? order.merchant.nameEN : '';
+          order.items.map(item => {
+            item.product.name = item.product.nameEN;
+          });
+        }
+      });
+
+      this.orders = ret.orders;
+      this.nOrders = ret.total;
+      this.loading = false;
+    });
+  }
+
+  getAddress(location: ILocation) {
+    return this.locationSvc.getAddrString(location);
+  }
+
 }

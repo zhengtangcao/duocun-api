@@ -11,6 +11,7 @@ export const environment = {
   API_URL: 'http://localhost:8000/api/',
   APP_URL: window.location.origin,
   MEDIA_URL: 'http://localhost:8000/',
+  GROCERY_APP_URL: 'http://localhost:3000',
   APP: 'duocun',
   AUTH_PREFIX: '',
   GOOGLE_MAP: {
@@ -29,8 +30,5 @@ export const environment = {
     APP_ID: 'wx0591bdd165898739',
     REDIRECT_URL: 'https://duocun.com.cn'
   },
-  DEFAULT_ADMIN: {
-    ID: '5d3a34afac8ce150f3bb70c2',
-    NAME: 'duocun'
-  }
+  language: 'zh'
 };

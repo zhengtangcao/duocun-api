@@ -3,6 +3,16 @@ import { DB } from "./db";
 import { Db } from 'mongodb';
 import moment from 'moment';
 
+export enum DbStatus {
+  SUCCESS = 1,
+  FAIL
+}
+
+export interface DbResult {
+  status: DbStatus,
+  msg: string
+}
+
 export interface IJoinParam {
   from: string,
   localField: string,
@@ -19,6 +29,52 @@ export class Entity {
     this.collectionName = name;
   }
 
+  // v2
+  filter(doc: any, fields?: string[]) {
+    if (fields && fields.length > 0) {
+      const it: any = {};
+      fields.map((key: any) => {
+        // if(key.indexOf(':')!== -1){
+        //   const parentKey = key.split(':')[0];
+        //   const children = key.split(':')[1].split(',').map((c: any) => c.trim());
+        // }
+        it[key] = doc[key];
+      });
+      return it;
+    } else {
+      return doc;
+    }
+  }
+
+  filterArray(rs: any[], fields?: string[]) {
+    if (fields && fields.length > 0) {
+      const xs: any[] = [];
+      if (rs && rs.length > 0) {
+        rs.map(r => {
+          const x = this.filter(r, fields);
+          xs.push(x);
+        });
+        return xs;
+      } else {
+        return xs;
+      }
+    } else {
+      return rs;
+    }
+  }
+
+  // quick find
+  async find(query: any, options?: any, fields?: any[]) {
+    const self = this;
+    query = this.convertIdFields(query);
+
+    const c = await self.getCollection();
+    const docs = await c.find(query, options).toArray();
+    const rs = this.filterArray(docs, fields);
+    return rs;
+  }
+
+  // v1
   getCollection(): Promise<Collection> {
     if (this.db) {
       const collection: Collection = this.db.collection(this.collectionName);
@@ -83,32 +139,24 @@ export class Entity {
   //     });
   //   });
   // }
-  
+
   // m --- moment object
-  toLocalDateTimeString(m: any){
+  toLocalDateTimeString(m: any) {
     const dt = m.toISOString(true);
-    return dt.split('.')[0]; 
+    return dt.split('.')[0];
   }
 
   insertOne(doc: any): Promise<any> {
     const self = this;
     return new Promise((resolve, reject) => {
       self.getCollection().then((c: Collection) => {
-
         doc = this.convertIdFields(doc);
-
         doc.created = moment().toISOString();
         doc.modified = moment().toISOString();
 
         c.insertOne(doc).then((result: any) => { // InsertOneWriteOpResult
           const ret = (result.ops && result.ops.length > 0) ? result.ops[0] : null;
-          if (ret && ret._id) {
-            ret.id = ret._id;
-            // delete (ret._id);
-          }
           resolve(ret);
-        }, err => {
-          reject(err);
         });
       });
     });
@@ -120,55 +168,26 @@ export class Entity {
       self.getCollection().then((c: Collection) => {
         query = this.convertIdFields(query);
         c.distinct(key, query, options, (err, doc) => {
-          if (doc && doc._id) {
-            doc.id = doc._id;
-            delete (doc._id);
-          }
           resolve(doc);
         });
       });
     });
   }
 
-  findOne(query: any, options?: any): Promise<any> {
+  findOne(query: any, options?: any, fields?: any[]): Promise<any> {
     const self = this;
     return new Promise((resolve, reject) => {
       self.getCollection().then((c: Collection) => {
         query = this.convertIdFields(query);
         c.findOne(query, options, (err, doc) => {
-          if (doc && doc._id) {
-            doc.id = doc._id;
-            // delete (doc._id);
-          }
-          resolve(doc);
+          const r = this.filter(doc, fields);
+          resolve(r);
         });
       });
     });
   }
 
-  // quick find
-  find(query: any, options?: any): Promise<any> {
-    const self = this;    
-    query = this.convertIdFields(query);
 
-    return new Promise((resolve, reject) => {
-      self.getCollection().then((c: Collection) => {
-        c.find(query, options).toArray((err, docs) => {
-          let s: any[] = [];
-          if (docs && docs.length > 0) {
-            docs.map((v, i) => {
-              if (v && v._id) {
-                v.id = v._id;
-                // delete (v._id);
-              }
-              s.push(v);
-            });
-          }
-          resolve(s);
-        });
-      });
-    });
-  }
 
   // deprecated
   replaceOne(query: any, doc: any, options?: any): Promise<any> {
@@ -188,12 +207,29 @@ export class Entity {
   }
 
   updateOne(query: any, doc: any, options?: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+        resolve();
+      } else {
+        query = this.convertIdFields(query);
+        doc = this.convertIdFields(doc);
+
+        this.getCollection().then((c: Collection) => {
+          c.updateOne(query, { $set: doc }, options, (err, r: any) => { // {n: 1, nModified: 0, ok: 1}
+            resolve(r.result);
+          });
+        });
+      }
+    });
+  }
+
+  updateMany(query: any, data: any, options?: any): Promise<any> {
     query = this.convertIdFields(query);
-    doc = this.convertIdFields(doc);
+    data = this.convertIdFields(data);
 
     return new Promise((resolve, reject) => {
       this.getCollection().then((c: Collection) => {
-        c.updateOne(query, { $set: doc }, options, (err, result: any) => { // {n: 1, nModified: 0, ok: 1}
+        c.updateMany(query, { $set: data }, options, (err, result: any) => {
           resolve(result);
         });
       });
@@ -220,35 +256,68 @@ export class Entity {
     });
   }
 
-  // only support query _id, not id
-  convertIdFields(doc: any){
-    if(doc && doc.hasOwnProperty('id')) {
-      let body = doc.id;
-      if (body && body.hasOwnProperty('$in')) {
-        let a = body['$in'];
-        const arr: any[] = [];
-        a.map((id: string) => {
-          arr.push({ _id: new ObjectID(id) });
-        });
-
-        doc = { $or: arr };
-      } else if (typeof body === "string" && body.length === 24) {
-        doc['_id'] = new ObjectID(doc._id);
-        delete doc.id;
-      }
+  getProperty(doc: any, p: string) {
+    let k = null;
+    if (doc) {
+      const keys = Object.keys(doc);
+      keys.map(key => {
+        if (key) {
+          if (key.indexOf(p) !== -1) {
+            k = key;
+            return k;
+          }
+        }
+      });
+      return k;
+    } else {
+      return k;
     }
-    if(doc && doc.hasOwnProperty('_id')) {
+  }
+
+  // only support query _id, not id
+  convertIdFields(doc: any) {
+    if (doc && doc.hasOwnProperty('_id')) {
       let body = doc._id;
       if (body && body.hasOwnProperty('$in')) {
         let a = body['$in'];
         const arr: any[] = [];
-        a.map((id: string) => {
-          arr.push({ _id: new ObjectID(id) });
+        a.map((id: any) => {
+          if (typeof id === "string" && id.length === 24) {
+            arr.push(new ObjectID(id));
+          } else {
+            arr.push(id);
+          }
         });
 
-        doc = { $or: arr };
+        doc['_id'] = { $in: arr };
       } else if (typeof body === "string" && body.length === 24) {
         doc['_id'] = new ObjectID(doc._id);
+      }
+    }
+
+    if (doc && doc.hasOwnProperty('paymentId')) {
+      let body = doc.paymentId;
+      if (body && body.hasOwnProperty('$in')) {
+        let a = body['$in'];
+        const arr: any[] = [];
+        a.map((id: any) => {
+          if (typeof id === "string" && id.length === 24) {
+            arr.push(new ObjectID(id));
+          } else {
+            arr.push(id);
+          }
+        });
+
+        doc['paymentId'] = { $in: arr };
+      } else if (typeof body === "string" && body.length === 24) {
+        doc['paymentId'] = new ObjectID(doc.paymentId);
+      }
+    }
+
+    if (doc && doc.hasOwnProperty('paymentId')) {
+      const paymentId = doc['paymentId'];
+      if (typeof paymentId === 'string' && paymentId.length === 24) {
+        doc['paymentId'] = new ObjectID(paymentId);
       }
     }
 
@@ -258,18 +327,48 @@ export class Entity {
         doc['categoryId'] = new ObjectID(catId);
       }
     }
+    if (doc && doc.hasOwnProperty('areaId')) {
+      const areaId = doc['areaId'];
+      if (typeof areaId === 'string' && areaId.length === 24) {
+        doc['areaId'] = new ObjectID(areaId);
+      }
+    }
 
     if (doc && doc.hasOwnProperty('merchantId')) {
-      const merchantId = doc['merchantId'];
-      if (typeof merchantId === 'string' && merchantId.length === 24) {
-        doc['merchantId'] = new ObjectID(merchantId);
-      } else if (merchantId && merchantId.hasOwnProperty('$in')) {
-        let a = merchantId['$in'];
+      let body = doc.merchantId;
+      if (body && body.hasOwnProperty('$in')) {
+        let a = body['$in'];
         const arr: any[] = [];
-        a.map((id: string) => {
-          arr.push(new ObjectID(id));
+        a.map((id: any) => {
+          if (typeof id === "string" && id.length === 24) {
+            arr.push(new ObjectID(id));
+          } else {
+            arr.push(id);
+          }
         });
-        doc.merchantId = { $in: arr };
+
+        doc['merchantId'] = { $in: arr };
+      } else if (typeof body === "string" && body.length === 24) {
+        doc['merchantId'] = new ObjectID(doc.merchantId);
+      }
+    }
+
+    if (doc && doc.hasOwnProperty('merchantAccountId')) {
+      let body = doc.merchantAccountId;
+      if (body && body.hasOwnProperty('$in')) {
+        let a = body['$in'];
+        const arr: any[] = [];
+        a.map((id: any) => {
+          if (typeof id === "string" && id.length === 24) {
+            arr.push(new ObjectID(id));
+          } else {
+            arr.push(id);
+          }
+        });
+
+        doc['merchantAccountId'] = { $in: arr };
+      } else if (typeof body === "string" && body.length === 24) {
+        doc['merchantAccountId'] = new ObjectID(doc.merchantAccountId);
       }
     }
 
@@ -287,6 +386,21 @@ export class Entity {
       }
     }
 
+    const productIdKey = this.getProperty(doc, 'productId');
+    if (productIdKey) {
+      const val = doc[productIdKey];
+      if (typeof val === 'string' && val.length === 24) {
+        doc[productIdKey] = new ObjectID(val);
+      } else if (val && val.hasOwnProperty('$in')) {
+        let a = val['$in'];
+        const arr: any[] = [];
+        a.map((id: string) => {
+          arr.push(new ObjectID(id));
+        });
+        doc[productIdKey] = { $in: arr };
+      }
+    }
+
     if (doc && doc.hasOwnProperty('mallId')) {
       const mallId = doc['mallId'];
       if (typeof mallId === 'string' && mallId.length === 24) {
@@ -298,23 +412,40 @@ export class Entity {
       const accountId = doc['accountId'];
       if (typeof accountId === 'string' && accountId.length === 24) {
         doc['accountId'] = new ObjectID(accountId);
-      }else if (accountId && accountId.hasOwnProperty('$in')) {
+      } else if (accountId && accountId.hasOwnProperty('$in')) {
         let a = accountId['$in'];
         const arr: any[] = [];
-        a.map((id: string) => {
-          arr.push(new ObjectID(id));
+        a.map((id: any) => {
+          if (typeof id === 'string' && id.length === 24) {
+            arr.push(new ObjectID(id));
+          } else {
+            arr.push(id); // object type
+          }
         });
         doc.accountId = { $in: arr };
       }
     }
 
     if (doc && doc.hasOwnProperty('orderId')) {
-      const orderId = doc['orderId'];
-      if (typeof orderId === 'string' && orderId.length === 24) {
-        doc['orderId'] = new ObjectID(orderId);
+      const body = doc['orderId'];
+
+      if (body && body.hasOwnProperty('$in')) {
+        let a = body['$in'];
+        const arr: any[] = [];
+        a.map((id: any) => {
+          if (typeof id === "string" && id.length === 24) {
+            arr.push(new ObjectID(id));
+          } else {
+            arr.push(id);
+          }
+        });
+
+        doc['orderId'] = { $in: arr };
+      } else if (typeof body === "string" && body.length === 24) {
+        doc['orderId'] = new ObjectID(body);
       }
     }
-    
+
     if (doc && doc.hasOwnProperty('driverId')) {
       const driverId = doc['driverId'];
       if (typeof driverId === 'string' && driverId.length === 24) {
@@ -336,13 +467,13 @@ export class Entity {
       }
     }
 
-    if(doc && doc.hasOwnProperty('$or')) {
+    if (doc && doc.hasOwnProperty('$or')) {
       const items: any[] = [];
       doc['$or'].map((it: any) => {
-        if (it && it.hasOwnProperty('toId')){
-          items.push({toId: new ObjectID(it.toId)});
-        }else if(it && it.hasOwnProperty('fromId')){
-          items.push({fromId: new ObjectID(it.fromId)});
+        if (it && it.hasOwnProperty('toId') && typeof it.toId === 'string' && it.toId.length === 24) {
+          items.push({ toId: new ObjectID(it.toId) });
+        } else if (it && it.hasOwnProperty('fromId') && typeof it.fromId === 'string' && it.fromId.length === 24) {
+          items.push({ fromId: new ObjectID(it.fromId) });
         }
       });
       doc['$or'] = items;
@@ -374,7 +505,7 @@ export class Entity {
     return doc;
   }
 
-  bulkUpdate(items: any[], options?: any): Promise<BulkWriteOpResultObject> {
+  bulkUpdate(items: any[], options?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getCollection().then((c: Collection) => {
         const clonedArray: any[] = JSON.parse(JSON.stringify(items));
@@ -383,21 +514,17 @@ export class Entity {
         clonedArray.map(item => {
           let query = item.query;
           let doc = item.data;
-          
+
           query = this.convertIdFields(query);
           doc = this.convertIdFields(doc);
           a.push({ updateOne: { filter: query, update: { $set: doc }, upsert: true } });
         });
 
         c.bulkWrite(a, (err, result: BulkWriteOpResultObject) => {
-          // if(result && result._id){
-          //   result.id = result._id;
-          //   delete(result._id);
-          // }
           if (err) {
-            reject(err);
+            resolve({ status: DbStatus.FAIL, msg: err });
           } else {
-            resolve(result);
+            resolve({ status: DbStatus.SUCCESS, msg: '' });
           }
         });
       });
@@ -405,7 +532,7 @@ export class Entity {
   }
 
   // use for test
-  bulkDelete(queries: any[], options?: any): Promise<BulkWriteOpResultObject> {
+  bulkDelete(queries: any[], options?: any): Promise<DbResult> {
     return new Promise((resolve, reject) => {
       this.getCollection().then((c: Collection) => {
         const clonedArray: any[] = JSON.parse(JSON.stringify(queries));
@@ -419,9 +546,10 @@ export class Entity {
 
         c.bulkWrite(a, (err: MongoError, result: BulkWriteOpResultObject) => {
           if (err) {
-            reject(err);
+            const s: any = err.errmsg;
+            resolve({ status: DbStatus.FAIL, msg: s });
           } else {
-            resolve(result);
+            resolve({ status: DbStatus.SUCCESS, msg: '' });
           }
         });
       });
@@ -453,7 +581,7 @@ export class Entity {
   deleteById(id: string): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getCollection().then((c: Collection) => {
-        c.deleteOne({ _id: new ObjectID(id) }, (err, doc) => { // DeleteWriteOpResultObject
+        c.deleteOne({ _id: new ObjectId(id) }, (err, doc) => { // DeleteWriteOpResultObject
           resolve(doc);
         });
       });
@@ -466,18 +594,10 @@ export class Entity {
         items.map(it => {
           it = this.convertIdFields(it);
         });
-        
+
         c.insertMany(items, {}, (err: MongoError, r: any) => { //InsertWriteOpResult
           if (!err) {
-            const rs: any[] = [];
-            r.ops.map((obj: any) => {
-              if (obj && obj._id) {
-                obj.id = obj._id;
-                // delete (obj._id);
-                rs.push(obj);
-              }
-            });
-            resolve(rs);
+            resolve(r.ops);
           } else {
             reject(err);
           }
@@ -486,7 +606,7 @@ export class Entity {
     });
   }
 
-  // deprecated
+
   deleteMany(query: any, options?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getCollection().then((c: Collection) => {

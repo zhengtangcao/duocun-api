@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ICart } from './cart.model';
+import { ICart, ICartItem } from './cart.model';
 
 @Injectable({
   providedIn: 'root'
@@ -7,6 +7,5 @@ import { ICart } from './cart.model';
 export class CartService {
 
   constructor() { }
-
 
 }

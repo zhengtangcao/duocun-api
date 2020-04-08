@@ -13,21 +13,18 @@ import { Config } from "./config";
 //import * as SocketIOAuth from "socketio-auth";
 
 import { DB } from "./db";
-import { MerchantStuff } from "./merchant-stuff";
 import { Utils } from "./utils";
 import { Socket } from "./socket";
 
 import { AccountRouter } from "./routers/account-route";
 import { DistanceRouter } from "./routers/distance-route";
 import { OrderRouter } from "./routers/order-route";
-import { AssignmentRouter } from "./routers/assignment-route";
 import { MerchantPaymentRouter } from "./routers/merchant-payment-route";
 import { MerchantBalanceRouter } from "./routers/merchant-balance-route";
 import { MerchantScheduleRouter } from "./routers/merchant-schedule-route";
 import { MallScheduleRouter } from "./routers/mall-schedule-route";
 
 import { ClientPaymentRouter } from "./routers/client-payment-route";
-import { ClientBalanceRouter } from "./routers/client-balance-route";
 import { DriverPaymentRouter } from "./routers/driver-payment-route";
 import { DriverBalanceRouter } from "./routers/driver-balance-route";
 import { RegionRouter } from "./routers/region-route";
@@ -35,10 +32,9 @@ import { TransactionRouter } from "./routers/transaction-route";
 import { OrderSequenceRouter } from "./routers/order-sequence-route";
 import { DriverHourRouter } from "./routers/driver-hour-route";
 import { CategoryRouter } from "./routers/category-route";
-import { RestaurantRouter } from "./routers/restaurant-route";
+import { MerchantRouter } from "./routers/merchant-route";
 import { ProductRouter } from "./routers/product-route";
 import { ContactRouter } from "./routers/contact-route";
-import { PhoneRouter } from "./routers/phone-route";
 import { RangeRouter } from "./routers/range-route";
 import { MallRouter } from "./routers/mall-route";
 import { LocationRouter } from "./routers/location-route";
@@ -46,7 +42,10 @@ import { PickupRouter } from "./routers/pickup-route";
 import { DriverRouter } from "./routers/driver-route";
 import { DriverShiftRouter } from "./routers/driver-shift-route";
 import { DriverScheduleRouter } from "./routers/driver-schedule-route";
-import { PictureRouter } from "./routers/picture-route";
+import { LogRouter } from "./routers/log-route";
+import { EventLogRouter } from "./routers/event-log-route";
+
+import { CellApplicationRouter } from "./routers/cell-application-route";
 
 import { AreaRouter } from './routers/area-route';
 
@@ -55,13 +54,20 @@ import { Product } from "./models/product";
 import { ApiMiddleWare } from "./api-middleware";
 import { schedule } from "node-cron";
 
-import { ClientBalance } from "./models/client-balance";
+import { Order } from "./models/order";
 
-
+import dotenv from "dotenv";
 process.env.TZ = 'America/Toronto';
 
-console.log(`env=${process.env.ENV}`)
-//if(ENV==='dev') 
+dotenv.config()
+
+function startCellOrderTask(dbo: any){
+  // s m h d m w
+  schedule('0 30 23 27 * *', () => {
+    const orderModel = new Order(dbo);
+    orderModel.createMobilePlanOrders();
+  });
+}
 // schedule('0 45 23 * * *', () => {
 //   let cb = new ClientBalance(dbo);
 //   cb.updateAll();
@@ -98,39 +104,15 @@ function setupSocket(server: any) {
   io.on('connection', function (socket: any) {
     console.log('server socket connected:' + socket.id);
 
-    socket.on('authentication', function (token: any) {
-      const cfg = new Config();
-      if (token) {
-        jwt.verify(token, cfg.JWT.SECRET, { algorithms: [cfg.JWT.ALGORITHM] }, (err, decoded: any) => {
-          if (err) {
-            console.log('socket authentication error:' + err);
-          }
-          if (decoded) {
-            console.log('socket authenticated:' + decoded.id);
-            if (decoded.id) {
-              socket.emit('authenticated', { userId: decoded.id });
-            }
-          }
-        });
-      } else {
-        console.log('socket authentication failed: access token is null.');
-      }
-    });
-
-    socket.on('disconnect', () => {
-      console.log('server socket disconnect');
-    });
+    // socket.on('authentication', function (token: any) {
+    // });
   });
 }
 
 // create db connection pool and return connection instance
 dbo.init(cfg.DATABASE).then(dbClient => {
-  // product = new Product(dbo);
-  // merchantStuff = new MerchantStuff(dbo);
-  // picture = new Picture();
-
   // socket = new Socket(dbo, io);
-
+  startCellOrderTask(dbo);
   // require('socketio-auth')(io, { authenticate: (socket: any, data: any, callback: any) => {
   //   const uId = data.userId;
   //   console.log('socketio connecting with uid: ' + uId + '/n');
@@ -153,17 +135,6 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   //   const ss = x;
   // });
 
-  // user.findOne({username: 'admin'}).then(x => {
-  //   if(x){
-  //     console.log('database duocun exists .../n');
-  //   }else{
-  //     user.insertOne({username:'guest', password:'', type:'user'}).then((x: any) => {
-  //       console.log('create database duocun and guest account .../n');
-  //       // res.setHeader('Content-Type', 'application/json');
-  //       // res.end(JSON.stringify(x.ops[0], null, 3))
-  //     });
-  //   }
-  // });
 
   app.get('/wx', (req, res) => {
     utils.genWechatToken(req, res);
@@ -199,32 +170,38 @@ dbo.init(cfg.DATABASE).then(dbClient => {
     res.send('upload file success');
   });
 
+  const merchantRouter = new MerchantRouter(dbo);
+  const areaRouter = new AreaRouter(dbo);
 
-  app.use(apimw.auth);
+  // disable auth token for testing
+  if(process.env.ENV != 'dev') {  
+    app.use(apimw.auth); 
+  }
+
+  
+  app.use('/' + ROUTE_PREFIX + '/Accounts', AccountRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Restaurants', merchantRouter.init());
+  app.use('/' + ROUTE_PREFIX + '/Areas', areaRouter.init());
 
   app.use('/' + ROUTE_PREFIX + '/Categories', CategoryRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Restaurants', RestaurantRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Products', ProductRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Contacts', ContactRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Phones', PhoneRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Ranges', RangeRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Malls', MallRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Locations', LocationRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Pickups', PickupRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Drivers', DriverRouter(dbo));
 
-  app.use('/' + ROUTE_PREFIX + '/Accounts', AccountRouter(dbo));
+
   app.use('/' + ROUTE_PREFIX + '/Distances', DistanceRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Regions', RegionRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Orders', OrderRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Assignments', AssignmentRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/MerchantPayments', MerchantPaymentRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/MerchantBalances', MerchantBalanceRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/MerchantSchedules', MerchantScheduleRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/MallSchedules', MallScheduleRouter(dbo));
 
   app.use('/' + ROUTE_PREFIX + '/ClientPayments', ClientPaymentRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/ClientBalances', ClientBalanceRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/DriverPayments', DriverPaymentRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/DriverBalances', DriverBalanceRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Transactions', TransactionRouter(dbo));
@@ -232,8 +209,12 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   app.use('/' + ROUTE_PREFIX + '/DriverHours', DriverHourRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/DriverShifts', DriverShiftRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/DriverSchedules', DriverScheduleRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Logs', LogRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/EventLogs', EventLogRouter(dbo));
 
-  app.use('/' + ROUTE_PREFIX + '/Areas', AreaRouter(dbo));
+
+  app.use('/' + ROUTE_PREFIX + '/CellApplications', CellApplicationRouter(dbo));
+
 
   app.use(express.static(path.join(__dirname, '/../uploads')));
   app.set('port', process.env.PORT || SERVER.PORT);
@@ -242,7 +223,7 @@ dbo.init(cfg.DATABASE).then(dbClient => {
     console.log("API is running on :%d/n", app.get("port"));
   });
 
-  setupSocket(server);
+  // setupSocket(server);
 });
 
 

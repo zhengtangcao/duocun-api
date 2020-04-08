@@ -1,40 +1,51 @@
 import { Picture } from '../picture.model';
-import { Restaurant, IRestaurant } from '../restaurant/restaurant.model';
+import { IMerchant } from '../merchant/merchant.model';
+import { IAccount } from '../account/account.model';
+
+export enum ProductStatus {
+  ACTIVE = 1,
+  INACTIVE,
+  NEW,
+  PROMOTE
+}
 
 export interface IProduct {
   _id?: string;
-  id?: string;
   name: string;
+  nameEN: string;
   description?: string;
-  price?: number;
+  price: number;
   cost?: number;
   merchantId: string;
   categoryId: string;
-  created?: Date;
-  modified?: Date;
+
   openDays?: number[];
-  restaurant?: IRestaurant;
+  restaurant?: IMerchant; // ??
   category?: ICategory;
   pictures?: Picture[];
   dow?: string[];
   order?: number;
-  status?: string;
+  status?: ProductStatus;
+  created?: string;
+  modified?: string;
+
+  merchant?: IMerchant; // join account table from find()
+  merchantAccount?: IAccount; // join account table from find()
 }
 
 export class Product implements IProduct {
   id: string;
   name: string;
+  nameEN: string;
   description: string;
   price: number;
   cost?: number;
   merchantId: string;
   categoryId: string;
-  created: Date;
-  modified: Date;
   pictures: Picture[];
   dow?: string[];
   order?: number;
-  status?: string;
+  status?: ProductStatus;
   constructor(data?: IProduct) {
     Object.assign(this, data);
   }
@@ -42,6 +53,7 @@ export class Product implements IProduct {
 
 export interface ICategory {
   name: string;
+  nameEN: string;
   description?: string;
   created?: Date;
   modified?: Date;
@@ -51,6 +63,7 @@ export interface ICategory {
 
 export class Category implements ICategory {
   name: string;
+  nameEN: string;
   description: string;
   created: Date;
   modified: Date;

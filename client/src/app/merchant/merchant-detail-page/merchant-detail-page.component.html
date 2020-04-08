@@ -1,29 +1,26 @@
 <div class="page">
-  <div class="row title-row" *ngIf="restaurant">
+  <div class="row title-block" *ngIf="restaurant">
     <div class="col-12 restaurant-name title-bg">{{restaurant.name}}</div>
-    <!-- <div class="col-12"><span i18n="@@OpeningHours">Opening Hours</span>: 11:30 - 23:00</div> -->
-    <!-- <div class="col-12"><span i18n="@@Address">Address</span>: {{restaurant.address.formattedAddress}}</div> -->
   </div>
 
-  <div class="row content-block">
-    <div class="col-xs-12 col-md-8 product-block">
-      <mat-tab-group mat-align-tabs="center">
-        <mat-tab i18n-label label="Menu" *ngIf="groups && groups.length>0">
-          <div *ngFor="let group of groups">
-            <div *ngIf="group && group.items && group.items.length > 0">
-              <div class="category-row text-sm">{{group.categoryName}}</div>
-              <app-product-list [restaurant]="restaurant" [items]="group.items" [hasAddress]="bHasAddress"></app-product-list>
-            </div>
-          </div>
-        </mat-tab>
-        <!-- <mat-tab i18n-label label="Reviews">
-          <div></div>
-        </mat-tab>
-        <mat-tab i18n-label label="About">
-          <div></div>
-        </mat-tab> -->
-      </mat-tab-group>
+  <div class="page-body">
+    <div class="cat-list">
+      <app-vertical-tab [selected]="category" [items]="categories" (select)="onCategorySelect($event)"></app-vertical-tab>
+    </div>
+    <div #list class="list">
+      <div [attr.id]="'cat'+grp.categoryId" class="row group" *ngFor="let grp of groups">
+        <div class="col-12 category-row text-sm">{{grp.categoryName}}</div>
+        <div class="col-12 product-block">
+          <app-product-list [restaurant]="restaurant" [items]="grp.items" [hasAddress]="bHasAddress" (add)="onAddProduct($event)" (remove)="onRemoveProduct($event)"></app-product-list>
+        </div>
+      </div>
     </div>
   </div>
+  <app-footer [type]="'restaurant'" (next)="onNext($event)"></app-footer>
 </div>
-  
+
+<!-- <app-modal id="custom-modal-1">
+  <h1>A Custom Modal!</h1>
+  <p>Home page text</p>
+  <button (click)="closeModal('custom-modal-1');">Close</button>
+</app-modal> -->

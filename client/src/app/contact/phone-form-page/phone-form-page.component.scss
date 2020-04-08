@@ -1,13 +1,30 @@
-.page{
-  height: 500px;
+$cellphone: "(max-width:480px)";
+$mobile: "(max-width: 767px)";
+$tablet: "(min-width: 768px) and (max-width: 1199px)";
+$desktop: "(min-width: 1200px)";
+
+$border-color: #aaa;
+
+.verify-hint{
+  margin: 0px;
+  padding: 15px;
+}
+
+.dialog-head{
+  .title-bg{
+    width: 180px;
+    margin: auto;
+    padding: 20px;
+  }
+  border-bottom: 1px solid #eee;
 }
 
 form{
   padding: 25px 15px;
   // margin-top: 60px;
-  position: fixed;
-  top: 60px;
-  left: 0px;
+  // position: fixed;
+  // top: 90px;
+  // left: 0px;
   height: 400px;
 
   .warning{
@@ -20,8 +37,9 @@ form{
     .verification-result{
       width: 30px;
       height: 40px;
-      border-top: solid 1px #aaa;
-      border-bottom: solid 1px #aaa;
+      border-top: solid 1px $border-color;
+      border-bottom: solid 1px $border-color;
+      border-right: solid 1px $border-color;
       padding-top: 4px;
     }
 
@@ -29,8 +47,13 @@ form{
       width: 118px;
     }
   
-    input.verification-code{
+    input.verification-code {
       width: calc(100% - 148px);
+      border-right: none;
+    }
+
+    input.phone{
+      width: calc(100% - 118px);
       border-right: none;
     }
   }
@@ -48,27 +71,48 @@ form{
   .col-6:last-child{
     padding-right: 0px;
   }
+
+  .signup-block{
+    padding-top: 40px;
+    .signup-btn{
+      width: 100%;
+      height: 48px;
+      padding: 10px;
+    }
+  }
+
 }
 
-.phone-save-row{
-  background-color: white;
-  position: fixed;
-  bottom: 0px;
-  width: 100%;
-  height: 60px;
-  margin: 0px;
-  padding: 0px;
-  border-top: solid 1px #eee;
+
+@media #{$tablet}{
+  $bottom-bar-h: 60px;
+  $padding-w: 100px;
+  .page{
+    padding: 0px $padding-w;
+  }
+
+  .title-block{
+    width: calc(100% - #{$padding-w} - #{$padding-w});
+  }
+}
+
+// .phone-save-row{
+//   background-color: white;
+//   position: fixed;
+//   bottom: 0px;
+//   width: 100%;
+//   height: 60px;
+//   margin: 0px;
+//   padding: 0px;
+//   border-top: solid 1px #eee;
   
-  .cancel-col, .save-col {
-    padding: 15px 0px;
-    text-align: center;
-    font-size: 18px;
-  }
+//   .cancel-col, .save-col {
+//     padding: 15px 0px;
+//     text-align: center;
+//     font-size: 18px;
+//   }
 
-  .cancel-col{
-    border-right: solid 1px #eee;
-  }
-
-
-}
+//   .cancel-col{
+//     border-right: solid 1px #eee;
+//   }
+// }

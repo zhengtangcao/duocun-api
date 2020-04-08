@@ -1,5 +1,5 @@
 
-import { GeoPoint } from '../location/location.model';
+import { GeoPoint, ILocation } from '../location/location.model';
 
 export enum Role {
   SUPER = 1,
@@ -13,29 +13,34 @@ export enum Role {
 
 export interface IAccount {
   _id?: string;
-  id?: string;
   type: string; // wechat, google, fb
   realm?: string;
   username?: string;
   email?: string;
   emailVerified?: boolean;
+
   phone?: string;
+  verified?: boolean;   // in db, phone number is verified or not
+  location?: ILocation; // in db, default location
+
   password?: string;
   sex?: string;
-  openid?: string; // wechat openid
+  openId?: string; // wechat openid
   imageurl?: string;
-  unionid?: string; // wechat unionid
+  unionId?: string; // wechat unionid
   accessTokens?: any[];
   address?: IAddress;
   roles?: number[]; // 'super', 'merchant-admin', 'merchant-stuff', 'driver', 'user'
-  visited?: boolean;
+  visited?: boolean;          // in db
   stripeCustomerId?: string;
-  pickupTime?: string;
+  pickup?: string;
+  balance?: number;
+
+  name?: string; // for merchant name
 }
 
 export class Account implements IAccount {
   _id?: string;
-  id: string;
   type: string;
   realm: string; // wechat, google, fb
   username: string;
@@ -52,6 +57,8 @@ export class Account implements IAccount {
   roles?: number[]; // 'super', 'merchant-admin', 'merchant-stuff', 'driver', 'user'
   visited?: boolean;
   stripeCustomerId?: string;
+  balance?: number;
+  location?: ILocation; // in db
 
   constructor(data?: IAccount) {
     Object.assign(this, data);
@@ -71,7 +78,7 @@ export interface IAddress {
   postalCode?: string;
   created?: Date;
   modified?: Date;
-  id?: number;
+  _id?: number;
 }
 
 export class Address implements IAddress {
@@ -87,7 +94,7 @@ export class Address implements IAddress {
   postalCode: string;
   created: Date;
   modified: Date;
-  id: number;
+  _id: number;
   constructor(data?: IAddress) {
     Object.assign(this, data);
   }

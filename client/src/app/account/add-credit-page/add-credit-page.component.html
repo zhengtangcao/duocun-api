@@ -1,0 +1,88 @@
+<div class="loading-spinner" *ngIf="loading">
+  <app-progress-spinner></app-progress-spinner>
+</div>
+
+<div class="page">
+  <div class="row title-block">
+    <div class="col-12 title-bg" i18n="@@AddCredit">AddCredit</div>
+  </div>
+
+  <div class="form-block" *ngIf="account">
+    <div class="row user-row">
+      <div class="col-12">
+        <span i18n="@@Name">Name</span>:&nbsp;
+        <span>{{account.username}}</span>
+      </div>
+    </div>
+
+    <div class="row balance-row">
+      <div class="col-12">
+        <span i18n="@@CurrentBalance">Balance</span>:&nbsp;
+        <span>${{account.balance | number : '1.2-2'}}</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <form [formGroup]="form" class="add-credit-form">
+        <div class="row received-row">
+          <div class="col-12 label-sm">
+            <span i18n="@@Amount">Amount</span>:(CAD)&nbsp;
+          </div>
+          <div class="col-12">
+            <input class="received-input" type="number" pattern="[\d\.]*" step="0.01" name="received" formControlName="received" />
+          </div>
+        </div>
+
+        <div class="row note-row">
+          <div class="col-12 label-sm">
+            <span i18n="@@Note">Note</span>:&nbsp;
+          </div>
+          <div class="col-12">
+            <textarea class="note-input" name="note" formControlName="note"></textarea>
+            <!-- <input class="note-input" name="note" formControlName="note" /> -->
+          </div>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+
+  <div class="payment-method-block">
+    <div class="row">
+      <div class="col-12 label-sm">
+        <span i18n="@@PaymentMethod">Payment Method</span>:
+      </div>
+      <div class="col-12" *ngIf="lang==='zh'">
+        <mat-button-toggle-group #group="matButtonToggleGroup" [value]="paymentMethod" (change)="onSelectPaymentMethod($event)">
+          <mat-button-toggle value="{{PaymentMethod.WECHAT}}" aria-label="Wechat">
+            <div class="title">微信支付</div>
+          </mat-button-toggle>
+          <mat-button-toggle value="{{PaymentMethod.CREDIT_CARD}}" aria-label="Card">
+            <div class="title" i18n="@@CreditCard">Credit/Debit Card</div>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+    </div>
+
+    <div class="row card-row">
+      <div class="col-12 card-wrapper">
+
+        <!-- <form id="payment-form1" onsubmit="return false;" *ngIf="paymentMethod===PaymentMethod.CREDIT_CARD">
+          <div class="form-row">
+            <label for="card-element1" class="label-sm" i18n="@@CreditCard">Credit/Debit Card</label>
+            <div id="card-element1">
+            </div>
+            <div id="card-errors1" role="alert"></div>
+          </div>
+        </form> -->
+        <app-credit-card-form *ngIf="paymentMethod===PaymentMethod.CREDIT_CARD" (init)="onCreditCardFormInit($event)"></app-credit-card-form>
+      </div>
+
+      <div class="col-12 actions-row">
+        <div class="btn btn-secondary btn-cancel" (click)="onCancel()" i18n="@@Back">Back</div>
+        <div class="btn btn-primary btn-pay" (click)="onPay()" i18n="@@Ok">Ok</div>
+      </div>
+    </div>
+  </div>
+</div>

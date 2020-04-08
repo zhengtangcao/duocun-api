@@ -13,6 +13,10 @@ import { ReactiveFormsModule } from '../../../node_modules/@angular/forms';
 import { SharedModule } from '../shared/shared.module';
 import { RangeService } from '../range/range.service';
 import { MerchantModule } from '../merchant/merchant.module';
+import { HeaderComponent } from './header/header.component';
+import { AreaModule } from '../area/area.module';
+import { AreaService } from '../area/area.service';
+import { MerchantService } from '../merchant/merchant.service';
 
 @NgModule({
   imports: [
@@ -26,14 +30,17 @@ import { MerchantModule } from '../merchant/merchant.module';
     MerchantModule
   ],
   declarations: [
-    HomeComponent
+    HomeComponent,
+    HeaderComponent
   ],
   exports: [
   ],
   providers: [
     AccountService,
     AuthService,
-    RangeService
+    RangeService,
+    AreaService,
+    MerchantService
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

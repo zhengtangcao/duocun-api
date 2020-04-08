@@ -1,7 +1,7 @@
 import { IMall } from './mall.model';
 
 export const DEFAULT_MALL: IMall = {
-  id: '1',
+  _id: '1',
   name: 'virtual Richmond Hill',
   placeId: '',
   // type: 'real',
@@ -10,6 +10,6 @@ export const DEFAULT_MALL: IMall = {
 };
 
 export class MallActions {
-  static UPDATE = 'UPDATE';
+  static UPDATE = 'UPDATE_MALL';
 }
 

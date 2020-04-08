@@ -1,24 +1,26 @@
-$cellphone: "(max-width:480px)";
-$mobile: "(max-width: 767px)";
-$tablet: "(min-width: 768px) and (max-width: 1199px)";
-$desktop: "(min-width: 1200px)";
+@import '../../../base';
 
-$green: rgb(24, 128, 56);
-$yellow: rgb(244, 160, 0);
-$red: rgb(219, 68, 55);
-$blue: #4285F3;
+$banner-height: 180px;
+
+$header-height: 0px; // 56px;
+$address-search-h: 50px;
+$ad-height: 0px; // 120px;
+$date-btn-height: 84px; // measure
+
 
 $position-btn-width: 0px;
-$map-height: 360px;
-$address-search-height: 56px;
-$bottom-bar-height: 60px;
-$ad-height: 0px; // 120px;
-$date-btn-height: 50px;
+$map-info-height: 48px;
 
+
+$list-height: calc(100% - #{$header-height} - #{$address-search-h} - #{$date-btn-height} - #{$ad-height});
+$map-height: calc(100% - #{$header-height} - #{$address-search-h} - #{$ad-height} - #{$map-info-height} - #{$bottom-bar-h});
+
+$spinner-bg: #000;
+$spinner-opacity: 0.8;
 // app-home
 // :host{
 //   width: 100%;
-//   height: calc(100% - #{$bottom-bar-height});
+//   height: calc(100% - #{$bottom-bar-h});
 //   display: block;
 // }
 
@@ -27,14 +29,21 @@ $date-btn-height: 50px;
     height: 0px;
 }
 
+
+// global
 .loading-spinner{
-  width: 100%;
-  margin-top: 220px;
+  // width: 100%;
+  // height: 100%;
+  // position: absolute;
+  // top: 0px;
+  // left: 0px;
+  // z-index: 9999;
 
   mat-spinner{
     margin-left: auto;
     margin-right: auto;
   }
+
   .loading-text{
     width: 90px;
     font-size: 14px;
@@ -43,11 +52,24 @@ $date-btn-height: 50px;
   }
 }
 
+.map-info-row{
+  height: $map-info-height;
+  background: $info-bg;
+  color: $info-fg;
+  text-align: center;
+  font-weight: 100;
+
+  .map-info-text{
+    padding-top: 10px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
 .map-block{
   position: fixed;
-  top: 110px;
+  top: $header-height + $address-search-h;
   left: 0px;
-  padding:0px;
   width: 100%;
   height: $map-height;
   app-map{
@@ -59,18 +81,15 @@ $date-btn-height: 50px;
 .option-item{
   width: 100%;
   height: 85px;
-  padding: 5px 0px 10px 0px;
+  padding: 0px;
   margin: 0px;
-  margin-top: 10px;
   text-align: left;
   background-color:#eee;
   border: none;
   border-radius: 2px;
-
-  .not-in-range-item{
-    .text-md{
-      color: $red;
-    }
+  
+  .text-md{
+    font-size: 14px;
   }
   
   .notInRange{
@@ -78,7 +97,6 @@ $date-btn-height: 50px;
     width: 100%;
     height: calc(100% - 460px);
   }
-  
 }
 
 .header-block{
@@ -88,41 +106,73 @@ $date-btn-height: 50px;
   width: 100%;
   background: white;
 
-  .address-search-block {
-    margin: 5px 0px 0px 0px;
-    width: 100%;
-    padding:0px 10px;
+  .left-col{
+    float: left;
+    width: 60%;
   }
-
-  .ad-block{
-    padding: 1px 10px;
-    width: 100%;
-    height: $ad-height;
-
-    img {
-      width: 100%;
-      height: $ad-height;
+  .right-col{
+    float: left;
+    width: 40%;
+    display: block;
+    padding-left: 50px;
+    img{
+      width: 120px;
+      height: 120px;
+    }
+    .text-xs{
+      font-size: 9px;
+      color: #333;
+      padding-top:4px;
     }
   }
 
-  .date-block{
-    width: 100%;
-    margin: 0px;
-    padding: 0px 10px;
+  .banner, .banner-up{
+    background: #aaa;
+
+    .address-search-block {
+      margin: 0px;
+      width: 100%;
+    }
+
+    .ad-block{
+      padding: 8px 14px;
+      width: 100%;
+      height: $ad-height;
+      font-size: 14px;
+      img {
+        width: 100%;
+        height: $ad-height;
+      }
+    }
+
+    .date-block{
+      width: 100%;
+      margin: 0px;
+      padding: 0px 10px;
+    }
+  }
+
+  .banner{
+    height: $banner-height;
+    // height: $address-search-h + $ad-height + $date-btn-height;
+  }
+
+  .banner-up{
+    height: $banner-height;
+    // height: $address-search-h + $ad-height;
   }
 }
 
 .merchant-list{
+  width: calc(100% - #{$content-padding} - #{$content-padding});
+  height: calc(100% - #{$header-height} - #{$banner-height} - #{$bottom-bar-h});
   position: absolute;
-  top: $address-search-height + $ad-height + $date-btn-height; // 110px;
-
-  height: calc(100% - #{$address-search-height + $ad-height + $date-btn-height});
-  overflow: scroll;
+  top: $header-height + $banner-height;
 }
 
 app-location-list{
-  position: absolute;
-  top: 58px;
+  // position: absolute;
+  // top: 58px;
   width: 100%;
   height: calc(100% - 58px - 61px);
 }
@@ -160,7 +210,7 @@ app-location-list{
   font-size: 14px;
 }
 
-.title-row{
+.title-block{
   text-align: left;
   height: 28px;
   line-height: 34px;
@@ -214,7 +264,18 @@ mat-button-toggle-group{
 }
 
 @media #{$tablet}{
+  $paddingw: 50px;
+  .header-block{
+    .banner, .banner-up{
+      padding: 15px $paddingw;
+    }
+  }
 
+  .merchant-list {
+    padding: 10px 0px;
+    width: 100%;
+    height: calc(100% - #{$header-height} - #{$banner-height} - #{$bottom-bar-h});
+  }
 }
 
 @media only screen
@@ -224,6 +285,43 @@ and (orientation: landscape) {
 }
 
 @media #{$mobile}{
+  .map-block{
+    padding:0px;
+  }
+
+  .merchant-list {
+    padding: 10px 0px;
+    top: $header-height + $address-search-h + $ad-height + $date-btn-height;
+    width: 100%;
+    height: calc(100% - #{$header-height} - #{$address-search-h} - #{$date-btn-height} - #{$ad-height} - #{$bottom-bar-h});
+  }
+
+  .header-block{
+    .left-col{
+      width: 100%;
+      height: 100%;
+    }
+    .right-col{
+      width: 0px;
+      display: none;
+    }
+    .banner, .banner-up{
+      background:white;
+      padding: 8px;
+
+      .ad-block{
+        height: 0px;
+        padding: 4px 14px;
+      }
+    }
+
+    .banner{
+      height: $address-search-h + $ad-height + $date-btn-height;
+    }
+    .banner-up{
+      height: $address-search-h + $ad-height;
+    }
+  }
 
   .branding-block{
     width: 100%;

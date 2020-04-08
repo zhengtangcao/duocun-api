@@ -1,7 +1,6 @@
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MerchantRoutingModule } from './merchant-routing.module';
-import { MerchantListComponent } from './merchant-list/merchant-list.component';
 import { MerchantDetailPageComponent } from './merchant-detail-page/merchant-detail-page.component';
 import { ProductModule } from '../product/product.module';
 
@@ -12,12 +11,14 @@ import { QuitRestaurantDialogComponent } from './quit-restaurant-dialog/quit-res
 import { SharedModule } from '../shared/shared.module';
 import { AreaModule } from '../area/area.module';
 import { AreaService } from '../area/area.service';
+import { MerchantGridComponent } from './merchant-grid/merchant-grid.component';
 
 
 @NgModule({
-  declarations: [MerchantListComponent,
+  declarations: [
     MerchantDetailPageComponent,
-    QuitRestaurantDialogComponent
+    QuitRestaurantDialogComponent,
+    MerchantGridComponent
   ],
   imports: [
     CommonModule,
@@ -29,8 +30,12 @@ import { AreaService } from '../area/area.service';
     AreaModule,
     SharedModule
   ],
-  providers: [AreaService],
-  exports: [MerchantListComponent],
+  providers: [
+    AreaService,
+  ],
+  exports: [
+    MerchantGridComponent
+  ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   entryComponents: [QuitRestaurantDialogComponent]
 })

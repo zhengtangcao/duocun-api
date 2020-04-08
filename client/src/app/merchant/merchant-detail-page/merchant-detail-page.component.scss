@@ -1,11 +1,13 @@
-$cellphone: "(max-width:480px)";
-$mobile: "(max-width: 767px)";
-$tablet: "(min-width: 768px) and (max-width: 1199px)";
-$desktop: "(min-width: 1200px)";
+@import '../../../base';
+
+$tab-h: 0px; // 48px;
+$secondary-bg:#eee;
+
+$padding-w: 100px;
+$cat-w: 120px;
 
 .page{
   height: 100%;
-  overflow: scroll;
 }
 
 .restaurant-name{
@@ -13,24 +15,123 @@ $desktop: "(min-width: 1200px)";
   padding-bottom: 15px;
 }
 
-.product-block{
-  padding:0px 3px;
-
-  .category-row{
-    padding: 15px;
-    text-align: center;
-  }
-}
-
 .row{
   margin-left:0px;
   margin-right:0px;
 }
 
-.mat-tab-body-content{
-  height: calc(100% - 95px - 60px - 48px);
+// .mat-tab-body-content{
+//   height: calc(100% - 95px - 60px - 48px);
+// }
+
+.page-body{
+  position: fixed;
+  top: $head-h;
+  height: calc(100% - #{$head-h} - #{$bottom-bar-h});
+
+  .mat-tab-group{
+    height: 100%;
+  }
+
+  .cat-list{
+    float: left;
+    width: $cat-w;
+    height: 100%;
+    // border-right:1px solid $secondary-bg;
+  }
+
+  .list{
+    width: calc(100% - #{$cat-w});
+    height: 100%;
+    overflow: scroll;
+  }
+
+  .category-row{
+    height: 30px;
+    padding: 5px;
+    text-align: center;
+  }
+
+  .product-block{
+    padding-left: 0px;
+    padding-right: 0px;
+  }
 }
 
-.content-block{
-  margin-top: 60px;
+@media #{$tablet}{
+  $bottom-bar-h: 60px;
+  $padding-w: 100px;
+  $cat-w: 120px;
+  .page{
+    padding: 0px $padding-w;
+  }
+
+  .title-block{
+    width: calc(100% - #{$padding-w} - #{$padding-w});
+  }
+
+  .content-block{
+    left: $padding-w;
+    width: calc(100% - #{$padding-w} - #{$padding-w});
+
+    .cat-list{
+      width: $cat-w;
+    }
+  
+    .list{
+      width: calc(100% - #{$cat-w});
+    }
+  }
+}
+
+@media #{$mobile}{
+  $padding-w: 0px;
+  $cat-w: 76px;
+
+  .page{
+    padding: 0px $padding-w;
+  }
+
+  .title-block{
+    width: calc(100% - #{$padding-w} - #{$padding-w});
+  }
+
+  .content-block{
+    left: $padding-w;
+    width: calc(100% - #{$padding-w} - #{$padding-w});
+  
+    .cat-list{
+      width: $cat-w;
+    }
+  
+    .list{
+      width: calc(100% - #{$cat-w});
+    }
+  }
+}
+
+@media #{$cellphone}{
+  $padding-w: 0px;
+  $cat-w: 76px;
+
+  .page{
+    padding: 0px $padding-w;
+  }
+
+  .title-block{
+    width: calc(100% - #{$padding-w} - #{$padding-w});
+  }
+
+  .content-block{
+    left: $padding-w;
+    width: calc(100% - #{$padding-w} - #{$padding-w});
+  
+    .cat-list{
+      width: $cat-w;
+    }
+  
+    .list{
+      width: calc(100% - #{$cat-w});
+    }
+  }
 }

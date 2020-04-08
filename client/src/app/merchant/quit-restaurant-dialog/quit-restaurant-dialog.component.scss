@@ -1,24 +1,13 @@
-.btn-leave{
-  width: 50%;
-  height: 52px;
+.btn-leave, .btn-stay{
+  float: right;
+  width: 90px;
+  height: 38px;
   text-align: center;
-  /* border-right: solid 1px #eee; */
-  /* vertical-align: middle; */
-  padding-top: 15px;
-  // border-right: solid 1px #eee;
+  margin-left: 10px;
 }
 
-.btn-stay{
-  width: 50%;
-  height: 52px;
-  text-align: center;
-  /* border-right: solid 1px #eee; */
-  /* vertical-align: middle; */
-  padding-top: 15px;
-  // border-right: solid 1px #eee;
-}
-
-.btn-row{
-  border-top: solid 1px #eee;
+.mat-dialog-actions{
+  margin-top: 5px;
+  margin-bottom: 0px;
 }
 
