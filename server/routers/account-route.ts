@@ -29,7 +29,7 @@ export function AccountRouter(db: DB) {
 
   // router.post('/', (req, res) => { controller.create(req, res); });
   // router.put('/', (req, res) => { controller.replace(req, res); });
-  // router.patch('/', (req, res) => { controller.update(req, res); });
+  router.patch('/', (req, res) => { controller.update(req, res); });
   // router.delete('/', (req, res) => { controller.remove(req, res); });
 
   // router.post('/sendClientMsg2', (req, res) => { controller.sendClientMsg2(req, res); });
