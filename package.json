@@ -55,7 +55,9 @@
     "socketio-auth": "^0.1.1",
     "strong-error-handler": "^3.0.0",
     "ts-md5": "^1.2.6",
-    "twilio": "^3.34.0"
+    "twilio": "^3.34.0",
+    "winston": "^3.2.1",
+    "winston-daily-rotate-file": "^4.4.2"
   },
   "devDependencies": {
     "@types/chai": "^4.2.2",
@@ -78,17 +80,17 @@
   },
   "nodemonConfig": {
     "ignore": [
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    ".git",
-    "node_modules"
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      ".git",
+      "node_modules"
     ],
     "watch": [
-    "./"
+      "./"
     ],
     "exec": "npm start",
     "ext": "ts"
-    },
+  },
   "license": "MIT",
   "description": "duocun"
 }

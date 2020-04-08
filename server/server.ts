@@ -59,9 +59,13 @@ import { schedule } from "node-cron";
 import { Order } from "./models/order";
 
 import dotenv from "dotenv";
+import log from './lib/logger'
+dotenv.config()
+
 process.env.TZ = 'America/Toronto';
 
-dotenv.config()
+
+
 
 function startCellOrderTask(dbo: any){
   // s m h d m w
@@ -104,7 +108,7 @@ function setupSocket(server: any) {
   io = Server(server);
 
   io.on('connection', function (socket: any) {
-    console.log('server socket connected:' + socket.id);
+    log.info(`server socket connected: socket-id=${socket.id}`);
 
     // socket.on('authentication', function (token: any) {
     // });
