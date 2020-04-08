@@ -9,9 +9,9 @@ export function OrderRouter(db: DB){
   // v2
   router.get('/v2/transactions', (req, res) => { controller.reqTransactions(req, res); });
   // tools
-  router.post('/missingWechatpayments', (req, res) => { controller.reqMissingWechatPayments(req, res); });
-  router.post('/missingPaid', (req, res) => { controller.reqFixMissingPaid(req, res); });
-  router.post('/missingUnpaid', (req, res) => { controller.reqFixMissingUnpaid(req, res); });
+  // router.post('/missingWechatpayments', (req, res) => { controller.reqMissingWechatPayments(req, res); });
+  // router.post('/missingPaid', (req, res) => { controller.reqFixMissingPaid(req, res); });
+  // router.post('/missingUnpaid', (req, res) => { controller.reqFixMissingUnpaid(req, res); });
   
   // v1
   router.get('/csv', (req, res) => { controller.reqCSV(req, res); });

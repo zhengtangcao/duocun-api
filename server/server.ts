@@ -45,6 +45,8 @@ import { DriverScheduleRouter } from "./routers/driver-schedule-route";
 import { LogRouter } from "./routers/log-route";
 import { EventLogRouter } from "./routers/event-log-route";
 
+import {ToolRouter} from "./routers/tool-route";
+
 import { CellApplicationRouter } from "./routers/cell-application-route";
 
 import { AreaRouter } from './routers/area-route';
@@ -186,6 +188,7 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   app.use('/' + ROUTE_PREFIX + '/Accounts', AccountRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Restaurants', merchantRouter.init());
   app.use('/' + ROUTE_PREFIX + '/Areas', areaRouter.init());
+  app.use('/' + ROUTE_PREFIX + '/Tools', ToolRouter(dbo));
 
   app.use('/' + ROUTE_PREFIX + '/Categories', CategoryRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Products', ProductRouter(dbo));
