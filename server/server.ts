@@ -60,6 +60,8 @@ import { ClientBalance } from "./models/client-balance";
 
 process.env.TZ = 'America/Toronto';
 
+console.log(`env=${process.env.ENV}`)
+//if(ENV==='dev') 
 // schedule('0 45 23 * * *', () => {
 //   let cb = new ClientBalance(dbo);
 //   cb.updateAll();

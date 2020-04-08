@@ -9,7 +9,7 @@
     "build": "tsc",
     "prestart": "npm run build",
     "lint": "eslint .",
-    "start": "node ./dist/server.js",
+    "start": "npm run build && node ./dist/server.js",
     "test": "mocha -r ts-node/register server/tests/**/*-spec.ts",
     "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test",
     "posttest": "npm run lint",
