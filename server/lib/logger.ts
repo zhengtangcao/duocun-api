@@ -1,38 +1,45 @@
+import winston, { createLogger, format, transports } from "winston";
+import DailyRotateFile from "winston-daily-rotate-file";
+const { combine, timestamp, label, printf } = format;
 
-import bunyan from "bunyan";
+import dotenv from "dotenv";
+dotenv.config();
 
-const logging_dev = {
-    name: "duocun-server",
-    streams: [
-        {
-            level: "trace",
-            stream: process.stdout // log INFO and above to stdout
-        },
-        {
-            level: "debug",
-            type: "rotating-file",
-            path: "./duocun-server.log",
-            period: "3d", // rotate every 3 days
-            count: 12  // keep 12 back copies
-        }
-    ]
+const logFormat = printf(({ level, message, timestamp }) => {
+  return `[${timestamp}] ${level}: ${message}`;
+});
+
+const transport = new DailyRotateFile({
+  filename: "duocun-api-%DATE%.log",
+  datePattern: "YYYY-MM-DD-HH",
+  zippedArchive: false,
+  maxSize: "20m",
+  maxFiles: "14d",
+});
+
+console.log(`env=>${process.env.ENV}`);
+const logger = createLogger({
+  level: "info",
+  format: combine(timestamp(), logFormat),
+  defaultMeta: { service: "duocun-api" },
+  transports: [
+    transport,
+    //
+    // - Write all logs with level `error` and below to `error.log`
+    // - Write all logs with level `info` and below to `combined.log`
+    //
+    // new winston.transports.File({ filename: "error.log", level: "error" }),
+    // new winston.transports.File({ filename: "info.log", level: "info" }),
+  ],
+});
+
+if (process.env.ENV == "dev") {
+  logger.add(
+    new winston.transports.Console({
+      level: "verbose",
+      format: winston.format.simple(),
+    })
+  );
 }
 
-const logging_prod = {
-    name: "duocun-server",
-    stream: {
-        level: "info",
-        type: "rotating-file",
-        path: "./duocun-server.log",
-        period: "3d", // rotate every 3 days
-        count: 12  // keep 12 back copies
-    }
-}
-
-let log = bunyan.createLogger(logging_prod);
-
-if(process.env.ENV === 'dev'){
-    bunyan.createLogger(logging_dev);
-}
-    
-export default log
+export default logger;
