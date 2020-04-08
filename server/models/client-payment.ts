@@ -112,14 +112,16 @@ export class ClientPayment extends Model {
   // appCode --- '122':grocery, '123':food delivery
   // actionCode --- P: Pay, A: Add credit
   // paymentId --- paymentId represent a batch of orders
-  async getSnappayData(appCode: string, actionCode: string, accountId: string, paymentId: string, amount: number, description: string) {
-    const cfgs = await this.cfgModel.find({});
-    const cfg = cfgs[0];
-    const method = cfg.snappay.methods.find((m: any) => m.code = 'WECHATPAY');
-    const app = method.apps.find((a: any) => a.code === appCode);
-    const notify_url = app ? app.notifyUrl : ''; // 'https://duocun.com.cn/api/ClientPayments/notify';
-    const returnUrl = app ? app.returnUrls.find((r: any) => r.action === actionCode) : { url: '' }; 'https://duocun.ca/grocery?p=h&cId='
-    const return_url = returnUrl.url + accountId; // 'https://duocun.ca/grocery?p=h&cId=' + accountId;
+  getSnappayData(appCode: string, actionCode: string, accountId: string, paymentId: string, amount: number, description: string) {
+    // const cfgs = await this.cfgModel.find({});
+    // const cfg = cfgs[0];
+    // const method = cfg.snappay.methods.find((m: any) => m.code = 'WECHATPAY');
+    // const app = method.apps.find((a: any) => a.code === appCode);
+    // const notify_url = app ? app.notifyUrl : ''; // 'https://duocun.com.cn/api/ClientPayments/notify';
+    // const returnUrl = app ? app.returnUrls.find((r: any) => r.action === actionCode) : { url: '' }; 'https://duocun.ca/grocery?p=h&cId='
+    // const return_url = returnUrl.url + accountId; // 'https://duocun.ca/grocery?p=h&cId=' + accountId;
+    const return_url = 'https://duocun.ca/grocery?p=h&cId=' + accountId;
+    const notify_url = 'https://duocun.com.cn/api/ClientPayments/notify';
     const trans_amount = Math.round(amount * 100) / 100;
 
     return { // the order matters
@@ -145,7 +147,7 @@ export class ClientPayment extends Model {
     const self = this;
 
     return new Promise((resolve, reject) => {
-      this.getSnappayData(appCode, actionCode, accountId, paymentId, amount, description).then(data => {
+      const data = this.getSnappayData(appCode, actionCode, accountId, paymentId, amount, description);
         const params = this.snappaySignParams(data);
         const options = {
           hostname: 'open.snappay.ca',
@@ -241,7 +243,6 @@ export class ClientPayment extends Model {
         post_req.write(JSON.stringify(params));
         post_req.end();
       });
-    });
   }
 
 
