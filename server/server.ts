@@ -58,8 +58,10 @@ import { schedule } from "node-cron";
 
 import { Order } from "./models/order";
 
-
+import dotenv from "dotenv";
 process.env.TZ = 'America/Toronto';
+
+dotenv.config()
 
 function startCellOrderTask(dbo: any){
   // s m h d m w
@@ -172,7 +174,12 @@ dbo.init(cfg.DATABASE).then(dbClient => {
 
   const merchantRouter = new MerchantRouter(dbo);
   const areaRouter = new AreaRouter(dbo);
-  app.use(apimw.auth);
+
+  // disable auth token for testing
+  if(process.env.ENV != 'dev') {  
+    app.use(apimw.auth); 
+  }
+
   
   app.use('/' + ROUTE_PREFIX + '/Accounts', AccountRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Restaurants', merchantRouter.init());

@@ -12,6 +12,7 @@
 *.xml
 .DS_Store
 .idea
+.env
 .project
 .strong-pm
 coverage

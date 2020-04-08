@@ -6,6 +6,7 @@
     "node": ">=4"
   },
   "scripts": {
+    "dev": "nodemon",
     "build": "tsc",
     "prestart": "npm run build",
     "lint": "eslint .",
@@ -34,6 +35,7 @@
     "cors": "^2.8.5",
     "csv-parser": "^2.3.2",
     "csv-writer": "^1.5.0",
+    "dotenv": "^8.2.0",
     "es6-promise": "^4.2.8",
     "growl": "^1.10.5",
     "helmet": "^3.21.0",
@@ -74,6 +76,19 @@
     "type": "",
     "url": ""
   },
+  "nodemonConfig": {
+    "ignore": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    ".git",
+    "node_modules"
+    ],
+    "watch": [
+    "./"
+    ],
+    "exec": "npm start",
+    "ext": "ts"
+    },
   "license": "MIT",
   "description": "duocun"
 }

@@ -9,7 +9,7 @@ export function ClientPaymentRouter(db: DB) {
   // v2 api
   router.post('/payByCreditCard', (req, res) => { controller.payByCreditCard(req, res); });
   router.post('/payBySnappay', (req, res) => { controller.payBySnappay(req, res) });
-
+  router.get('/hello', (req, res) => { controller.hello(req, res) });
   // router.get('/session', (req, res) => {controller.createStripeSession(req, res); });
   // router.post('/checkout', (req, res) => {controller.checkout(req, res); });
 

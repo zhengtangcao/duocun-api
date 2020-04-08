@@ -104,6 +104,11 @@ export class ClientPayment extends Model {
     this.cfg = new Config();
   }
 
+  hello(req: Request, res: Response){
+    // res.send(JSON.stringify(r, null, 3));
+    res.send({msg: "Hello" });
+  }
+
   // appCode --- '122':grocery, '123':food delivery
   // actionCode --- P: Pay, A: Add credit
   // paymentId --- paymentId represent a batch of orders
