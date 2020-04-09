@@ -508,7 +508,8 @@ export class Order extends Model {
   // should not directly call this function, use placeOrders instead.
   doInsertOneV2(order: IOrder): Promise<IOrder> {
     const location: ILocation = order.location;
-    const date = moment(order.deliverDate).format('YYYY-MM-DD');
+    const s = order.deliverDate + 'T' + order.deliverTime + ':00.000Z';
+    const date = moment(s).format('YYYY-MM-DD');
     const time: any = order.deliverTime;
     const delivered = this.getUtcTime(date, time).toISOString();
 
