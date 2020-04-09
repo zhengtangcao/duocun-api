@@ -510,7 +510,7 @@ export class Order extends Model {
     const location: ILocation = order.location;
     const date = moment(order.deliverDate).format('YYYY-MM-DD');
     const time: any = order.deliverTime;
-    const delivered = this.getUtcTime(date, time).toISOString();
+    const delivered = order.deliverDate + 'T15:00:00.000Z'; // this.getUtcTime(date, time).toISOString(); //tmp fix!!!
 
     return new Promise((resolve, reject) => {
       if (order.code) {
