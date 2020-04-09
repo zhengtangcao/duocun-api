@@ -14,9 +14,9 @@ export class AreaRouter{
     // v1
     this.router.get('/my', (req, res) => { this.reqMyArea(req, res); }); // fix me
     this.router.get('/qFind', (req, res) => { this.quickFind(req, res); });
+    this.router.get('/', (req, res) => { this.quickFind(req, res); });
 
     // fix me
-    // this.router.get('/', (req, res) => { this.list(req, res); });
     // this.router.get('/:id', (req, res) => { this.get(req, res); });
     
     this.router.post('/nearest', (req, res) => {this.getNearest(req, res); });
