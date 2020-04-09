@@ -48,8 +48,6 @@ export function AccountRouter(db: DB) {
 };
 
 export class AccountController extends Model {
-
-  router = express.Router();
   accountModel: Account;
   attrModel: AccountAttribute;
   merchantStuff: MerchantStuff;

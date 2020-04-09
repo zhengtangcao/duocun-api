@@ -177,7 +177,6 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   });
 
   const merchantRouter = new MerchantRouter(dbo);
-  const areaRouter = new AreaRouter(dbo);
 
   // disable auth token for testing
   if(process.env.ENV != 'dev') {  
@@ -187,7 +186,7 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   
   app.use('/' + ROUTE_PREFIX + '/Accounts', AccountRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Restaurants', merchantRouter.init());
-  app.use('/' + ROUTE_PREFIX + '/Areas', areaRouter.init());
+  app.use('/' + ROUTE_PREFIX + '/Areas', AreaRouter(dbo));
   app.use('/' + ROUTE_PREFIX + '/Tools', ToolRouter(dbo));
 
   app.use('/' + ROUTE_PREFIX + '/Categories', CategoryRouter(dbo));
