@@ -1,19 +1,11 @@
-$cellphone: "(max-width:480px)";
-$mobile: "(max-width: 767px)";
-$tablet: "(min-width: 768px) and (max-width: 1199px)";
-$desktop: "(min-width: 1200px)";
-
-$green: rgb(24, 128, 56);
-$yellow: rgb(244, 160, 0);
-$red: rgb(219, 68, 55);
-$blue: #4285F3;
+@import '../../../base';
 
 $map-height: 360px;
 
 .address-input-block{
-  position: fixed;
-  top: 0px;
-  padding: 15px;
+  // position: fixed;
+  // top: 0px;
+  padding: 15px 10px;
   width: 100%;
   background-color: white;
   z-index: 1000;
@@ -36,8 +28,8 @@ app-address-input{
 }
 
 app-location-list{
-  position: absolute;
-  top: 78px;
+  // position: absolute;
+  // top: 78px;
   height: calc(100% - 140px);
   overflow: scroll;
   width: 100%;
@@ -80,5 +72,15 @@ app-location-list{
     top: 400px;
     width: 100%;
     height: calc(100% - 460px);
+  }
+}
+
+
+@media #{$tablet}{
+  $bottom-bar-h: 60px;
+  $padding-w: 100px;
+
+  .page{
+    padding: 0px $padding-w;
   }
 }

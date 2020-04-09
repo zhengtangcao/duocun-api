@@ -1,16 +1,19 @@
-import { throwError as observableThrowError, Observable ,  empty, of } from 'rxjs';
+import { throwError as observableThrowError, Observable, empty, of } from 'rxjs';
 import { map, catchError, mergeMap, flatMap } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 
 import { environment } from '../../environments/environment';
-import { Account } from './account.model';
+import { Account, IAccount } from './account.model';
 
 import { NgRedux } from '@angular-redux/store';
 import { AccountActions } from './account.actions';
 import { AuthService } from './auth.service';
-import { EntityService } from '../entity.service';
+import { EntityService, HttpStatus } from '../entity.service';
+
+import * as Cookies from 'js-cookie';
+const COOKIE_EXPIRY_DAYS = 365;
 
 export interface IAccessToken {
   'id'?: string;
@@ -18,8 +21,6 @@ export interface IAccessToken {
   'created'?: Date;
   'userId'?: string;
 }
-
-const API_URL = environment.API_URL;
 
 @Injectable()
 export class AccountService extends EntityService {
@@ -35,12 +36,29 @@ export class AccountService extends EntityService {
     this.url = super.getBaseUrl() + 'Accounts';
   }
 
-  signup(account: Account): Observable<any> {
-    return this.http.post(this.url + '/signup', account);
+  // d --- accountId, phone, lang: 'en' or 'zh'
+  // return tokenId if (signup) success, otherwise return ''
+  sendVerifyMsg(accountId: string, phone: string, lang: string): Observable<any> {
+    const url = this.url + '/sendVerifyMsg';
+    return this.doPost(url, { accountId: accountId, phone: phone, lang: lang });
   }
 
-  // login --- return {id: tokenId, ttl: 10000, userId: r.id}
-  login(username: string, password: string, rememberMe: boolean = true): Observable<any> {
+  verifyAndLogin(phone: string, code: string, accountId: string): Observable<any> {
+    const url = this.url + '/verifyAndLogin';
+    return this.doPost(url, { code: code, phone: phone, accountId: accountId });
+  }
+
+  verifyCode(phone: string, code: string): Observable<any> {
+    const url = this.url + '/verifyCode';
+    return this.doPost(url, { code: code, phone: phone });
+  }
+
+  signup(phone: string, verificationCode: string): Observable<any> {
+    return this.http.post(this.url + '/signup', { phone: phone, verificationCode: verificationCode });
+  }
+
+  // login --- return string tokenId
+  login(username: string, password: string): Observable<any> {
     const credentials = {
       username: username,
       password: password
@@ -48,149 +66,64 @@ export class AccountService extends EntityService {
     return this.http.post(this.url + '/login', credentials);
   }
 
+  loginByPhone(phone: string, verificationCode: string): Observable<any> {
+    const credentials = {
+      phone: phone,
+      verificationCode: verificationCode
+    };
+    return this.http.post(this.url + '/loginByPhone', credentials);
+  }
+
   logout(): Observable<any> {
     const state = this.ngRedux.getState();
-    if (state && state.id) {
+    if (state && state._id) {
       this.ngRedux.dispatch({ type: AccountActions.UPDATE, payload: new Account() });
     }
     return this.http.post(this.url + '/logout', {});
   }
 
   // ------------------------------------
-  // getCurrentUser
-  // return Account object or null
-  getCurrentUser(): Observable<any> {
-    const id: any = this.authSvc.getUserId();
-    // const url = id ? (this.url + '/' + id) : (this.url + '/__anonymous__');
-    if (id) {
-      return this.findById(id);
+  // getCurrentAccount
+  // return IAccount or null
+  getCurrentAccount(): Observable<any> {
+    const tokenId: string = this.authSvc.getAccessTokenId();
+    if (tokenId) {
+      return this.http.get(this.url + '/current?tokenId=' + tokenId);
     } else {
       return of(null);
     }
   }
-
-  // overide
-  // findById(id: string, filter?: any): Observable<any> {
-  //   let headers: HttpHeaders = new HttpHeaders();
-  //   headers = headers.append('Content-Type', 'application/json');
-  //   return this.http.post(this.url + '/getAccount', {_id: id}, {headers: headers});
-  // }
-
-
-  getCurrent(forceGet: boolean = false): Observable<Account> {
-    const self = this;
-    const state: any = this.ngRedux.getState();
-    if (!state || !state.account || !state.account.id || forceGet) {
-      return this.getCurrentUser();
-    } else {
-      return this.ngRedux.select<Account>('account');
-    }
-  }
-
-  // getWechatAccessToken(authCode: string) {
-  //   const url = super.getBaseUrl() + 'wechatAccessToken?code=' + authCode;
-  //   return this.http.get(url);
-  // }
-  // refreshWechatAccessToken(refreshToken: string) {
-  //   const url = super.getBaseUrl() + 'wechatRefreshAccessToken?token=' + refreshToken;
-  //   return this.http.get(url);
-  // }
 
   wechatLogin(authCode: string) {
     const url = this.url + '/wechatLogin?code=' + authCode;
     return this.http.get(url);
   }
 
-  // getUserList(query?: string): Observable<User[]> {
-  //     const url = API_URL + 'users' + (query ? query : '');
-  //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-  //     return this.http.get(url, { 'headers': headers }).pipe(map((res: any) => {
-  //         let a: User[] = [];
-  //         if (res.data && res.data.length > 0) {
-  //             for (let i = 0; i < res.data.length; i++) {
-  //                 a.push(new User(res.data[i]));
-  //             }
-  //         }
-  //         return a;
-  //     }),
-  //         catchError((err) => {
-  //             return observableThrowError(err.message || err);
-  //         }), );
-  // }
+  // v2
+  setAccessTokenId(token) {
+    // const oldToken = this.getAccessTokenId();
+    // if (oldToken) {
+    //   Cookies.remove('duocun-token-id');
+    // }
+    if (token) {
+      Cookies.set('duocun-token-id', token, { expires: COOKIE_EXPIRY_DAYS });
+    }
+  }
 
-  // getUser(id: number): Observable<User> {
-  //     const url = this.API_URL + 'users/' + id;
-  //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-  //     return this.http.get(url, { 'headers': headers }).pipe(map((res: any) => {
-  //         return new User(res.data);
-  //     }),
-  //         catchError((err) => {
-  //             return observableThrowError(err.message || err);
-  //         }), );
-  // }
+  getAccessTokenId() {
+    const tokenId = Cookies.get('duocun-token-id');
+    return tokenId ? tokenId : null;
+  }
 
-  // saveUser(d: User): Observable<User> {
-  //     const url = this.API_URL + 'users';
-  //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-  //     const data = {
-  //         'id': d.id,
-  //         'username': d.username,
-  //         'email': d.email,
-  //         'password': d.password,
-  //         'first_name': d.first_name,
-  //         'last_name': d.last_name,
-  //         'portrait': d.portrait,
-  //         'type': d.type,
-  //     };
-  // }
-
-  // getUserList(query?: string): Observable<User[]> {
-  //     const url = API_URL + 'users' + (query ? query : '');
-  //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-  //     return this.http.get(url, { 'headers': headers }).pipe(map((res: any) => {
-  //         let a: User[] = [];
-  //         if (res.data && res.data.length > 0) {
-  //             for (let i = 0; i < res.data.length; i++) {
-  //                 a.push(new User(res.data[i]));
-  //             }
-  //         }
-  //         return a;
-  //     }),
-  //     catchError((err) => {
-  //         return observableThrowError(err.message || err);
-  //     }), );
-  // }
-
-  // getUser(id: number): Observable<User> {
-  //     const url = this.API_URL + 'users/' + id;
-  //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-  //     return this.http.get(url, { 'headers': headers }).pipe(map((res: any) => {
-  //         return new User(res.data);
-  //     }),
-  //     catchError((err) => {
-  //         return observableThrowError(err.message || err);
-  //     }), );
-  // }
-
-  // saveUser(d: User): Observable<User> {
-  //     const url = this.API_URL + 'user';
-  //     const headers = new HttpHeaders().set('Content-Type', 'application/json');
-  //     const data = {
-  //         'username': d.username,
-  //         'first_name': d.first_name,
-  //         'last_name': d.last_name,
-  //         'portrait': d.portrait,
-  //         'type': d.type,
-  //     };
-
-  //     return this.http.post(url, data, { 'headers': headers }).pipe(map((res: any) => {
-  //         return new User(res.data);
-  //     }),
-  //     catchError((err) => {
-  //         return observableThrowError(err.message || err);
-  //     }), );
-  // }
-
-
+  // v2
+  wxLogin(authCode) {
+    const url = this.url + '/wxLogin?code=' + authCode;
+    return this.http.get(url).toPromise();
+    // if (rsp.status === HttpStatus.OK.code) {
+    //   return rsp.data;
+    // } else {
+    //   return null;
+    // }
+  }
 }
 

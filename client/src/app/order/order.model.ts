@@ -1,25 +1,44 @@
-import { Product } from '../product/product.model';
-// import { Picture } from '../picture.model';
 import { Address } from '../account/account.model';
-import { Restaurant, IRestaurant } from '../restaurant/restaurant.model';
-import { Picture } from '../picture.model';
 import { ILocation } from '../location/location.model';
+
+export const OrderType = {
+  FOOD_DELIVERY: 'F',
+  MOBILE_PLAN_SETUP: 'MS',
+  MOBILE_PLAN_MONTHLY: 'MM',
+  GROCERY: 'G'
+};
+
+export const OrderStatus = {
+  BAD:     'B',          // client return, compansate
+  DELETED: 'D',          // cancellation
+  TEMP:    'T',             // generate a temp order for electronic order
+  NEW:     'N',
+  LOADED:  'L',           // The driver took the food from Merchant
+  DONE:    'F',             // Finish delivery
+  MERCHANT_CHECKED: 'MC'  // VIEWED BY MERCHANT
+};
 
 export interface IOrder {
   _id?: string;
-  id?: string;
   code?: string;
   clientId?: string;
   clientName?: string;
   clientPhoneNumber?: string;
-  // prepaidClient?: boolean;
   merchantId?: string;
   merchantName?: string;
   driverId?: string;
   driverName?: string;
+
+  type?: string;       // in db
   status?: string;
+  paymentStatus?: string;
+
+  pickupTime?: string;
+  deliverDate?: string;   // eg. 2025-01-03
+  deliverTime?: string;   // eg. 14:00:01
+
   note?: string;
-  address?: string;
+  // address?: string;       // should not in db
   location?: ILocation;
 
   items?: IOrderItem[];
@@ -30,7 +49,6 @@ export interface IOrder {
   deliveryDiscount?: number;
   overRangeCharge?: number;
   groupDiscount?: number;
-  productTotal?: number;
   total?: number;
   paymentMethod ?: string;
   chargeId?: string; // stripe chargeId
@@ -38,26 +56,30 @@ export interface IOrder {
   payable?: number; // total - balance
   price?: number;
   cost?: number;
+  orderType?: string;
 
   defaultPickupTime?: string;
-  deliveryDate?: string; // 'today', 'tomorrow'
+  dateType?: string; // 'today', 'tomorrow'
   delivered?: Date;  // obsoleted
   created?: string;  // obsoleted
   modified?: string; // obsoleted
 }
 
 export class Order implements IOrder {
-  id: string;
+  _id: string;
   code?: string;
   clientId: string;
   clientName: string;
   clientPhoneNumber?: string;
-  // prepaidClient?: boolean;
   merchantId: string;
   merchantName: string;
   driverId?: string;
   driverName?: string;
-  status: string;
+
+  type?: string;      // in db
+  status?: string;
+  paymentStatus?: string;
+
   note: string;
   address: string;
   location?: ILocation;
@@ -107,7 +129,8 @@ export class OrderItem implements IOrderItem {
 }
 
 export interface ICharge {
-  productTotal: number;
+  price: number;
+  cost: number;
   deliveryCost: number;
   deliveryDiscount: number;
   overRangeCharge: number;

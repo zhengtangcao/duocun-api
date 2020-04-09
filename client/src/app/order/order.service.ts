@@ -2,11 +2,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { EntityService } from '../entity.service';
+import { EntityService, HttpStatus } from '../entity.service';
 import { AuthService } from '../account/auth.service';
 import { Observable } from '../../../node_modules/rxjs';
 import { IOrder } from './order.model';
-
 
 
 @Injectable()
@@ -63,4 +62,33 @@ export class OrderService extends EntityService {
     const url = this.url + '/updateDelivered';
     return this.doPatch(url, { orderId: orderId, pickup: pickup });
   }
+
+  afterRemoveOrder( orderId: string ): Observable<any> {
+    const url = this.url + '/afterRemoveOrder';
+    return this.doPost(url, { orderId: orderId });
+  }
+
+  // afterAddOrder( clientId: string,  merchantId: string, dateType: string,  address: string, paid: number ): Observable<any> {
+  //   const url = this.url + '/afterAddOrder';
+  //   return this.doPost(url, { clientId: clientId, merchantId: merchantId, dateType: dateType, address: address, paid: paid });
+  // }
+
+  loadPage(filter: any, currentPageNumber: number, itemsPerPage: number ): Observable<any> {
+    const url = this.url + '/loadPage/' + currentPageNumber + '/' + itemsPerPage;
+    return this.doGet(url, filter);
+  }
+
+  placeOrders(orders) {
+    const url = this.url + '/bulk';
+    return new Promise((resolve, reject) => {
+      this.doPost(url, orders).toPromise().then(rsp => {
+        // if (rsp.status === HttpStatus.OK.code) {
+        //   resolve(rsp.data);
+        // } else {
+          resolve(rsp);
+        // }
+      });
+    });
+  }
+
 }

@@ -18,6 +18,10 @@ import { PaymentService } from '../payment/payment.service';
 import { MerchantService } from '../merchant/merchant.service';
 import { TransactionService } from '../transaction/transaction.service';
 import { MallService } from '../mall/mall.service';
+import { PaginatePipe, NgxPaginationModule } from '../../../node_modules/ngx-pagination';
+import { PhoneVerifyDialogComponent } from './phone-verify-dialog/phone-verify-dialog.component';
+import { CartService } from '../cart/cart.service';
+import { PaymentModule } from '../payment/payment.module';
 
 @NgModule({
   imports: [
@@ -25,13 +29,15 @@ import { MallService } from '../mall/mall.service';
     // NgbModule,
     FormsModule,
     ReactiveFormsModule,
+    NgxPaginationModule,
     MatTabsModule,
     MatSnackBarModule,
     MatDialogModule,
     MatButtonToggleModule,
     // MatProgressSpinnerModule,
     OrderRoutingModule,
-    SharedModule
+    SharedModule,
+    PaymentModule
   ],
   exports: [
   ],
@@ -41,16 +47,22 @@ import { MallService } from '../mall/mall.service';
     PaymentService,
     MerchantService,
     TransactionService,
-    MallService
+    CartService,
+    MallService,
+    PaginatePipe
   ],
   declarations: [
     OrderHistoryComponent,
     OrderFormPageComponent,
-    RemoveOrderDialogComponent
+    RemoveOrderDialogComponent,
+    PhoneVerifyDialogComponent
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
   ],
-  entryComponents: [RemoveOrderDialogComponent]
+  entryComponents: [
+    RemoveOrderDialogComponent,
+    PhoneVerifyDialogComponent
+  ]
 })
 export class OrderModule { }

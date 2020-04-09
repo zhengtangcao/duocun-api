@@ -2,10 +2,12 @@ export const environment = {
   production: true,
   API_VERSION: 'api',
   SECURE: window.location.protocol === 'https:',
-  API_BASE: window.location.protocol + '//' + window.location.hostname,
-  API_URL: window.location.origin + '/api/',
+  API_BASE: window.location.protocol + '//' + window.location.hostname, // deprecated
+  API_URL: 'https://duocun.com.cn/api/', // window.location.origin + '/api/',
+
   APP_URL: window.location.origin,
-  MEDIA_URL: window.location.origin + '/media/',
+  MEDIA_URL: 'https://duocun.com.cn/media/', // window.location.origin + '/media/',
+  GROCERY_APP_URL: 'http://duocun.com.cn/grocery',
   APP: 'duocun',
   AUTH_PREFIX: '',
   GOOGLE_MAP: {
@@ -27,5 +29,6 @@ export const environment = {
   DEFAULT_ADMIN: {
     ID: '5d3a34afac8ce150f3bb70c2',
     NAME: 'duocun'
-  }
+  },
+  language: 'zh'
 };

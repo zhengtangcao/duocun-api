@@ -1,13 +1,9 @@
-<h1 mat-dialog-title>{{data.title}}</h1>
+<h1 mat-dialog-title i18n="@@Hint">Hint</h1>
 <div mat-dialog-content>
-  <p>{{data.content}}</p>
-  <mat-form-field>
-    <!-- <input matInput [(ngModel)]="data.animal"> -->
-  </mat-form-field>
+  <p i18n="@@LeaveCartHint">The Cart will be clear when leave</p>
 </div>
 
 <div mat-dialog-actions>
-  <div mat-button class="btn-leave" (click)="onClickLeave()" >{{data.buttonTextNo}}</div>
-  <div mat-button class="btn-stay" (click)="onClickStay()" >{{data.buttonTextYes}}</div>
+  <div class="btn btn-secondary btn-leave" (click)="onLeave()" i18n="@@Leave">Leave</div>
+  <div class="btn btn-primary btn-stay" (click)="onStay()" i18n="@@Stay">Stay</div>
 </div>
-

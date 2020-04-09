@@ -654,6 +654,14 @@
           <context context-type="linenumber">57</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="Merchant" datatype="html">
+        <source>Merchant</source>
+        <target>商家</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/order/order-detail/order-detail.component.html</context>
+          <context context-type="linenumber">57</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="OrderId" datatype="html">
         <source>Order Id</source>
         <target>订单号</target>
@@ -692,6 +700,14 @@
         <context-group purpose="location">
           <context context-type="sourcefile">app/admin/admin-order-list/admin-order-list.component.ts</context>
           <context context-type="linenumber">23</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="Grocery" datatype="html">
+        <source>Grocery</source>
+        <target>送菜</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/order/cart/cart.component.html</context>
+          <context context-type="linenumber">3</context>
         </context-group>
       </trans-unit>
       <trans-unit id="ShoppingCart" datatype="html">
@@ -753,6 +769,14 @@
       <trans-unit id="CashWhenDelivered" datatype="html">
         <source>Cash when Delivered</source>
         <target>送到后付现金</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/order/order-form/order-form.component.html</context>
+          <context context-type="linenumber">39</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="Cash" datatype="html">
+        <source>Cash</source>
+        <target>现金支付</target>
         <context-group purpose="location">
           <context context-type="sourcefile">app/order/order-form/order-form.component.html</context>
           <context context-type="linenumber">39</context>
@@ -1048,6 +1072,14 @@
           <context context-type="linenumber">68</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="Tomorrow" datatype="html">
+        <source>Tomorrow</source>
+        <target>明天</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/page/home/home.component.html</context>
+          <context context-type="linenumber">68</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="FreeDelivery" datatype="html">
         <source>Free Delivery</source>
         <target>免运费</target>
@@ -1180,6 +1212,14 @@
           <context context-type="linenumber">44</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="PayCashNote" datatype="html">
+        <source>*Pay in cash upon delivery</source>
+        <target>*送达时付现金</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/order/order-form-page/order-form-page.component.html</context>
+          <context context-type="linenumber">44</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="ProductTotal" datatype="html">
         <source>Product Total</source>
         <target>商品总额</target>
@@ -1293,7 +1333,7 @@
         </context-group>
       </trans-unit>
       <trans-unit id="178cd5673e5cb7d0e5531b34e015bfad3a421dd6" datatype="html">
-        <source>InputDeliveryAddress</source>
+        <source>Enter Delivery Address</source>
         <target>请输入送餐地址</target>
         <context-group purpose="location">
           <context context-type="sourcefile">app/shared/address-input/address-input.component.html</context>
@@ -1356,6 +1396,14 @@
           <context context-type="linenumber">30</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="Loading" datatype="html">
+        <source>Loading...</source>
+        <target>拼命加载中</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/contact/contact-form/contact-form.component.html</context>
+          <context context-type="linenumber">30</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="DefaultAddress" datatype="html">
         <source>Default Address</source>
         <target>默认地址</target>
@@ -1399,6 +1447,62 @@
       <trans-unit id="Back" datatype="html">
         <source>Back</source>
         <target>返回</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="SignupAndContinuePay" datatype="html">
+        <source>Signup and Continue Pay</source>
+        <target>创建账号并继续付款</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="VerifyPhoneNumber" datatype="html">
+        <source>Verify Phone Number</source>
+        <target>验证手机号码</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="VerifyPhoneNumberNote" datatype="html">
+        <source>*In order to contact upon arrive, we may need to call this number.</source>
+        <target>*为了司机和客服送到时能联系到您，我们需要您的手机号码.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="NotInServiceRangeHint" datatype="html">
+        <source>Your address is not in our service range, please try another</source>
+        <target>您的地址不在配送范围内，请尝试其它地址</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="MerchantClosed" datatype="html">
+        <source>Closed Today</source>
+        <target>轮休中</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="LastOrder" datatype="html">
+        <source>Last Order</source>
+        <target>订单截止</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="PayByDeposit" datatype="html">
+        <source>Pay by my deposit</source>
+        <target>用余额付款</target>
         <context-group purpose="location">
           <context context-type="sourcefile">app/main/filter/filter.component.ts</context>
           <context context-type="linenumber">19</context>
@@ -1452,6 +1556,14 @@
           <context context-type="linenumber">19</context>
         </context-group>
       </trans-unit>
+      <trans-unit id="CreditCard" datatype="html">
+        <source>CreditCard</source>
+        <target>信用卡</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
       <trans-unit id="Debit" datatype="html">
         <source>Debit</source>
         <target>支出</target>
@@ -1463,6 +1575,22 @@
       <trans-unit id="New" datatype="html">
         <source>New</source>
         <target>新</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="DeliverWarning" datatype="html">
+        <source>If you are in condo or office building, Please pickup the food at the hall, we will not enter the building. For downtown we will stop at the road side near the building.</source>
+        <target>*如果你在公寓楼或办公楼请在大楼门口取餐，我们无法上楼送餐。</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="PhoneWarning" datatype="html">
+        <source>Please turn on your phone to answering status.</source>
+        <target>**请将您的电话保持在接听状态，以便联系。</target>
         <context-group purpose="location">
           <context context-type="sourcefile">app/account/account-page.component.ts</context>
           <context context-type="linenumber">19</context>
@@ -1564,7 +1692,78 @@
           <context context-type="linenumber">19</context>
         </context-group>
       </trans-unit>
-      
+      <trans-unit id="AddCredit" datatype="html">
+        <source>AddCredit</source>
+        <target>充值</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="Note" datatype="html">
+        <source>Note</source>
+        <target>备注</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="Amount" datatype="html">
+        <source>Amount</source>
+        <target>金额</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="CreditDebit" datatype="html">
+        <source>Credit or Debit Card</source>
+        <target>银行卡</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="MapHint" datatype="html">
+        <source>Sorry, the address is not in our service range</source>
+        <target>实在抱歉, 您的地址不在我们的配送范围内</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="Leave" datatype="html">
+        <source>Leave</source>
+        <target>离开</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="Stay" datatype="html">
+        <source>Stay</source>
+        <target>留下</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="LeaveCartHint" datatype="html">
+        <source>The Cart will be clear when leave</source>
+        <target>离开后将清空购物车</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="Hint" datatype="html">
+        <source>Hint</source>
+        <target>提示</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/account/account-page.component.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+      </trans-unit>                        
     </body>
   </file>
 </xliff>

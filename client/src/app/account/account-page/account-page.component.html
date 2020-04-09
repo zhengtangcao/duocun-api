@@ -3,7 +3,7 @@
     <div class="row head-block">
       <div class="col-8 name-block title-bg">{{account.username}}</div>
       <div class="col-4 portrait-block">
-        <div class="portrait-frame">
+        <div class="portrait-frame" *ngIf="account.imageurl">
           <img class="portrait" [src]="account.imageurl"/>
         </div>
       </div>
@@ -21,22 +21,28 @@
         </div>
     </div>
 
-    <div class="row form-group">
+    <div class="row form-group" *ngIf="account">
       <div class="row label-sm">
         <span i18n="@@PhoneNumber">Phone Number</span><span>*</span>
       </div>
-      <div class="phone-input" (click)="changePhoneNumber()">{{phone}}</div>
+      <div class="phone-input" (click)="changePhoneNumber()">{{account.phone}}</div>
     </div>
 
-    <div class="row form-group">
+    <div class="row form-group" *ngIf="account">
       <div class="row label-sm">
         <span i18n="@@DefaultAddress">Default Address</span><span>*</span>
       </div>
-      <div class="phone-input" (click)="changeAddress()">{{address}}</div>
+      <div class="phone-input" (click)="changeAddress()">{{getDefaultAddress()}}</div>
     </div>
 
-    <div class="row form-group logout-block">
-      <div class="btn btn-primary btn-logout" i18n="@@LogoutDuocun" (click)="logout()">Logout</div>
-    </div>
+    <!-- <div class="row form-group actions-row">
+      <div class="btn btn-primary btn-add-credit" i18n="@@AddCredit" (click)="toAddCreditPage()">Add Credit</div>
+    </div> -->
+
+    <div class="row form-group actions-row">
+        <div class="btn btn-primary btn-logout" i18n="@@LogoutDuocun" (click)="logout()">Logout</div>
+      </div>
   </div>
+
+  <app-footer [type]="'menu'" [menu]="'account-setting'"></app-footer>
 </div>

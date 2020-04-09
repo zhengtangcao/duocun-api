@@ -31,27 +31,10 @@ export class LocationService extends EntityService {
     }
   }
 
-  // query -- { where: { userId: self.account.id, placeId: r.placeId }}
-  // lh --- {
-  //   userId: self.account.id, type: 'history',
-  //   placeId: r.placeId, location: r, created: new Date()
-  // }
-  saveIfNot(query, lh: ILocationHistory): Observable<any> {
-    return this.find(query).pipe(
-      mergeMap((x: ILocationHistory[]) => {
-        if (x && x.length > 0) {
-          return of(null);
-        } else {
-          return this.save(lh);
-        }
-      })
-    );
-  }
-
   // find(filter: any): Observable<any> {
   //   let headers: HttpHeaders = new HttpHeaders();
   //   headers = headers.append('Content-Type', 'application/json');
-  //   const accessTokenId = this.auth.getAccessToken();
+  //   const accessTokenId = this.auth.getAccessTokenId();
   //   if (accessTokenId) {
   //     headers = headers.append('Authorization', LoopBackConfig.getAuthPrefix() + accessTokenId);
   //     // httpParams = httpParams.append('access_token', LoopBackConfig.getAuthPrefix() + accessTokenId);
@@ -299,7 +282,7 @@ export class LocationService extends EntityService {
 
 
   // ---------------------------------
-  // return --- meter
+  // return --- km
   // get surface distance between current location and restaurant
   getDirectDistance(center: ILatLng, location: ILatLng) {
     const lat1 = center.lat;
@@ -315,7 +298,7 @@ export class LocationService extends EntityService {
         * Math.sin(dLng / 2) * Math.sin(dLng / 2);
       const d = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-      return d;
+      return Math.round(d / 10) / 100;
     } else {
       return 0;
     }
@@ -323,19 +306,22 @@ export class LocationService extends EntityService {
 
   toPlaces(lhs: ILocationHistory[]) {
     const options: IPlace[] = [];
-    for (let i = lhs.length - 1; i >= 0; i--) {
-      const lh = lhs[i];
-      const loc = lh.location;
-      const p: IPlace = {
-        type: 'history',
-        structured_formatting: {
-          main_text: loc.streetNumber + ' ' + loc.streetName,
-          secondary_text: (loc.subLocality ? loc.subLocality : loc.city) + ',' + loc.province
-        },
-        location: loc
-      };
-      options.push(p);
+    if (!lhs || lhs.length === 0) {
+      return options;
+    } else {
+      for (let i = lhs.length - 1; i >= 0; i--) {
+        const lh = lhs[i];
+        const loc = lh.location;
+        const p: IPlace = {
+          structured_formatting: {
+            main_text: loc.streetNumber + ' ' + loc.streetName,
+            secondary_text: (loc.subLocality ? loc.subLocality : loc.city) + ',' + loc.province
+          },
+          location: loc
+        };
+        options.push(p);
+      }
+      return options;
     }
-    return options;
   }
 }
