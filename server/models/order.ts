@@ -2151,22 +2151,22 @@ export class Order extends Model {
   async correctTime() {
     const delivered = { $gte: moment('2020-04-07T00:00:00.000Z').startOf('day').toISOString() };
     const rs: any[] = await this.find({ delivered });
-      const items: any[] = [];
-      rs.map((order: any) => {
-        const t = order.delivered.split('T')[1];
-        if(t !== '15:00:00.000Z'){
-          const date = order.delivered.split('T')[0];
-          if(date === '2020-04-19'){
-            const data = { delivered: '2020-04-12T15:00:00.000Z' };
-            items.push({ query: { _id: order._id }, data });
-          }else{
-            const data = { delivered: date + 'T15:00:00.000Z' };
-            items.push({ query: { _id: order._id }, data });
-          }
+    const items: any[] = [];
+    rs.map((order: any) => {
+      const t = order.delivered.split('T')[1];
+      const date = order.delivered.split('T')[0];
+      if (date === '2020-04-19') {
+        const data = { delivered: '2020-04-12T15:00:00.000Z' };
+        items.push({ query: { _id: order._id }, data });
+      } else {
+        if (t !== '15:00:00.000Z') {
+          const data = { delivered: date + 'T15:00:00.000Z' };
+          items.push({ query: { _id: order._id }, data });
         }
-      });
-      await this.bulkUpdate(items);
-      return items.map(it => it.query._id);
+      }
+    });
+    await this.bulkUpdate(items);
+    return items.map(it => it.query._id);
   }
 
 
