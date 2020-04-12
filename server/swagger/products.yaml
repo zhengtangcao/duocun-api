@@ -1,0 +1,121 @@
+paths:
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products in system
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Products"
+    post:
+      tags:
+        - Products
+      summary: Create new product in system
+      requestBody:
+        description: Product that we want to create
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+        required: false
+      responses:
+        200:
+          description: New product is created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+      x-codegen-request-body-name: product
+  /products/{sku}:
+    get:
+      tags:
+        - Products
+      summary: Get product by sku
+      parameters:
+        - name: sku
+          in: path
+          description: sku of product
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Product is found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    put:
+      tags:
+        - Products
+      summary: Update product by sku
+      parameters:
+        - name: sku
+          in: path
+          description: sku of product
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Product with new values of properties
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+        required: false
+      responses:
+        200:
+          description: Product is updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+      x-codegen-request-body-name: product
+    delete:
+      tags:
+        - Products
+      summary: Delete product by sku
+      parameters:
+        - name: sku
+          in: path
+          description: product sku
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Product is deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+components:
+  schemas:
+    Product:
+      required:
+        - _id
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        cost:
+          type: number
+        properties:
+          type: array
+          items:
+            type: object
+    Products:
+      type: array
+      items:
+        $ref: "#/components/schemas/Product"

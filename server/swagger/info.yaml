@@ -1,0 +1,17 @@
+openapi: 3.0.1
+info:
+  title: Shops API
+  description: E-Commerce application restful API
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0
+schemes:
+  - http
+  - https
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    required: true
+    in: header
