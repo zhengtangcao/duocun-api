@@ -48,8 +48,6 @@ export function AccountRouter(db: DB) {
 };
 
 export class AccountController extends Model {
-
-  router = express.Router();
   accountModel: Account;
   attrModel: AccountAttribute;
   merchantStuff: MerchantStuff;
@@ -173,9 +171,9 @@ export class AccountController extends Model {
 
     let txt;
     if (orderType === 'G') {
-      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 您的订的货已送到, 请查收';
+      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 您订的货已送到, 请查收';
     } else {
-      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 您的订的餐已送到, 请查收';
+      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 您订的餐已送到, 请查收';
     }
 
     self.accountModel.sendMessage(phone, txt).then(() => {

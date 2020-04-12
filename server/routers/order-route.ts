@@ -13,6 +13,8 @@ export function OrderRouter(db: DB){
   // router.post('/missingPaid', (req, res) => { controller.reqFixMissingPaid(req, res); });
   // router.post('/missingUnpaid', (req, res) => { controller.reqFixMissingUnpaid(req, res); });
   
+  router.get('/v2/correctTime', (req, res) => { controller.reqCorrectTime(req, res); });
+
   // v1
   router.get('/csv', (req, res) => { controller.reqCSV(req, res); });
   router.get('/clients', (req, res) => { controller.reqClients(req, res); });

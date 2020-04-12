@@ -2,31 +2,34 @@ import express from "express";
 import { Area, IArea } from "../models/area";
 import { DB } from "../db";
 import { Request, Response } from "express";
+import { Model } from "../models/model";
 
-export class AreaRouter{
-  router = express.Router();
+export function AreaRouter(db: DB){
+  const router = express.Router();
+  const controller = new AreaController(db);
+
+  router.get('/my', (req, res) => { controller.reqMyArea(req, res); }); // fix me
+  router.get('/qFind', (req, res) => { controller.quickFind(req, res); });
+  router.get('/', (req, res) => { controller.quickFind(req, res); });
+  router.get('/:id', (req, res) => { controller.get(req, res); });
+  router.post('/', (req, res) => { controller.create(req, res); });
+  router.patch('/', (req, res) => { controller.update(req, res); });
+  
+  // fix me
+  
+  router.post('/nearest', (req, res) => {controller.getNearest(req, res); });
+  
+  // router.put('/', (req, res) => { controller.replace(req, res); });
+  // router.delete('/', (req, res) => { controller.remove(req, res); });
+  
+  return router;
+}
+
+export class AreaController extends Model{
   model: Area;
   constructor(db: DB) {
+    super(db, 'users');
     this.model = new Area(db);
-  }
-
-  init(){
-    // v1
-    this.router.get('/my', (req, res) => { this.reqMyArea(req, res); }); // fix me
-    this.router.get('/qFind', (req, res) => { this.quickFind(req, res); });
-
-    // fix me
-    // this.router.get('/', (req, res) => { this.list(req, res); });
-    // this.router.get('/:id', (req, res) => { this.get(req, res); });
-    
-    this.router.post('/nearest', (req, res) => {this.getNearest(req, res); });
-    
-    // this.router.post('/', (req, res) => { this.create(req, res); });
-    // this.router.put('/', (req, res) => { this.replace(req, res); });
-    // this.router.patch('/', (req, res) => { this.update(req, res); });
-    // this.router.delete('/', (req, res) => { this.remove(req, res); });
-    
-    return this.router;
   }
 
   getNearest(req: Request, res: Response) {

@@ -1,11 +1,28 @@
-// import { Order, OrderType } from "../../models/order";
-// import { DB } from "../../db";
-// import { expect } from 'chai';
-// import moment from "moment";
+import { Order, OrderType } from "../../models/order";
+import { DB } from "../../db";
+import { expect } from 'chai';
+import moment from "moment";
 // import { Config } from "../../config";
 // import { IPhase } from "../../models/merchant";
 
+describe('getUtcTime', () => {
+  it('getUtcTime should return utc date time', () => {
+    const db = new DB();
+    const orderModel = new Order(db);
+    // utc time this.getUtcTime(date, time).toISOString();
+    const datas = [
+      { created: '2019-11-03T14:52:59.566Z', time: '10:00', type: 'today', ret: '2019-11-03T15:00:00.000Z' },
+      { created: '2019-11-03T15:52:59.566Z', time: '10:00',  type: 'today', ret: '2019-11-03T15:00:00.000Z' },
+      { created: '2019-11-03T16:52:59.566Z', time: '10:00',  type: 'today', ret: '2019-11-03T15:00:00.000Z' },
+    ];
 
+    datas.map(d => {
+      const r: moment.Moment = orderModel.getUtcTime(d.created, d.time);
+      expect(r.toISOString()).to.equal(d.ret);
+    });
+
+  });
+});
 // describe('getUTC', () => {
 //   it('should return utc date time', () => {
 //     const db = new DB();

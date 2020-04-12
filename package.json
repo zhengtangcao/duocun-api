@@ -58,7 +58,9 @@
     "swagger-ui-express": "^4.1.4",
     "ts-md5": "^1.2.6",
     "twilio": "^3.34.0",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "winston": "^3.2.1",
+    "winston-daily-rotate-file": "^4.4.2"
   },
   "devDependencies": {
     "@types/chai": "^4.2.2",

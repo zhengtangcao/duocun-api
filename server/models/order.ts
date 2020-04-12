@@ -510,7 +510,7 @@ export class Order extends Model {
     const location: ILocation = order.location;
     const date = moment(order.deliverDate).format('YYYY-MM-DD');
     const time: any = order.deliverTime;
-    const delivered = this.getUtcTime(date, time).toISOString();
+    const delivered = order.deliverDate + 'T15:00:00.000Z'; // this.getUtcTime(date, time).toISOString(); //tmp fix!!!
 
     return new Promise((resolve, reject) => {
       if (order.code) {
@@ -2139,6 +2139,34 @@ export class Order extends Model {
           res.send(JSON.stringify(JSON.stringify(ps), null, 3));
         });
       });
+  }
+
+  reqCorrectTime(req: Request, res: Response) {
+    this.correctTime().then((ps) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(JSON.stringify(ps), null, 3));
+    });
+  }
+
+  async correctTime() {
+    const delivered = { $gte: moment('2020-04-07T00:00:00.000Z').startOf('day').toISOString() };
+    const rs: any[] = await this.find({ delivered });
+    const items: any[] = [];
+    rs.map((order: any) => {
+      const t = order.delivered.split('T')[1];
+      const date = order.delivered.split('T')[0];
+      if (date === '2020-04-19') {
+        const data = { delivered: '2020-04-12T15:00:00.000Z' };
+        items.push({ query: { _id: order._id }, data });
+      } else {
+        if (t !== '15:00:00.000Z') {
+          const data = { delivered: date + 'T15:00:00.000Z' };
+          items.push({ query: { _id: order._id }, data });
+        }
+      }
+    });
+    await this.bulkUpdate(items);
+    return items.map(it => it.query._id);
   }
 
 

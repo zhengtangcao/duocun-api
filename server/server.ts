@@ -62,9 +62,10 @@ import { schedule } from "node-cron";
 import { Order } from "./models/order";
 
 import dotenv from "dotenv";
-process.env.TZ = "America/Toronto";
+import log from './lib/logger'
+dotenv.config()
 
-dotenv.config();
+process.env.TZ = 'America/Toronto';
 
 const swaggerDefinition = YAML.load("./swagger/info.yaml");
 // options for the swagger docs
@@ -77,7 +78,8 @@ const options = {
 // initialize swagger-jsdoc
 const swaggerSpec = swaggerJsDoc(options);
 
-function startCellOrderTask(dbo: any) {
+
+function startCellOrderTask(dbo: any){
   // s m h d m w
   schedule("0 30 23 27 * *", () => {
     const orderModel = new Order(dbo);
@@ -117,8 +119,8 @@ let io: any;
 function setupSocket(server: any) {
   io = Server(server);
 
-  io.on("connection", function (socket: any) {
-    console.log("server socket connected:" + socket.id);
+  io.on('connection', function (socket: any) {
+    log.info(`server socket connected: socket-id=${socket.id}`);
 
     // socket.on('authentication', function (token: any) {
     // });
@@ -191,7 +193,6 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   );
 
   const merchantRouter = new MerchantRouter(dbo);
-  const areaRouter = new AreaRouter(dbo);
 
   // disable auth token for testing
   if (process.env.ENV != "dev") {
@@ -199,46 +200,46 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   }
 
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  app.use("/" + ROUTE_PREFIX + "/Accounts", AccountRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Restaurants", merchantRouter.init());
-  app.use("/" + ROUTE_PREFIX + "/Areas", areaRouter.init());
-  app.use("/" + ROUTE_PREFIX + "/Tools", ToolRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Accounts', AccountRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Restaurants', merchantRouter.init());
+  app.use('/' + ROUTE_PREFIX + '/Areas', AreaRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Tools', ToolRouter(dbo));
 
-  app.use("/" + ROUTE_PREFIX + "/Categories", CategoryRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Products", ProductRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Contacts", ContactRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Ranges", RangeRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Malls", MallRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Locations", LocationRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Pickups", PickupRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Drivers", DriverRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Categories', CategoryRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Products', ProductRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Contacts', ContactRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Ranges', RangeRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Malls', MallRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Locations', LocationRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Pickups', PickupRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Drivers', DriverRouter(dbo));
 
-  app.use("/" + ROUTE_PREFIX + "/Distances", DistanceRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Regions", RegionRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Orders", OrderRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/MerchantPayments", MerchantPaymentRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/MerchantBalances", MerchantBalanceRouter(dbo));
-  app.use(
-    "/" + ROUTE_PREFIX + "/MerchantSchedules",
-    MerchantScheduleRouter(dbo)
-  );
-  app.use("/" + ROUTE_PREFIX + "/MallSchedules", MallScheduleRouter(dbo));
 
-  app.use("/" + ROUTE_PREFIX + "/ClientPayments", ClientPaymentRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/DriverPayments", DriverPaymentRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/DriverBalances", DriverBalanceRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Transactions", TransactionRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/OrderSequences", OrderSequenceRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/DriverHours", DriverHourRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/DriverShifts", DriverShiftRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/DriverSchedules", DriverScheduleRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Logs", LogRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/EventLogs", EventLogRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Distances', DistanceRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Regions', RegionRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Orders', OrderRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/MerchantPayments', MerchantPaymentRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/MerchantBalances', MerchantBalanceRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/MerchantSchedules', MerchantScheduleRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/MallSchedules', MallScheduleRouter(dbo));
 
-  app.use("/" + ROUTE_PREFIX + "/CellApplications", CellApplicationRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/ClientPayments', ClientPaymentRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/DriverPayments', DriverPaymentRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/DriverBalances', DriverBalanceRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Transactions', TransactionRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/OrderSequences', OrderSequenceRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/DriverHours', DriverHourRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/DriverShifts', DriverShiftRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/DriverSchedules', DriverScheduleRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/Logs', LogRouter(dbo));
+  app.use('/' + ROUTE_PREFIX + '/EventLogs', EventLogRouter(dbo));
 
-  app.use(express.static(path.join(__dirname, "/../uploads")));
-  app.set("port", process.env.PORT || SERVER.PORT);
+
+  app.use('/' + ROUTE_PREFIX + '/CellApplications', CellApplicationRouter(dbo));
+
+
+  app.use(express.static(path.join(__dirname, '/../uploads')));
+  app.set('port', process.env.PORT || SERVER.PORT);
 
   const server = app.listen(app.get("port"), () => {
     console.log("API is running on :%d/n", app.get("port"));
