@@ -1,4 +1,3 @@
-
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -45,11 +44,11 @@ import { DriverScheduleRouter } from "./routers/driver-schedule-route";
 import { LogRouter } from "./routers/log-route";
 import { EventLogRouter } from "./routers/event-log-route";
 
-import {ToolRouter} from "./routers/tool-route";
+import { ToolRouter } from "./routers/tool-route";
 
 import { CellApplicationRouter } from "./routers/cell-application-route";
 
-import { AreaRouter } from './routers/area-route';
+import { AreaRouter } from "./routers/area-route";
 
 import { Product } from "./models/product";
 
@@ -59,17 +58,14 @@ import { schedule } from "node-cron";
 import { Order } from "./models/order";
 
 import dotenv from "dotenv";
-import log from './lib/logger'
-dotenv.config()
+import log from "./lib/logger";
+dotenv.config();
 
-process.env.TZ = 'America/Toronto';
+process.env.TZ = "America/Toronto";
 
-
-
-
-function startCellOrderTask(dbo: any){
+function startCellOrderTask(dbo: any) {
   // s m h d m w
-  schedule('0 30 23 27 * *', () => {
+  schedule("0 30 23 27 * *", () => {
     const orderModel = new Order(dbo);
     orderModel.createMobilePlanOrders();
   });
@@ -93,21 +89,21 @@ const app = express();
 const dbo = new DB();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/')
+    cb(null, "uploads/");
   },
   filename: function (req: any, file, cb) {
-    cb(null, req.body.fname + '.' + req.body.ext);
-  }
+    cb(null, req.body.fname + "." + req.body.ext);
+  },
 });
 const upload = multer({ storage: storage });
 // const upload = multer({ dest: 'uploads/' });
-let mysocket: any;// Socket;
+let mysocket: any; // Socket;
 let io: any;
 
 function setupSocket(server: any) {
   io = Server(server);
 
-  io.on('connection', function (socket: any) {
+  io.on("connection", function (socket: any) {
     log.info(`server socket connected: socket-id=${socket.id}`);
 
     // socket.on('authentication', function (token: any) {
@@ -116,7 +112,7 @@ function setupSocket(server: any) {
 }
 
 // create db connection pool and return connection instance
-dbo.init(cfg.DATABASE).then(dbClient => {
+dbo.init(cfg.DATABASE).then((dbClient) => {
   // socket = new Socket(dbo, io);
   startCellOrderTask(dbo);
   // require('socketio-auth')(io, { authenticate: (socket: any, data: any, callback: any) => {
@@ -135,14 +131,11 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   //   }
   // }, timeout: 200000});
 
-
-
   // io.on("updateOrders", (x: any) => {
   //   const ss = x;
   // });
 
-
-  app.get('/wx', (req, res) => {
+  app.get("/wx", (req, res) => {
     utils.genWechatToken(req, res);
   });
 
@@ -152,79 +145,85 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   // app.get('/wechatRefreshAccessToken', (req, res) => {
   //   utils.refreshWechatAccessToken(req, res);
   // });
-  app.get('/' + ROUTE_PREFIX + '/geocodeLocations', (req, res) => {
+  app.get("/" + ROUTE_PREFIX + "/geocodeLocations", (req, res) => {
     utils.getGeocodeLocationList(req, res);
   });
-  
-  app.get('/' + ROUTE_PREFIX + '/places', (req, res) => {
+
+  app.get("/" + ROUTE_PREFIX + "/places", (req, res) => {
     utils.getPlaces(req, res);
   });
 
-  app.get('/' + ROUTE_PREFIX + '/users', (req, res) => {
-  });
+  app.get("/" + ROUTE_PREFIX + "/users", (req, res) => {});
 
-  app.post('/' + ROUTE_PREFIX + '/files/upload', upload.single('file'), (req, res) => {
-    const product = new Product(dbo);
-    product.uploadPicture(req, res);
-  });
+  app.post(
+    "/" + ROUTE_PREFIX + "/files/upload",
+    upload.single("file"),
+    (req, res) => {
+      const product = new Product(dbo);
+      product.uploadPicture(req, res);
+    }
+  );
 
   // app.get('/' + ROUTE_PREFIX + '/Pictures', (req, res) => {
   //   picture.get(req, res);
   // });
 
-  app.post('/' + ROUTE_PREFIX + '/files/upload', upload.single('file'), (req, res, next) => {
-    res.send('upload file success');
-  });
+  app.post(
+    "/" + ROUTE_PREFIX + "/files/upload",
+    upload.single("file"),
+    (req, res, next) => {
+      res.send("upload file success");
+    }
+  );
 
   const merchantRouter = new MerchantRouter(dbo);
   const areaRouter = new AreaRouter(dbo);
 
   // disable auth token for testing
-  if(process.env.ENV != 'dev') {  
-    app.use(apimw.auth); 
+  if (process.env.ENV != "dev") {
+    app.use(apimw.auth);
   }
 
-  
-  app.use('/' + ROUTE_PREFIX + '/Accounts', AccountRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Restaurants', merchantRouter.init());
-  app.use('/' + ROUTE_PREFIX + '/Areas', areaRouter.init());
-  app.use('/' + ROUTE_PREFIX + '/Tools', ToolRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Accounts", AccountRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Restaurants", merchantRouter.init());
+  app.use("/" + ROUTE_PREFIX + "/Areas", areaRouter.init());
+  app.use("/" + ROUTE_PREFIX + "/Tools", ToolRouter(dbo));
 
-  app.use('/' + ROUTE_PREFIX + '/Categories', CategoryRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Products', ProductRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Contacts', ContactRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Ranges', RangeRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Malls', MallRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Locations', LocationRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Pickups', PickupRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Drivers', DriverRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Categories", CategoryRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Products", ProductRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Contacts", ContactRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Ranges", RangeRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Malls", MallRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Locations", LocationRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Pickups", PickupRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Drivers", DriverRouter(dbo));
 
+  app.use("/" + ROUTE_PREFIX + "/Distances", DistanceRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Regions", RegionRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Orders", OrderRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/MerchantPayments", MerchantPaymentRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/MerchantBalances", MerchantBalanceRouter(dbo));
+  app.use(
+    "/" + ROUTE_PREFIX + "/MerchantSchedules",
+    MerchantScheduleRouter(dbo)
+  );
+  app.use("/" + ROUTE_PREFIX + "/MallSchedules", MallScheduleRouter(dbo));
 
-  app.use('/' + ROUTE_PREFIX + '/Distances', DistanceRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Regions', RegionRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Orders', OrderRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/MerchantPayments', MerchantPaymentRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/MerchantBalances', MerchantBalanceRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/MerchantSchedules', MerchantScheduleRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/MallSchedules', MallScheduleRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/ClientPayments", ClientPaymentRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/DriverPayments", DriverPaymentRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/DriverBalances", DriverBalanceRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Transactions", TransactionRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/OrderSequences", OrderSequenceRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/DriverHours", DriverHourRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/DriverShifts", DriverShiftRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/DriverSchedules", DriverScheduleRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Logs", LogRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/EventLogs", EventLogRouter(dbo));
 
-  app.use('/' + ROUTE_PREFIX + '/ClientPayments', ClientPaymentRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/DriverPayments', DriverPaymentRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/DriverBalances', DriverBalanceRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Transactions', TransactionRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/OrderSequences', OrderSequenceRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/DriverHours', DriverHourRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/DriverShifts', DriverShiftRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/DriverSchedules', DriverScheduleRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/Logs', LogRouter(dbo));
-  app.use('/' + ROUTE_PREFIX + '/EventLogs', EventLogRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/CellApplications", CellApplicationRouter(dbo));
 
-
-  app.use('/' + ROUTE_PREFIX + '/CellApplications', CellApplicationRouter(dbo));
-
-
-  app.use(express.static(path.join(__dirname, '/../uploads')));
-  app.set('port', process.env.PORT || SERVER.PORT);
+  app.use(express.static(path.join(__dirname, "/../uploads")));
+  app.set("port", process.env.PORT || SERVER.PORT);
 
   const server = app.listen(app.get("port"), () => {
     console.log("API is running on :%d/n", app.get("port"));
@@ -233,16 +232,14 @@ dbo.init(cfg.DATABASE).then(dbClient => {
   // setupSocket(server);
 });
 
-
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: false, limit: '1mb' }));
-app.use(bodyParser.json({ limit: '1mb' }));
+app.use(bodyParser.urlencoded({ extended: false, limit: "1mb" }));
+app.use(bodyParser.json({ limit: "1mb" }));
 
 // const staticPath = path.resolve('client/dist');
-const staticPath = path.resolve('uploads');
-console.log(staticPath + '/n/r');
+const staticPath = path.resolve("uploads");
+console.log(staticPath + "/n/r");
 app.use(express.static(staticPath));
-
 
 // const http = require('http');
 // const express = require('express')
@@ -251,7 +248,6 @@ app.use(express.static(staticPath));
 // const cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json','utf8'));
 // const DB = require('./db');
 // // const User = require('./user');
-
 
 // const SERVER = cfg.API_SERVER;
 // const ROUTE_PREFIX = SERVER.ROUTE_PREFIX;
@@ -266,8 +262,6 @@ app.use(express.static(staticPath));
 // //     res.sendFile(path.join(__dirname, '/dist/index.html'));
 // // });
 // //app.listen(SERVER_PORT, () => console.log('Server setup'))
-
-
 
 // app.set('port', process.env.PORT || SERVER.PORT)
 

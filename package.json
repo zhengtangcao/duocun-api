@@ -54,10 +54,13 @@
     "socket.io": "^2.1.1",
     "socketio-auth": "^0.1.1",
     "strong-error-handler": "^3.0.0",
+    "swagger-jsdoc": "^4.0.0",
+    "swagger-ui-express": "^4.1.4",
     "ts-md5": "^1.2.6",
     "twilio": "^3.34.0",
     "winston": "^3.2.1",
-    "winston-daily-rotate-file": "^4.4.2"
+    "winston-daily-rotate-file": "^4.4.2",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.2",
