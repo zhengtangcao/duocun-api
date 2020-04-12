@@ -17,7 +17,6 @@ const transport = new DailyRotateFile({
   maxFiles: "14d",
 });
 
-console.log(`env=>${process.env.ENV}`);
 const logger = createLogger({
   level: "info",
   format: combine(timestamp(), logFormat),
