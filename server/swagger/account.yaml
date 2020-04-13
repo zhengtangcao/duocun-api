@@ -1,0 +1,145 @@
+paths:
+  /current/{tokenId}:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Accounts
+      summary: login by token id (/current)
+      parameters:
+        - name: tokenId
+          in: path
+          description: token id of current user
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        400:
+          description: invalid auth code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: INVALID_CREDENTIAL
+        500:
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: DATABASE_ERROR | SERVER_ERROR
+
+  /wechat/{code}:
+    get:
+      tags:
+        - Accounts
+      summary: login by wechat (/wxLogin) 
+      parameters:
+        - name: code
+          in: path
+          description: tencent auth code
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+
+        400:
+          description: invalid auth code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: INVALID_CREDENTIAL
+        500:
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: DATABASE_ERROR | SERVER_ERROR
+
+components:
+  schemas:
+
+    Account:
+      required:
+        - _id
+      type: object
+      properties:
+        _id:
+          type: string
+        realm:
+          type: string
+          description: login type
+        username:
+          type: string
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+          description: if eamil verified
+        phone:
+          type: string
+        openId:
+          type: string
+          description: wechat info
+        sex:
+          type: number
+          description: wechat info
+        imageurl:
+          type: string
+          description: wechat info
+        unionid:
+          type: string
+          description: wechat info
+        roles:
+          type: string
+          enum: ['super', 'merchant-admin', 'merchant-stuff', 'driver', 'user']
+        visited:
+          type: boolean
+        stripeCustomerId:
+          type: string
+        pickup:
+          type: string
+        balance:
+          type: number
+        verified:
+          type: boolean
+        verificationCode:
+          type: string
+        merchants:
+          type: array
+          items: 
+            type: array
+        info:
+          type: string
+          description: client info
+        
+    Accounts:
+      type: array
+      items:
+        $ref: "#/components/schemas/Account"

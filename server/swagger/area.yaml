@@ -1,0 +1,125 @@
+paths:
+  /filter/{query}:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Areas
+      summary: Get areas by query
+      parameters:
+        - name: query
+          in: path
+          description: query to filter areas
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Areas"
+
+        400:
+          description: invalid query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: INVALID_QUERY
+        500:
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: DATABASE_ERROR | SERVER_ERROR
+
+  /location/{location}:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Areas
+      summary: Get single area by location
+      parameters:
+        - name: location
+          in: path
+          description: location to filter areas
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Area"
+
+        400:
+          description: invalid query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: INVALID_QUERY
+        500:
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: DATABASE_ERROR | SERVER_ERROR
+
+components:
+  schemas:
+    LatLng:
+      type: object
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+
+    Area:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          description: name
+        code:
+          type: string
+          description: code
+        lat:
+          type: number
+        lng:
+          type: number
+        coords:
+          type: array
+          items:
+            $ref: "#/components/schemas/LatLng"
+        distance:
+          type: number
+        rate:
+          type: number
+
+    Areas:
+      type: array
+      items:
+        $ref: "#/components/schemas/Area"

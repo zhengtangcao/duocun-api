@@ -1,0 +1,59 @@
+paths:
+  /:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Merchants
+      summary: Get products by query
+      parameters:
+        - name: tokenId
+          in: path
+          description: token id of current user
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Products"
+
+        400:
+          description: invalid query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: INVALID_QUERY
+        500:
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: DATABASE_ERROR | SERVER_ERROR
+
+components:
+  schemas:
+    Merchant:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          description: in Chinese
+        nameEn:
+          type: string
+          description: in English
+        description:
+          type: string
