@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
-  title: Shops API
-  description: E-Commerce application restful API
+  title: Duocun Service API
+  description: Duocuns application restful API
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT

@@ -1,101 +1,29 @@
 paths:
-  /v2/transactions:
-    get:
+  /:
+    post:
       security:
         - Bearer: []
       tags:
         - Orders
-      summary: Get all accounts in system
+      summary: place orders
+      requestBody:
+        description: order
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Order"
+        required: false
+
       responses:
         200:
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Accounts"
+                $ref: "#/components/schemas/Order"
 
-  /v2/correctTime:
-    get:
-      tags:
-        - Orders
-      summary: account eamil confirmation, after clicked, generate jwt token, register user on redis
-      parameters:
-        - name: id
-          in: path
-          description: id of account
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/token"
-
-                /csv:
-                  get:
-                    tags:
-                      - Authentication
-                    summary: account eamil confirmation, after clicked, generate jwt token, register user on redis
-                    parameters:
-                      - name: id
-                        in: path
-                        description: id of account
-                        required: true
-                        schema:
-                          type: string
-                    responses:
-                      200:
-                        description: token
-                        content:
-                          application/json:
-                            schema:
-                              $ref: "#/components/schemas/token"
-
-  /accounts/send:
-    post:
-      tags:
-        - Orders
-      summary: if confirmation email expired, inactive user can resend confirmation eamil
-      requestBody:
-        description: confirmation{username}
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/confirmation"
-        required: false
-      responses:
-        200:
-          description: confirmation send out
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Account"
-      x-codegen-request-body-name: account
-
-  /accounts/signup:
-    post:
-      tags:
-        - Orders
-      summary: user sign up
-      requestBody:
-        description: user sign up fields
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Account"
-        required: false
-      responses:
-        200:
-          description: signup success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
         400:
-          description: email duplicated
+          description: invalid request
           content:
             application/json:
               schema:
@@ -103,7 +31,7 @@ paths:
                 properties:
                   code:
                     type: string
-                    description: ACCOUNT_EXISTS
+                    description: INVALID_REQUEST
         500:
           description: server error
           content:
@@ -113,200 +41,155 @@ paths:
                 properties:
                   code:
                     type: string
-                    description: MONGO_ERROR | REDIS_ERROR | SERVER_ERROR
-      x-codegen-request-body-name: account
-  /accounts/login:
-    post:
-      tags:
-        - Orders
-      summary: user login
-      requestBody:
-        description: credential {username, password}
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/credential"
-        required: false
-      responses:
-        200:
-          description: Active user information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        401:
-          description: Unauthorized request
-      x-codegen-request-body-name: account
+                    description: DATABASE_ERROR | SERVER_ERROR
 
-  /accounts/logout:
-    post:
-      tags:
-        - Authentication
-      summary: logout
-      parameters:
-        - in: header
-          name: token
-          schema:
-            type: string
-            required: true
-          description: jwt token
-      responses:
-        200:
-          description: Active user information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        401:
-          description: Unauthorized request
-      x-codegen-request-body-name: account
+components:
+  schemas:
+    confirmation:
+      required:
+        - username
+        - userId
+      type: object
+      properties:
+        username:
+          type: string
+        userId:
+          type: string
+          format: uuid
 
-  /accounts/{id}:
-    get:
-      security:
-        - Bearer: []
-      tags:
-        - Accounts
-      summary: Get account by id
-      parameters:
-        - in: header
-          name: token
-          schema:
-            type: string
-            required: true
-          description: jwt token
-        - name: id
-          in: path
-          description: id of account
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: account is find
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Account"
+    credential:
+      required:
+        - username
+        - password
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
 
-    put:
-      tags:
-        - Accounts
-      summary: Update account by id
-      parameters:
-        - in: header
-          name: token
-          schema:
-            type: string
-            required: true
-          description: jwt token
-        - name: id
-          in: path
-          description: id of account
-          required: true
-          schema:
-            type: string
-      requestBody:
-        description: Account with new values of properties
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Account"
-        required: false
-      responses:
-        200:
-          description: Account is updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Account"
-        401:
-          description: Unauthorized request
-      x-codegen-request-body-name: account
-    delete:
-      tags:
-        - Accounts
-      summary: Delete account by id
-      parameters:
-        - name: id
-          in: path
-          description: account id
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: Account is deleted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Account"
-        401:
-          description: Unauthorized request
-# components:
-#   schemas:
-#     confirmation:
-#       required:
-#         - username
-#         - userId
-#       type: object
-#       properties:
-#         username:
-#           type: string
-#         userId:
-#           type: string
-#           format: uuid
+    token:
+      required:
+        - token
+      type: object
+      properties:
+        token:
+          type: string
+          description: jwt token with account as payload
 
-#     credential:
-#       required:
-#         - username
-#         - password
-#       type: object
-#       properties:
-#         username:
-#           type: string
-#         password:
-#           type: string
+    User:
+      allOf:
+        - $ref: "#/components/schemas/Account"
+        - type: object
+          properties:
+            token:
+              type: string
+              description: jwt token stored in redis cache
 
-#     token:
-#       required:
-#         - token
-#       type: object
-#       properties:
-#         token:
-#           type: string
-#           description: jwt token with account as payload
+    Order:
+      required:
+        - _id
+      type: object
+      properties:
+        _id:
+          type: string
+        code:
+          type: string
+        clientId:
+          type: string
+        clientName:
+          type: string
+        clientPhoneNumber:
+          type: string
+        merchantId:
+          type: string
+        merchantName:
+          type: string
+        driverId:
+          type: string
+        driverName:
+          type: string
+        type:
+          type: string
 
-#     User:
-#       allOf:
-#         - $ref: "#/components/schemas/Account"
-#         - type: object
-#           properties:
-#             token:
-#               type: string
-#               description: jwt token stored in redis cache
+        paymentStatus:
+          type: string
+        status:
+          type: string
+        note:
+          type: string
+        address:
+          type: string
+        location:
+          $ref: "#/components/schemas/Location"
 
-#     Account:
-#       required:
-#         - _id
-#       type: object
-#       properties:
-#         _id:
-#           type: string
-#         firstName:
-#           type: string
-#         lastName:
-#           type: string
-#         email:
-#           type: string
-#         status:
-#           type: string
-#           description: inactive(default), active
-#         roles:
-#           type: array
-#           items:
-#             $ref: "#/components/schemas/Role"
-#     Accounts:
-#       type: array
-#       items:
-#         $ref: "#/components/schemas/Account"
+        deliverDate:
+          type: string
+        deliverTime:
+          type: string
+        delivereId:
+          type: string
+        items:
+          type: array
+          items: "#/components/schemas/OrderItem"
+        tax:
+          type: number
+        tips:
+          type: number
+        deliverCost:
+          type: number
+        deliverDiscount:
+          type: number
+        overRangeCharge:
+          type: number
+        groupDiscount:
+          type: number
+        cost:
+          type: number
+        price:
+          type: number
+        total:
+          type: number
+
+    Location:
+      type: object
+      properties:
+        placeId:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        unit:
+          type: string
+        street:
+          type: string
+        subLocality:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        country:
+          type: string
+        postalCode:
+          type: string
+
+    OrderItem:
+      type: object
+      properties:
+        productId:
+          type: string
+        productName:
+          type: string
+        price:
+          type: number
+        cost:
+          type: number
+        quantity:
+          type: number
+
+    Accounts:
+      type: array
+      items:
+        $ref: "#/components/schemas/Account"
