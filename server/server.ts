@@ -7,9 +7,9 @@ import fs from "fs";
 import Server from "socket.io";
 import { ObjectID } from "mongodb";
 
-import swaggerUi from "swagger-ui-express";
-import swaggerJsDoc from "swagger-jsdoc";
-import YAML from "yamljs";
+// import swaggerUi from "swagger-ui-express";
+// import swaggerJsDoc from "swagger-jsdoc";
+// import YAML from "yamljs";
 
 import jwt from "jsonwebtoken";
 import { Config } from "./config";
@@ -67,18 +67,16 @@ dotenv.config();
 
 process.env.TZ = "America/Toronto";
 
-log.info(`current path=>${__dirname}`);
-
-const swaggerDefinition = YAML.load(path.join(__dirname, "/swagger/info.yaml"));
-// options for the swagger docs
-const options = {
-  // import swaggerDefinitions
-  swaggerDefinition,
-  // path to the API docs
-  apis: [path.join(__dirname, "/swagger/**/*.yaml")],
-};
-// initialize swagger-jsdoc
-const swaggerSpec = swaggerJsDoc(options);
+// const swaggerDefinition = YAML.load(path.join(__dirname, "/swagger/info.yaml"));
+// // options for the swagger docs
+// const options = {
+//   // import swaggerDefinitions
+//   swaggerDefinition,
+//   // path to the API docs
+//   apis: [path.join(__dirname, "/swagger/**/*.yaml")],
+// };
+// // initialize swagger-jsdoc
+// const swaggerSpec = swaggerJsDoc(options);
 
 function startCellOrderTask(dbo: any) {
   // s m h d m w
@@ -200,7 +198,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
     app.use(apimw.auth);
   }
 
-  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.use("/" + ROUTE_PREFIX + "/Accounts", AccountRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Restaurants", merchantRouter.init());
   app.use("/" + ROUTE_PREFIX + "/Areas", AreaRouter(dbo));
