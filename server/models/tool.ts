@@ -56,18 +56,13 @@ export class Tool {
   updateBalances(){
     const self = this;
     return new Promise( (resolve, reject) => {
-      this.accountModel.find({type: 'client'}).then(accounts => {
-        const clientIds = accounts.map(account => account._id.toString());
-        this.transactionModel.find({}).then(ts => {
-          clientIds.map((cId) => {
-            setTimeout(() => {
-              self.transactionModel.updateBalanceByAccountId(cId, ts);
-            }, 100);
-
-            resolve({status: 'success'});
-          });
-        });
-      });
+      // this.accountModel.find({}, null, ['_id']).then(accounts => {
+      //   const accountIds = accounts.map(account => account._id.toString());
+      //   this.updateBalanceList(accountIds).then(n => {
+      //     res.setHeader('Content-Type', 'application/json');
+      //     res.send(JSON.stringify('success update ' + n + 'accounts', null, 3));
+      //   });
+      // });
     });
   }
 }

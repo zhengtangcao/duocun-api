@@ -9,6 +9,7 @@ import { EventLog } from "./event-log";
 import { ResponseStatus } from "./client-payment";
 
 import fs from 'fs';
+import { AccountType } from "./log";
 
 const CASH_BANK_ID = '5c9511bb0851a5096e044d10';
 const CASH_BANK_NAME = 'Cash Bank';
@@ -662,40 +663,24 @@ export class Transaction extends Model {
   }
 
   // v2 api
-  updateBalanceList(accountIds: string[]){
+  async updateBalanceList(accountIds: string[]){
     const self = this;
-    this.find({}).then(ts => {
-      accountIds.map((id: string) => {
-        setTimeout(() => {
-          self.updateBalanceByAccountId(id, ts).then(() => {
-            
-          });
-        }, 500);
-      });
-    });
+    const trs = await this.find({type: {$in: ['driver', 'client', 'merchant']}}); // type: {$in: ['driver', 'client', 'merchant']}
+    
+    let list = this.sortTransactions(trs);
+    
+    for(let i=0; i<accountIds.length; i++){
+      const id = accountIds[i];
+      await self.updateBalanceByAccountId(id, list);
+    }
+    return accountIds.length;
   }
 
   // const trs = transactions.filter(t => t.fromId.toString() === accountId || t.toId.toString() === accountId);
   async updateBalanceByAccountId(accountId: string, trs: ITransaction[]) {
     if (trs && trs.length > 0) {
       let balance = 0;
-      const list = trs.sort((a: any, b: any) => {
-        const aMoment = moment(a.created);
-        const bMoment = moment(b.created);
-        if (aMoment.isSame(bMoment, 'day')) {
-          if (aMoment.isAfter(bMoment)) {
-            return 1; // a to bottom
-          } else {
-            return -1;
-          }
-        } else {
-          if (aMoment.isAfter(bMoment)) {
-            return 1;
-          } else {
-            return -1;
-          }
-        }
-      });
+      const list = trs;
 
       const datas: any[] = [];
       list.map((t: ITransaction) => {
@@ -798,7 +783,6 @@ export class Transaction extends Model {
 
   updateAccount(req: Request, res: Response) {
     const accountId = req.body.accountId;
-
     this.updateBalance(accountId).then((r) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(r, null, 3));
@@ -807,22 +791,12 @@ export class Transaction extends Model {
 
   updateBalances(req: Request, res: Response) {
     const self = this;
-    this.accountModel.find({}).then(accounts => {
-      this.find({}).then(ts => {
-        accounts.map((a: IAccount) => {
-          setTimeout(() => {
-            self.updateBalanceByAccountId(a._id.toString(), ts).then(() => {
-
-            });
-          }, 500);
-        });
-
+    this.accountModel.find({}, null, ['_id']).then(accounts => {
+      const accountIds = accounts.map(account => account._id.toString());
+      this.updateBalanceList(accountIds).then(n => {
         res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify('success', null, 3));
+        res.send(JSON.stringify('success update ' + n + 'accounts', null, 3));
       });
     });
   }
-
-
-
 }
