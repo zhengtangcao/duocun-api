@@ -171,9 +171,9 @@ export class AccountController extends Model {
 
     let txt;
     if (orderType === 'G') {
-      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 您订的货已送到, 请查收';
+      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 货已送到, 请查收。(系统短信, 勿回)';
     } else {
-      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 您订的餐已送到, 请查收';
+      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 餐已送到, 请查收。(系统短信, 勿回)';
     }
 
     self.accountModel.sendMessage(phone, txt).then(() => {

@@ -2148,6 +2148,19 @@ export class Order extends Model {
     });
   }
 
+
+  getWechatPayments(){
+
+  }
+
+  reqWechatPayments(req: Request, res: Response) {
+    this.correctTime().then((ps) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(JSON.stringify(ps), null, 3));
+    });
+  }
+
+
   async correctTime() {
     const delivered = { $gte: moment('2020-04-07T00:00:00.000Z').startOf('day').toISOString() };
     const rs: any[] = await this.find({ delivered });
