@@ -21,6 +21,8 @@ export function ClientPaymentRouter(db: DB) {
 
 
   router.post('/snappayAddCredit', (req, res) => { controller.snappayAddCredit(req, res); });
+
+  
   router.post('/notify', (req, res) => { controller.snappayNotify(req, res); });
   router.post('/snappayPayOrder', (req, res) => { controller.snappayPayOrder(req, res); });
   // router.post('/snappayRefund', (req, res) => {controller.snappayRefund(req, res); });

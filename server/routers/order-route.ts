@@ -6,6 +6,11 @@ export function OrderRouter(db: DB){
   const router = express.Router();
   const controller = new Order(db);
 
+  // place orders (List<Orders no-payment-id>) => {0/1-> Order(id, payment-id)}
+  router.post('/', (req, res) => { controller.create(req, res); });
+
+  // =======================================================
+
   // v2
   router.get('/v2/transactions', (req, res) => { controller.reqTransactions(req, res); });
   // tools
@@ -14,6 +19,7 @@ export function OrderRouter(db: DB){
   // router.post('/missingUnpaid', (req, res) => { controller.reqFixMissingUnpaid(req, res); });
   
   router.get('/v2/correctTime', (req, res) => { controller.reqCorrectTime(req, res); });
+
 
   // v1
   router.get('/csv', (req, res) => { controller.reqCSV(req, res); });
@@ -32,7 +38,7 @@ export function OrderRouter(db: DB){
   router.post('/checkWechatpay', (req, res) => { controller.checkWechatpay(req, res); });
   router.post('/bulk', (req, res) => { controller.reqPlaceOrders(req, res); });
   router.post('/payOrder', (req, res) => { controller.payOrder(req, res); });
-  router.post('/', (req, res) => { controller.create(req, res); });
+  
 
 
   // deprecated

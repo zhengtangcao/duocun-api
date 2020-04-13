@@ -12,11 +12,19 @@ export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
 
-  // v2
+  // (server-token-id,) => {account object}
+  router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
+  
+  // open (tencent auth code) => { account }
   router.get('/wxLogin', (req, res) => { controller.reqWxLogin(req, res); });
+  
+  // 
+
+  // =========================================
+  // v2
   router.get('/qFind', (req, res) => { controller.list(req, res); }); // deprecated
   router.get('/', (req, res) => { controller.list(req, res); });
-  router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
+
 
   // v1
   // router.get('/attributes', (req, res) => { this.attrModel.quickFind(req, res); });

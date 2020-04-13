@@ -9,9 +9,12 @@ export function MerchantScheduleRouter(db: DB){
   // v2
   router.get('/qFind', (req, res) => { controller.quickFind(req, res); });
 
-  // v1
-  router.get('/availableMerchants', (req, res) => { controller.getAvailableMerchants(req, res); });
+
+
+  // (merchant-id, location) => (schedule)
   router.get('/availables', (req, res) => { controller.getAvailableSchedules(req, res); });
+  //=================================
+  
   router.get('/', (req, res) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
   

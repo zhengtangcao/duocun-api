@@ -14,16 +14,28 @@ export class MerchantRouter {
   }
 
   init() {
-    // v2
-    this.router.get('/v2/myMerchants', (req, res) => { this.getMyMerchants(req, res); });
-    this.router.get('/v2/mySchedules', (req, res) => { this.getMySchedules(req, res); })
-    this.router.get('/getByAccountId', (req, res) => { this.getByAccountId(req, res); });
-    this.router.get('/qFind', (req, res) => { this.quickFind(req, res); });
-    this.router.get('/:id', (req, res) => { this.get(req, res); });
+    // get merchants
     this.router.get('/', (req, res) => { this.model.list(req, res); });
+    this.router.get('/:id', (req, res) => { this.get(req, res); });
 
-    // v1
+    // v1 (area-id)=> {List<Merchant>}  ?-> simply api interaction
+    // /merchant/avaliable
+    router.get('/availableMerchants', (req, res) => { controller.getAvailableMerchants(req, res); });
 
+    // (location, db.query(type, date), db.fields, date) -> List<merchant> . add -> zone(north york) -> mapping to active day.
+    this.router.get('/v2/myMerchants', (req, res) => { this.getMyMerchants(req, res); });
+
+    // (location, db.query(type, date), db.fields, date) -> List<merchant-schedule> . add -> zone(north york) -> mapping to active day.
+    this.router.get('/v2/mySchedules', (req, res) => { this.getMySchedules(req, res); })
+
+    this.router.get('/getByAccountId', (req, res) => { this.getByAccountId(req, res); });
+   
+    //============================
+    // v2
+
+  
+    // quick find 
+    this.router.get('/qFind', (req, res) => { this.quickFind(req, res); });
     this.router.post('/load', (req, res) => { this.load(req, res); });
     // this.router.post('/', (req, res) => { this.create(req, res); });
     // this.router.put('/', (req, res) => { this.replace(req, res); });
@@ -68,6 +80,8 @@ export class MerchantRouter {
     }
     const merchantId = data.merchantId;
     const location = data.location;
+
+    // fetch parameters
     this.model.getMySchedules(location, merchantId, fields).then((rs: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(rs, null, 3));

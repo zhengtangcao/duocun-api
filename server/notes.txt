@@ -1,0 +1,104 @@
+const order = {
+      clientId: account._id,
+      clientName: account.username,
+      merchantId: merchant._id,
+      merchantName: lang === 'zh' ? merchant.name : merchant.nameEN,
+      items, // DS 
+      location, // DS
+      pickupTime: '10:00',
+      deliverDate,
+      deliverTime,
+      type: OrderType.GROCERY,
+      status,
+      paymentStatus,
+      paymentMethod,
+      note,
+      price: Math.round(charge.price * 100) / 100,
+      cost: Math.round(charge.cost * 100) / 100,
+      //deliveryCost: Math.round(charge.deliveryCost * 100) / 100,
+      //deliveryDiscount: Math.round(charge.deliveryCost * 100) / 100,
+      //groupDiscount: Math.round(charge.groupDiscount * 100) / 100,
+      //overRangeCharge: Math.round(charge.overRangeCharge * 100) / 100,
+      total: Math.round(charge.total * 100) / 100,
+      //tax: Math.round(charge.tax * 100) / 100,
+      //tips: Math.round(charge.tips * 100) / 100,
+      //defaultPickupTime: account.pickup ? account.pickup : ''
+    };
+
+    export const OrderType = {
+  FOOD_DELIVERY: 'F',
+  MOBILE_PLAN_SETUP: 'MS',
+  MOBILE_PLAN_MONTHLY: 'MM',
+  GROCERY: 'G'
+};
+
+export const OrderStatus = {
+  BAD:     'B',          // client return, compansate
+  DELETED: 'D',          // cancellation
+  TEMP:    'T',             // generate a temp order for electronic order
+  NEW:     'N',
+  LOADED:  'L',           // The driver took the food from Merchant
+  DONE:    'F',             // Finish delivery
+  MERCHANT_CHECKED: 'MC'  // VIEWED BY MERCHANT
+};
+
+export const AppType = {
+  FOOD_DELIVERY: 'F',
+  GROCERY: 'G',
+  FRESH: 'F',
+  TELECOM: 'T'
+};
+
+
+export const PaymentError = {
+  NONE: 'N',
+  PHONE_EMPTY: 'PE',
+  LOCATION_EMPTY: 'LE',
+  DUPLICATED_SUBMIT: 'DS',
+  CART_EMPTY: 'CE',
+  BANK_CARD_EMPTY: 'BE',
+  INVALID_BANK_CARD: 'IB',
+  BANK_CARD_FAIL: 'BF',
+  WECHATPAY_FAIL: 'WF',
+  CREATE_BANK_CUSTOMER_FAIL: 'CBCF',
+  BANK_INSUFFICIENT_FUND: 'BIF',
+  BANK_CARD_DECLIEND: 'BCD',
+  INVALID_ACCOUNT: 'IA',
+  BANK_AUTHENTICATION_REQUIRED: 'BAR'
+};
+
+export const PaymentMethod = {
+  CASH: 'CA',
+  WECHAT: 'W',
+  CREDIT_CARD: 'CC',
+  PREPAY: 'P'
+};
+
+export const PaymentStatus = {
+  UNPAID: 'U',
+  PAID: 'P'
+};
+
+export const Language = {ZH:'zh', EN: 'en'}
+
+export interface ILocation {
+  placeId: string;
+  city?: string;
+  lat: number;
+  lng: number;
+  postalCode?: string;
+  province?: string;
+  streetName?: string;
+  streetNumber?: string;
+  subLocality?: string;
+}
+
+export interface IOrderItem {
+  productId: string;
+  productName: string; // product name
+  merchantId: string;
+  merchantName: string;
+  price: number;
+  cost: number;
+  quantity: number;
+}

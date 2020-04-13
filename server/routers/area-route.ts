@@ -8,9 +8,13 @@ export function AreaRouter(db: DB){
   const router = express.Router();
   const controller = new AreaController(db);
 
-  router.get('/my', (req, res) => { controller.reqMyArea(req, res); }); // fix me
-  router.get('/qFind', (req, res) => { controller.quickFind(req, res); });
   router.get('/', (req, res) => { controller.quickFind(req, res); });
+
+  //(location) => return db.area
+  router.get('/my', (req, res) => { controller.reqMyArea(req, res); }); // fix me
+
+  //===========================================
+  router.get('/qFind', (req, res) => { controller.quickFind(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
   router.post('/', (req, res) => { controller.create(req, res); });
   router.patch('/', (req, res) => { controller.update(req, res); });
