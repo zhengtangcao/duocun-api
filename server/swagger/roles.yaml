@@ -1,0 +1,116 @@
+paths:
+  /roles:
+    get:
+      tags:
+        - Roles
+      summary: Get all roles in system
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Roles"
+    post:
+      tags:
+        - Roles
+      description: Create new role in system
+      requestBody:
+        description: Role that we want to create
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Role"
+        required: false
+      responses:
+        200:
+          description: New role is created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+      x-codegen-request-body-name: role
+  /roles/{id}:
+    get:
+      tags:
+        - Roles
+      summary: Get role by id
+      parameters:
+        - name: id
+          in: path
+          description: id of role
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Role is found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+    put:
+      tags:
+        - Roles
+      summary: Update role by id
+      parameters:
+        - name: id
+          in: path
+          description: id of role
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Role with new values of properties
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Role"
+        required: false
+      responses:
+        200:
+          description: Role is updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        401:
+          description: Unauthorized request
+      x-codegen-request-body-name: role
+    delete:
+      tags:
+        - Roles
+      summary: Delete role by id
+      parameters:
+        - name: id
+          in: path
+          description: role id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Role is deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        401:
+          description: Unauthorized request
+
+components:
+  schemas:
+    Role:
+      required:
+        - _id
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+
+    Roles:
+      type: array
+      items:
+        $ref: "#/components/schemas/Role"
