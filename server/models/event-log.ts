@@ -3,7 +3,7 @@ import { Model } from "./model";
 import { ObjectID } from "mongodb";
 import { Request, Response } from "express";
 import { IOrder } from "../models/order";
-import { Account, IAccount } from "./account";
+// import { Account, IAccount } from "./account";
 import moment from "moment";
 import { resolve } from "url";
 
@@ -15,15 +15,15 @@ export interface IEventLog {
   code: string;
   decline_code: string; // from stripe
   message: string;
-  account?: IAccount;
+  // account?: IAccount;
   created?: string;
 }
 
 export class EventLog extends Model {
-  accountModel : Account;
+  // accountModel : Account;
   constructor(dbo: DB) {
     super(dbo, 'event_logs');
-    this.accountModel = new Account(dbo);
+    // this.accountModel = new Account(dbo);
   }
 
   list(req: Request, res: Response) {
@@ -81,23 +81,23 @@ export class EventLog extends Model {
     let q = query ? query : {};
 
     return new Promise((resolve, reject) => {
-      this.accountModel.find({}).then(accounts => {
+      // this.accountModel.find({}).then(accounts => {
         this.find(q).then((rs: any) => {
-          rs.map((r: any) => {
-            if(r.accountId){
-              const account = accounts.find((a: any) => a._id && r.accountId && a._id.toString() === r.accountId.toString());
-              if(account){
-                if(account.password){
-                  delete account.password;
-                }
-                r.account = account;
-              }
-            }
-          });
+          // rs.map((r: any) => {
+          //   if(r.accountId){
+          //     const account = accounts.find((a: any) => a._id && r.accountId && a._id.toString() === r.accountId.toString());
+          //     if(account){
+          //       if(account.password){
+          //         delete account.password;
+          //       }
+          //       r.account = account;
+          //     }
+          //   }
+          // });
           resolve(rs);
         });
       });
-    });
+    // });
   }
 
 
@@ -116,15 +116,15 @@ export class EventLog extends Model {
     // }
     let q = query ? query : {};
 
-    this.accountModel.find({}).then(accounts => {
+    // this.accountModel.find({}).then(accounts => {
       this.find(q).then((rs: IEventLog[]) => {
-        rs.map((r: IEventLog) => {
-          const account = accounts.find((a: IAccount) => a._id && r.accountId && a._id.toString() === r.accountId.toString());
-          if(account){
-            delete account.password;
-          }
-          r.account = account;
-        });
+        // rs.map((r: IEventLog) => {
+        //   const account = accounts.find((a: IAccount) => a._id && r.accountId && a._id.toString() === r.accountId.toString());
+        //   if(account){
+        //     delete account.password;
+        //   }
+        //   r.account = account;
+        // });
 
         const arrSorted = rs.sort((a: any, b: any) => {
           const ca = moment(a.created);
@@ -148,6 +148,6 @@ export class EventLog extends Model {
           res.send(JSON.stringify({ total: len, logs: [] }, null, 3));
         }
       });
-    });
+    // });
   }
 }
