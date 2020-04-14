@@ -1,0 +1,131 @@
+paths:
+  /products:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Products
+      summary: Get products by query
+      parameters:
+        - in: header
+          name: query
+          schema:
+            type: string
+            required: true
+          description:
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Products"
+
+        400:
+          description: invalid query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: INVALID_QUERY
+        401:
+          description: unauthorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: UNAUTHORIZED_ACCESS
+        500:
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: DATABASE_ERROR | SERVER_ERROR
+
+components:
+  schemas:
+    Product:
+      required:
+        - _id
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          description: in Chinese
+        nameEn:
+          type: string
+          description: in English
+        description:
+          type: string
+        price:
+          type: number
+        cost:
+          type: number
+        merchantId:
+          type: string
+        catagoryId:
+          type: string
+        openDays:
+          type: array
+          items:
+            type: number
+        pictures:
+          type: array
+          items:
+            $ref: "#/components/schemas/Picture"
+        dow:
+          type: array
+          items:
+            type: string
+        order:
+          type: number
+        status:
+          $ref: "#/components/schemas/ProductStatus"
+        merchant:
+          $ref: "#/components/schemas/Merchant"
+        category:
+          $ref: "#/components/schemas/Category"
+        merchantAccount:
+          $ref: "#/components/schemas/Account"
+
+    Products:
+      type: array
+      items:
+        $ref: "#/components/schemas/Product"
+
+    Picture:
+      type: object
+      properties:
+        url:
+          type: string
+
+    ProductStatus:
+      type: enum
+      properties:
+        url:
+          type: string
+          enum: [ACTIVE, INACTIVE, NEW, PROMOTE]
+
+    Category:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        order:
+          type: number

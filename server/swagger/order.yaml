@@ -1,0 +1,195 @@
+paths:
+  /:
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Orders
+      summary: place orders
+      requestBody:
+        description: order
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Order"
+        required: false
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+        400:
+          description: invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: INVALID_REQUEST
+        500:
+          description: server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: DATABASE_ERROR | SERVER_ERROR
+
+components:
+  schemas:
+    confirmation:
+      required:
+        - username
+        - userId
+      type: object
+      properties:
+        username:
+          type: string
+        userId:
+          type: string
+          format: uuid
+
+    credential:
+      required:
+        - username
+        - password
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    token:
+      required:
+        - token
+      type: object
+      properties:
+        token:
+          type: string
+          description: jwt token with account as payload
+
+    User:
+      allOf:
+        - $ref: "#/components/schemas/Account"
+        - type: object
+          properties:
+            token:
+              type: string
+              description: jwt token stored in redis cache
+
+    Order:
+      required:
+        - _id
+      type: object
+      properties:
+        _id:
+          type: string
+        code:
+          type: string
+        clientId:
+          type: string
+        clientName:
+          type: string
+        clientPhoneNumber:
+          type: string
+        merchantId:
+          type: string
+        merchantName:
+          type: string
+        driverId:
+          type: string
+        driverName:
+          type: string
+        type:
+          type: string
+
+        paymentStatus:
+          type: string
+        status:
+          type: string
+        note:
+          type: string
+        address:
+          type: string
+        location:
+          $ref: "#/components/schemas/Location"
+
+        deliverDate:
+          type: string
+        deliverTime:
+          type: string
+        delivereId:
+          type: string
+        items:
+          type: array
+          items: "#/components/schemas/OrderItem"
+        tax:
+          type: number
+        tips:
+          type: number
+        deliverCost:
+          type: number
+        deliverDiscount:
+          type: number
+        overRangeCharge:
+          type: number
+        groupDiscount:
+          type: number
+        cost:
+          type: number
+        price:
+          type: number
+        total:
+          type: number
+
+    Location:
+      type: object
+      properties:
+        placeId:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        unit:
+          type: string
+        street:
+          type: string
+        subLocality:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        country:
+          type: string
+        postalCode:
+          type: string
+
+    OrderItem:
+      type: object
+      properties:
+        productId:
+          type: string
+        productName:
+          type: string
+        price:
+          type: number
+        cost:
+          type: number
+        quantity:
+          type: number
+
+    Accounts:
+      type: array
+      items:
+        $ref: "#/components/schemas/Account"
