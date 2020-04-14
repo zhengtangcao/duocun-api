@@ -85,7 +85,7 @@ export class AccountController extends Model {
 
   wechatLogin(req: Request, res: Response) {
 
-    const authCode = req.query.code;
+    const authCode:any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
 
     this.utils.getWechatAccessToken(authCode).then((r: any) => {
@@ -112,8 +112,9 @@ export class AccountController extends Model {
 
   // return {account, tokenId}
   reqWxLogin(req: Request, res: Response) {
+    const wxLoginCode:any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
-    this.accountModel.wxLogin(req.query.code).then((r: any) => {
+    this.accountModel.wxLogin(wxLoginCode).then((r: any) => {
       if (r) {
         res.send(JSON.stringify(r, null, 3));
       } else {
@@ -214,7 +215,7 @@ export class AccountController extends Model {
   }
 
   getCurrentAccount(req: Request, res: Response) {
-    const tokenId: string = req.query.tokenId;
+    const tokenId: any = req.query.tokenId;
 
     let fields: string[];
     if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
