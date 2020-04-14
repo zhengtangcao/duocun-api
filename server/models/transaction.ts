@@ -665,7 +665,7 @@ export class Transaction extends Model {
   // v2 api
   async updateBalanceList(accountIds: string[]){
     const self = this;
-    const trs = await this.find({}); // type: {$in: ['driver', 'client', 'merchant']}
+    const trs = await this.find({type: 'user'}); // type: {$in: ['driver', 'client', 'merchant']}
     
     let list = this.sortTransactions(trs);
     
