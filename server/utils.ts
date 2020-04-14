@@ -49,10 +49,10 @@ export class Utils {
             if (s && s.access_token) {
               resolve(s);
             } else {
-              reject();
+              resolve({code: s.errcode, msg: s.errmsg});
             }
           } else {
-            reject();
+            resolve({code: -2, msg: 'wechat no response'});
           }
         });
 

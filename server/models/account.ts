@@ -593,7 +593,7 @@ export class Account extends Model {
               }
             });
           } else {
-            resolve();
+            resolve(r);
           }
         });
       } catch (e) {
