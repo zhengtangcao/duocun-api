@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import { Config } from "../config";
 import { Utils } from "../utils";
 import moment from 'moment';
-import { resolve } from "dns";
+import { EventLog } from "./event-log";
 
 const saltRounds = 10;
 export const VerificationError = {
@@ -77,9 +77,11 @@ export class AccountAttribute extends Model {
 export class Account extends Model {
   cfg: Config;
   twilioClient: any;
+  eventLogModel: EventLog;
 
   constructor(dbo: DB) {
     super(dbo, 'users');
+    this.eventLogModel = new EventLog(dbo);
     this.cfg = new Config();// JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
     this.twilioClient = require('twilio')(this.cfg.TWILIO.SID, this.cfg.TWILIO.TOKEN);
   }
@@ -593,7 +595,18 @@ export class Account extends Model {
               }
             });
           } else {
-            resolve(r);
+            const eventLog = {
+              accountId: '5e9517761b9d9e01d8b44275',
+              type: "login error",
+              code: r && r.code? r.code: 'N/A',
+              decline_code: "",
+              message: r && r.msg? r.msg: 'N/A',
+              created: moment().toISOString(),
+            };
+    
+            this.eventLogModel.insertOne(eventLog).then(() => {
+              resolve(r);
+            });
           }
         });
       } catch (e) {
