@@ -21,7 +21,7 @@ const SNAPPAY_BANK_NAME = 'SnapPay Bank';
 
 
 export const TransactionAction = {
-  DECLINE_CREDIT_CARD: { code: 'DC', name: 'decline credit card payment'},
+  DECLINE_CREDIT_CARD: { code: 'DC', name: 'decline credit card payment' },
   PAY_DRIVER_CASH: { code: 'PDCH', name: 'client pay driver cash' }, // 'client pay cash', 'pay cash'
   PAY_BY_CARD: { code: 'PC', name: 'client pay by card' }, // 'pay by card'
   PAY_BY_WECHAT: { code: 'PW', name: 'client pay by wechat' }, // 'pay by wechat'
@@ -152,46 +152,30 @@ export class Transaction extends Model {
     });
   }
 
-  doInsertOne(tr: ITransaction): Promise<IDbTransaction> {
+  async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.toId;     // must be account id
     const amount: number = tr.amount;
+    const accountQuery = { _id: { $in: [fromId, toId] } };
+    const accounts = await this.accountModel.find(accountQuery);
+    const fromAccount: any = accounts.find(x => x._id.toString() === fromId);
+    const toAccount: any = accounts.find(x => x._id.toString() === toId);
 
-    return new Promise((resolve, reject) => {
-      const accountQuery = { _id: { $in: [fromId, toId] } };
-      this.accountModel.find(accountQuery).then((accounts: IAccount[]) => {
-        const fromAccount: any = accounts.find(x => x._id.toString() === fromId);
-        const toAccount: any = accounts.find(x => x._id.toString() === toId);
+    if (fromAccount && toAccount) {
+      tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
+      tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
 
-        if (fromAccount && toAccount) {
-          tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
-          tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
+      const x = await this.insertOne(tr);
+      const updates = [
+        { query: { _id: fromId }, data: { balance: tr.fromBalance } },
+        { query: { _id: toId }, data: { balance: tr.toBalance } }
+      ];
 
-          this.insertOne(tr).then((x: IDbTransaction) => {
-            const updates = [
-              { query: { _id: fromId }, data: { balance: tr.fromBalance } },
-              { query: { _id: toId }, data: { balance: tr.toBalance } }
-            ];
-
-            this.accountModel.bulkUpdate(updates).then((r) => {
-              resolve(x);
-            });
-          });
-        } else {
-          // const eventLog = {
-          //   accountId: fromId,
-          //   type: 'debug',
-          //   code: '',
-          //   decline_code: '',
-          //   message: 'fromId: ' + tr.fromId + ' toId: ' + tr.toId + ' actionCode: ' + tr.actionCode,
-          //   created: moment().toISOString()
-          // }
-          // this.eventLogModel.insertOne(eventLog).then(() => {
-          resolve();
-          // });
-        }
-      });
-    });
+      await this.accountModel.bulkUpdate(updates);
+      return x;
+    } else {
+      return;
+    }
   }
 
   create(req: Request, res: Response) {
@@ -406,21 +390,6 @@ export class Transaction extends Model {
     });
   }
 
-
-
-
-  // snappayAddCredit(req: Request, res: Response) {
-  //   const clientId = req.body.clientId;
-  //   const clientName = req.body.clientName;
-  //   const total = +req.body.total;
-  //   const paymentMethod = req.body.paymentMethod;
-  //   const note = req.body.note;
-
-  //   this.doAddCredit(clientId, clientName, total, paymentMethod, note).then(x => {
-  //     res.setHeader('Content-Type', 'application/json');
-  //     res.send(JSON.stringify(x, null, 3));
-  //   });
-  // }
 
   doAddCredit(fromId: string, fromName: string, total: number, paymentMethod: string, note: string): Promise<IDbTransaction> {
     let toId = '';
@@ -663,13 +632,13 @@ export class Transaction extends Model {
   }
 
   // v2 api
-  async updateBalanceList(accountIds: string[]){
+  async updateBalanceList(accountIds: string[]) {
     const self = this;
-    const trs = await this.find({type: 'user'}); // type: {$in: ['driver', 'client', 'merchant']}
-    
+    const trs = await this.find({ type: 'user' }); // type: {$in: ['driver', 'client', 'merchant']}
+
     let list = this.sortTransactions(trs);
-    
-    for(let i=0; i<accountIds.length; i++){
+
+    for (let i = 0; i < accountIds.length; i++) {
       const id = accountIds[i];
       await self.updateBalanceByAccountId(id, list);
     }
