@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { DB } from "../db";
 import { Model } from "./model";
-import { ILocation } from "./location";
+import { ILocation, Location} from "./location";
 import { OrderSequence } from "./order-sequence";
 import moment from 'moment';
 import { Merchant, IPhase, IMerchant, IDbMerchant } from "./merchant";
 import { Account, IAccount } from "./account";
+
 import { Transaction, ITransaction, TransactionAction } from "./transaction";
 import { Product, IProduct } from "./product";
 import { CellApplication, CellApplicationStatus, ICellApplication } from "./cell-application";
@@ -16,7 +17,6 @@ import { ClientCredit } from "./client-credit";
 import fs from "fs";
 import { EventLog } from "./event-log";
 import { PaymentAction } from "./client-payment";
-import { resolve } from "url";
 
 const CASH_ID = '5c9511bb0851a5096e044d10';
 const CASH_NAME = 'Cash';
@@ -133,6 +133,7 @@ export class Order extends Model {
   private logModel: Log;
   clientCreditModel: ClientCredit;
   eventLogModel: EventLog;
+  locationModel: Location;
 
   constructor(dbo: DB) {
     super(dbo, 'orders');
@@ -146,6 +147,7 @@ export class Order extends Model {
     this.logModel = new Log(dbo);
     this.clientCreditModel = new ClientCredit(dbo);
     this.eventLogModel = new EventLog(dbo);
+    this.locationModel = new Location(dbo);
   }
 
   // v2
@@ -1325,74 +1327,103 @@ export class Order extends Model {
     });
   }
 
-  loadPage(req: Request, res: Response) {
-    const itemsPerPage = +req.params.itemsPerPage;
-    const currentPageNumber = +req.params.currentPageNumber;
+  // to be added --- should add sort type
+  sortByDeliverDate(orders: any[]){
+    return orders.sort((a: IOrder, b: IOrder) => {
+      const ma = moment(a.delivered);
+      const mb = moment(b.delivered);
+      if (ma.isAfter(mb)) {
+        return -1;
+      } else if (mb.isAfter(ma)) {
+        return 1;
+      } else {
+        const ca = moment(a.created);
+        const cb = moment(b.created);
+        if (ca.isAfter(cb)) {
+          return -1;
+        } else {
+          return 1;
+        }
+      }
+    });
+  }
 
-    let query = null;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+  getDescription(order: any, lang: string) {
+    const d = order.delivered.split('T')[0];
+    // const y = +(d.split('-')[0]);
+    const m = +(d.split('-')[1]);
+    const prevMonth = m === 1 ? 12 : (m - 1);
+
+    // const product = order.items[0].product;
+    // const productName = lang === 'en' ? product.name : product.nameEN;
+    const range = prevMonth + '/27 ~ ' + m + '/26';
+
+    if (order.type === 'MM') {
+      return range + (lang === 'en' ? ' Phone monthly fee' : ' 电话月费');
+      // } else if (order.type === 'MS') {
+      //   return (this.lang === 'en' ? ' Phone setup fee' : ' 电话安装费');
+    } else {
+      return '';
     }
+  }
 
+  // return [{_id, address description,items, merchantName, clientPhoneNumber, price, total, tax, delivered, created}, ...]
+  async loadHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
+    const client = await this.accountModel.findOne({_id: clientId});
+    const ps = await this.productModel.find({});
+    const query = {clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP]}};
+    const rs = await this.find(query);
+
+    const arrSorted = this.sortByDeliverDate(rs);
+    const start = (currentPageNumber - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const arr = arrSorted.slice(start, end);
+
+    return arr.map((order: any) => {
+      const items: any[] = [];
+      order.items.map((it: any) => {
+        const product = ps.find((p: any) => p._id.toString() === it.productId.toString());
+        if (product) {
+          items.push({ product, quantity: it.quantity, price: it.price });
+        }
+      });
+
+      const description = this.getDescription(order, 'zh');
+      const clientPhoneNumber = client.phone;
+      const address = this.locationModel.getAddrString(order.location);
+      return { ...order, address, description, items, clientPhoneNumber};
+    });
+  }
+
+  async loadPage(query: any, itemsPerPage: number, currentPageNumber: number) {
     if (query.hasOwnProperty('pickup')) {
       query.delivered = this.getPickupDateTime(query['pickup']);
       delete query.pickup;
     }
-    let q = query ? query : {};
+    const accounts = await this.accountModel.find({});
+    const ms = await this.merchantModel.find({});
+    const ps = await this.productModel.find({});
+    const rs = await this.find(query);
 
-    this.accountModel.find({}).then(accounts => {
-      this.merchantModel.find({}).then(ms => {
-        this.productModel.find({}).then(ps => {
-          this.find(q).then((rs: any) => {
+    const arrSorted = this.sortByDeliverDate(rs);
+    const start = (currentPageNumber - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const len = arrSorted.length;
+    const arr = arrSorted.slice(start, end);
 
-            const arrSorted = rs.sort((a: IOrder, b: IOrder) => {
-              const ma = moment(a.delivered).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-              const mb = moment(b.delivered).set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-              if (ma.isAfter(mb)) {
-                return -1;
-              } else if (mb.isAfter(ma)) {
-                return 1;
-              } else {
-                const ca = moment(a.created);
-                const cb = moment(b.created);
-                if (ca.isAfter(cb)) {
-                  return -1;
-                } else {
-                  return 1;
-                }
-              }
-            });
+    return arr.map((order: any) => {
+      const items: any[] = [];
+      order.client = accounts.find((a: any) => a._id.toString() === order.clientId.toString());
+      order.merchant = ms.find((m: any) => m._id.toString() === order.merchantId.toString());
+      order.merchantAccount = accounts.find((a: any) => a && order.merchant && a._id.toString() === order.merchant._id.toString());
 
-            const start = (currentPageNumber - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const len = arrSorted.length;
-            const arr = arrSorted.slice(start, end);
-
-            arr.map((order: any) => {
-              const items: any[] = [];
-              order.client = accounts.find((a: any) => a._id.toString() === order.clientId.toString());
-              order.merchant = ms.find((m: any) => m._id.toString() === order.merchantId.toString());
-              order.merchantAccount = accounts.find((a: any) => a && order.merchant && a._id.toString() === order.merchant._id.toString());
-
-              order.items.map((it: any) => {
-                const product = ps.find((p: any) => p._id.toString() === it.productId.toString());
-                if (product) {
-                  items.push({ product: product, quantity: it.quantity, price: it.price, cost: it.cost });
-                }
-              });
-              order.items = items;
-            });
-
-            res.setHeader('Content-Type', 'application/json');
-            if (arr && arr.length > 0) {
-              res.send(JSON.stringify({ total: len, orders: arr }, null, 3));
-            } else {
-              res.send(JSON.stringify({ total: len, orders: [] }, null, 3));
-            }
-
-          });
-        });
+      order.items.map((it: any) => {
+        const product = ps.find((p: any) => p._id.toString() === it.productId.toString());
+        if (product) {
+          items.push({ product: product, quantity: it.quantity, price: it.price, cost: it.cost });
+        }
       });
+      order.items = items;
     });
   }
 
