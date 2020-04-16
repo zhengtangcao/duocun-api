@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { DB } from "../db";
 import { Model } from "./model";
-import { ILocation, Location} from "./location";
+import { ILocation, Location } from "./location";
 import { OrderSequence } from "./order-sequence";
 import moment from 'moment';
 import { Merchant, IPhase, IMerchant, IDbMerchant } from "./merchant";
@@ -1089,32 +1089,26 @@ export class Order extends Model {
     return t;
   }
 
+
   // paymentId --- order paymentId
   async processAfterPay(paymentId: string, actionCode: string, amount: number, chargeId: string) {
     const orders = await this.find({ paymentId });
     if (orders && orders.length > 0) {
       const order = orders[0];
       if (order.paymentStatus === PaymentStatus.UNPAID) {
-        
-        if (order.paymentMethod !== PaymentMethod.WECHAT) {
-          // add two transactions for placing order for duocun and merchant
-          await this.addDebitTransactions(orders);
+        // add two transactions for placing order for duocun and merchant
+        await this.addDebitTransactions(orders);
 
-          // add transaction to Bank and update the balance
-          const delivered: any = order.delivered;
-          const clientId = order.clientId.toString();
-          await this.addCreditTransaction(paymentId, clientId, order.clientName, amount, actionCode, delivered); // .then(t => {
-          
-          // update payment status to 'paid' for the orders in batch
-          const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
-          const updates = orders.map(order => {
-            return { query: { _id: order._id }, data }
-          });
-          await this.bulkUpdate(updates);
-          return;
-        } else {
-          return;
-        }
+        // add transaction to Bank and update the balance
+        const delivered: any = order.delivered;
+        const clientId = order.clientId.toString();
+        await this.addCreditTransaction(paymentId, clientId, order.clientName, amount, actionCode, delivered); // .then(t => {
+
+        // update payment status to 'paid' for the orders in batch
+        const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
+        const updates = orders.map(order => ({ query: { _id: order._id }, data }));
+        await this.bulkUpdate(updates);
+        return;
       }
     } else { // add credit for Wechat
       const credit = await this.clientCreditModel.findOne({ paymentId }); // .then((credit) => {
@@ -1288,7 +1282,7 @@ export class Order extends Model {
   }
 
   // to be added --- should add sort type
-  sortByDeliverDate(orders: any[]){
+  sortByDeliverDate(orders: any[]) {
     return orders.sort((a: IOrder, b: IOrder) => {
       const ma = moment(a.delivered);
       const mb = moment(b.delivered);
@@ -1329,9 +1323,9 @@ export class Order extends Model {
 
   // return [{_id, address description,items, merchantName, clientPhoneNumber, price, total, tax, delivered, created}, ...]
   async loadHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
-    const client = await this.accountModel.findOne({_id: clientId});
+    const client = await this.accountModel.findOne({ _id: clientId });
     const ps = await this.productModel.find({});
-    const query = {clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP]}};
+    const query = { clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
     const rs = await this.find(query);
 
     const arrSorted = this.sortByDeliverDate(rs);
@@ -1351,7 +1345,7 @@ export class Order extends Model {
       const description = this.getDescription(order, 'zh');
       const clientPhoneNumber = client.phone;
       const address = this.locationModel.getAddrString(order.location);
-      return { ...order, address, description, items, clientPhoneNumber};
+      return { ...order, address, description, items, clientPhoneNumber };
     });
   }
 
@@ -2140,7 +2134,7 @@ export class Order extends Model {
   }
 
 
-  getWechatPayments(){
+  getWechatPayments() {
 
   }
 

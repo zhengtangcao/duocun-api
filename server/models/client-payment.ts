@@ -132,14 +132,6 @@ export class ClientPayment extends Model {
       if (rsp && rsp.status === ResponseStatus.FAIL) {
         return { ...rsp, err: PaymentError.WECHATPAY_FAIL };
       } else {
-        const transactionActionCode = TransactionAction.PAY_BY_WECHAT.code;
-        const transactionNote = "";
-        await this.orderEntity.processAfterPay(
-          paymentId,
-          transactionActionCode,
-          amount,
-          transactionNote
-        );
         return { ...rsp, err: PaymentError.NONE };
       }
     } else {
@@ -239,24 +231,8 @@ export class ClientPayment extends Model {
 
   // This request could response multiple times !!!
   async processSnappayNotify(paymentId: string, amount: number) {
-    const orders = await this.orderEntity.find({ paymentId });
-    const order = orders[0];
-    const delivered: any = order.delivered;
-    const clientId = order.clientId.toString();
     const actionCode = TransactionAction.PAY_BY_WECHAT.code;
-    await this.orderEntity.addDebitTransactions(orders);
-    const t = await this.orderEntity.addCreditTransaction(
-      paymentId,
-      clientId,
-      order.clientName,
-      amount,
-      actionCode,
-      delivered
-    );
-
-    const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
-    const updates = orders.map(order => ({ query: { _id: order._id }, data }));
-    await this.bulkUpdate(updates);
+    await this.orderEntity.processAfterPay(paymentId, actionCode, amount, '');
     return;
   }
 
