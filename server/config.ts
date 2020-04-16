@@ -38,6 +38,7 @@ export interface ISmsProvider {
 export interface ISNS {
   APP_ID: string;
   APP_SECRET: string;
+  TOKEN: string;
 }
 
 export interface ISnappay {

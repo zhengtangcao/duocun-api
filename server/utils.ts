@@ -5,18 +5,20 @@ import { IncomingMessage } from "http";
 import { Config } from "./config";
 
 export class Utils {
-  cfg: any;
+  cfg: Config;
 
   constructor() {
     this.cfg = new Config();// JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
   }
 
   genWechatToken(req: Request, res: Response) {
-    let token = 'testToken20';
-    let timestamp = req.query.timestamp;
-    let nonce = req.query.nonce;
-    let signature = req.query.signature;
-    let echostr = req.query.echostr;
+    let token = this.cfg.WECHAT.TOKEN;
+    const timestamp = req.query.timestamp;
+    const nonce = req.query.nonce;
+
+    const signature = req.query.signature; // involves token, timestamp and nonce
+    const echostr = req.query.echostr;
+
     let list = [token, timestamp, nonce].sort();
     let sha1 = crypto.createHash('sha1');
     let s = list.join('');
@@ -25,7 +27,7 @@ export class Utils {
     if (hash === signature) {
       res.send(echostr);
     } else {
-      res.send('');
+      res.send('failed');
     }
   }
   
