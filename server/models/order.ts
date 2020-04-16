@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { DB } from "../db";
 import { Model } from "./model";
-import { ILocation, Location} from "./location";
+import { ILocation, Location } from "./location";
 import { OrderSequence } from "./order-sequence";
 import moment from 'moment';
 import { Merchant, IPhase, IMerchant, IDbMerchant } from "./merchant";
@@ -1060,22 +1060,19 @@ export class Order extends Model {
     return Promise.all(promises);
   }
 
-  addDebitTransactions(orders: IOrder[]) {
-    return new Promise((resolve, reject) => {
-      if (orders && orders.length > 0) {
-        const merchantId = orders[0].merchantId.toString();
-        this.merchantModel.findOne({ _id: merchantId }).then(merchant => {
-          this.saveTransactionsForPlaceOrder(orders, merchant).then(() => {
-            resolve();
-          });
-        });
-      } else {
-        resolve();
-      }
-    });
+  // add transactions for placing order for duocun and merchant
+  async addDebitTransactions(orders: IOrder[]) {
+    if (orders && orders.length > 0) {
+      const merchantId = orders[0].merchantId.toString();
+      const merchant = await this.merchantModel.findOne({ _id: merchantId });
+      await this.saveTransactionsForPlaceOrder(orders, merchant);
+      return;
+    } else {
+      return;
+    }
   }
 
-
+  // add transaction to Bank and update the balance
   async addCreditTransaction(paymentId: string, clientId: string, clientName: string, amount: number, actionCode: string, delivered: string) {
     const tr: ITransaction = {
       fromId: clientId,
@@ -1093,68 +1090,25 @@ export class Order extends Model {
   }
 
 
-  updateSnappayOrderStatus(orders: IOrder[], chargeId: string) {
-    return new Promise((resolve, reject) => {
-      const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID, chargeId: chargeId }; // transactionId: t._id
-      const items = orders.map(order => { return { query: { _id: order._id }, data } });
-      this.bulkUpdate(items).then((r: any) => { // { status: DbStatus.FAIL, msg: err }
-        // const eventLog = {
-        //   accountId: SNAPPAY_BANK_ID,
-        //   type: 'debug',
-        //   code: r.status,
-        //   decline_code: '',
-        //   message: 'updateOrdersAsPaid: ' + r.msg,
-        //   created: moment().toISOString()
-        // }
-        // this.eventLogModel.insertOne(eventLog).then(() => {
-        resolve();
-        // });
-      });
-    });
-  }
-
-
-  async updateOrdersAsPaid(orders: IOrder[], data: any) {
-    const items = orders.map(order => {
-      // const data = { status: OrderStatus.NEW, paymentStatus };
-      return { query: { _id: order._id }, data }
-    });
-    await this.bulkUpdate(items);
-    // const eventLog = {
-    //   accountId: SNAPPAY_BANK_ID,
-    //   type: 'debug',
-    //   code: r.status,
-    //   decline_code: '',
-    //   message: 'updateOrdersAsPaid: ' + r.msg,
-    //   created: moment().toISOString()
-    // }
-    // await this.eventLogModel.insertOne(eventLog);
-    return;
-  }
-
-
   // paymentId --- order paymentId
   async processAfterPay(paymentId: string, actionCode: string, amount: number, chargeId: string) {
-    // return new Promise((resolve, reject) => {
-    const orders = await this.find({ paymentId }); // .then((orders: IOrder[]) => {
+    const orders = await this.find({ paymentId });
     if (orders && orders.length > 0) {
       const order = orders[0];
       if (order.paymentStatus === PaymentStatus.UNPAID) {
-        // --------------------------------------------------------------------------------------
-        // 1.update payment status to 'paid' for the orders in batch
-        // 2.add two transactions for place order and add another transaction for deposit to bank
-        // 3.update account balance
-        if (order.paymentMethod !== PaymentMethod.WECHAT) {
-          await this.addDebitTransactions(orders); // .then(() => {
-          const delivered: any = order.delivered;
-          const clientId = order.clientId.toString();
-          await this.addCreditTransaction(paymentId, clientId, order.clientName, amount, actionCode, delivered); // .then(t => {
-          const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
-          await this.updateOrdersAsPaid(orders, data); // .then(() => {
-          return;
-        } else {
-          return;
-        }
+        // add two transactions for placing order for duocun and merchant
+        await this.addDebitTransactions(orders);
+
+        // add transaction to Bank and update the balance
+        const delivered: any = order.delivered;
+        const clientId = order.clientId.toString();
+        await this.addCreditTransaction(paymentId, clientId, order.clientName, amount, actionCode, delivered); // .then(t => {
+
+        // update payment status to 'paid' for the orders in batch
+        const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
+        const updates = orders.map(order => ({ query: { _id: order._id }, data }));
+        await this.bulkUpdate(updates);
+        return;
       }
     } else { // add credit for Wechat
       const credit = await this.clientCreditModel.findOne({ paymentId }); // .then((credit) => {
@@ -1328,7 +1282,7 @@ export class Order extends Model {
   }
 
   // to be added --- should add sort type
-  sortByDeliverDate(orders: any[]){
+  sortByDeliverDate(orders: any[]) {
     return orders.sort((a: IOrder, b: IOrder) => {
       const ma = moment(a.delivered);
       const mb = moment(b.delivered);
@@ -1369,9 +1323,9 @@ export class Order extends Model {
 
   // return [{_id, address description,items, merchantName, clientPhoneNumber, price, total, tax, delivered, created}, ...]
   async loadHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
-    const client = await this.accountModel.findOne({_id: clientId});
+    const client = await this.accountModel.findOne({ _id: clientId });
     const ps = await this.productModel.find({});
-    const query = {clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP]}};
+    const query = { clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
     const rs = await this.find(query);
 
     const arrSorted = this.sortByDeliverDate(rs);
@@ -1391,7 +1345,7 @@ export class Order extends Model {
       const description = this.getDescription(order, 'zh');
       const clientPhoneNumber = client.phone;
       const address = this.locationModel.getAddrString(order.location);
-      return { ...order, address, description, items, clientPhoneNumber};
+      return { ...order, address, description, items, clientPhoneNumber };
     });
   }
 
@@ -2180,7 +2134,7 @@ export class Order extends Model {
   }
 
 
-  getWechatPayments(){
+  getWechatPayments() {
 
   }
 
