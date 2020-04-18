@@ -1,43 +1,35 @@
-# Duocun
+# duocun-api
 
-Duocun is a food delivery website
+duocun-api is a delivery service server
 
 # Dependencies
-
-Nodejs 
+Nodejs
+Express
 Mongodb
 
 # Install
 
 git clone project
 
-cd to project root folder /, (remove package-lock.json), then run `npm install` for server
-
-cd to /client folder, (remove package-lock.json), then run `npm install` for client
+cd to the project folder duocun-api, (remove package-lock.json), then run `npm install`
 
 
 ## Config
-copy duocun.cfg.json file to the parent folder of root /
+copy duocun.cfg.json file to the parent folder of the folder duocun-api
+
+## Build
+Open a terminal, cd to duocun-api/, for production build, run `npm run build`
+
 
 ## Run
 
 ### Run Server
 
-cd to project root folder /,  and run `npm run build`
-
-then `npm run start` or open Visual Studio Code and hit Debug menu.
-
-### Run client
-cd to /client and run `ng serve --port 5000`
+Open a terminal, cd to duocun-api/, run `npm run start` or open Visual Studio Code and hit Debug menu.
 
 
-### Generate language template
-cd to /client then run `ng xi18n --output-path locale` and under the locale folder you will see messages.xlf, use your merge tools merge the differences to messages-zh-Hans.xlf, and add <target> to your new items to be translate.
+### Service API
 
-#### Run client locale version
-run `ng serve --port 5000 --configuration=zh-Hans`
-
-#### Build production locale version
-run `ng build --prod --i18n-file src/locale/messages.zh-Hans.xlf --i18n-format xlf --i18n-locale zh-Hans`
+To be done
 
 
