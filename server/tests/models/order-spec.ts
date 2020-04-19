@@ -53,129 +53,6 @@ describe('getUtcTime', () => {
 //   });
 // });
 
-// describe('getDeliveryDateTimeByPhase', () => {
-//   it('should return delivered date time', () => {
-//     const db = new DB();
-//     const orderModel = new Order(db);
-//     const phases: IPhase[] = [
-//       {
-//         orderEnd: '10:45',
-//         pickup: '11:20'
-//       },
-//       {
-//         orderEnd: '11:30',
-//         pickup: '12:00'
-//       },
-//     ];
-
-//     const datas = [
-//       { created: '2019-11-03T03:52:59.566Z', phases: phases, type: 'tomorrow', ret: '2019-11-03T16:20:00.000Z' },
-//       { created: '2019-11-03T15:52:59.566Z', phases: phases, type: 'today', ret: '2019-11-03T17:00:00.000Z' },
-//       { created: '2019-11-03T16:52:59.566Z', phases: phases, type: 'today', ret: '2019-11-03T16:20:00.000Z' },
-//     ];
-
-//     datas.map(d => {
-//       const r: string = orderModel.getDeliveryDateTimeByPhase(d.created, d.phases, d.type);
-//       expect(r).to.equal(d.ret);
-//     });
-
-//   });
-// });
-
-// describe('getDeliveryDateTime', () => {
-//   const db: any = new DB();
-//   const cfg: any = new Config();
-//   let orderModel: Order;
-//   let connection: any = null;
-
-//   before(function (done) {
-//     db.init(cfg.DATABASE).then((dbClient: any) => {
-//       connection = dbClient;
-//       orderModel = new Order(db);
-//       done();
-//     });
-//   });
-
-//   after(function (done) {
-//     connection.close();
-//     done();
-//   });
-
-//   it('should return delivered date time string', (done) => {
-//     const phases: IPhase[] = [
-//       {
-//         orderEnd: '10:45',
-//         pickup: '11:20'
-//       },
-//       {
-//         orderEnd: '11:30',
-//         pickup: '12:00'
-//       },
-//     ];
-
-//     // utc time
-//     const datas = [
-//       {
-//         orderType: OrderType.FOOD_DELIVERY,
-//         dateType: 'today',
-//         clientId: '5dc463a7cb39ea565b0b634e',
-//         phases: phases,
-//         utcCreatedStr: '2019-12-10T15:25:16.210Z',
-//         ret: '2019-12-10T16:20:00.000Z'
-//       },
-//     ];
-
-//     datas.map(d => {
-//       orderModel.getDeliveryDateTime(d.orderType, d.dateType, d.clientId, d.phases, d.utcCreatedStr).then(r => {
-//         expect(r).to.equal(d.ret);
-//         done();
-//       });
-//     });
-//   });
-// });
-
-
-// describe('getDeliveryDateTime', () => {
-//   const db: any = new DB();
-//   const cfg: any = new Config();
-//   let orderModel: Order;
-//   let connection: any = null;
-
-//   before(function (done) {
-//     db.init(cfg.DATABASE).then((dbClient: any) => {
-//       connection = dbClient;
-//       orderModel = new Order(db);
-//       done();
-//     });
-//   });
-
-//   after(function (done) {
-//     connection.close();
-//     done();
-//   });
-
-//   it('should return delivered date time string without phases', (done) => {
-//     const phases: IPhase[] = [];
-//     const datas = [
-//       {
-//         orderType: OrderType.FOOD_DELIVERY,
-//         dateType: 'today',
-//         clientId: '5dc463a7cb39ea565b0b634e',
-//         phases: phases,
-//         utcCreatedStr: '2019-12-10T15:25:16.210Z',
-//         ret: '2019-12-10T16:20:00.000Z'
-//       },
-//     ];
-
-//     datas.map(d => {
-//       orderModel.getDeliveryDateTime(d.orderType, d.dateType, d.clientId, d.phases, d.utcCreatedStr).then(r => {
-//         // expect(r).to.equal(d.ret); // today's
-//         done();
-//       });
-//     });
-//   });
-// });
-
 
 // describe('order joinFind query id', () => {
 //   const db: any = new DB();
@@ -225,16 +102,7 @@ describe('getUtcTime', () => {
 //   console.log(b.toISOString());  // 2013-02-04T18:35:24+00:00
 //   console.log(moment('2019-04-23T15:45:00').local().format('YYYY-MM-DDTHH:mm:ss') + '.000Z');
 // }
-// // getDeliveryDateTimeByPhase(createdDateTime: string, phases: IPhase[], dateType: string): string {
 
-// // import { Order } from '../../models/order';
-// // import { Account } from '../../models/account';
-// // import { ClientBalance } from '../../models/client-balance';
-
-// // import { DB } from '../../db';
-// // import { expect } from 'chai';
-// // import { Config } from '../../config';
-// // import moment from 'moment';
 
 // // // // describe('getDistinctArray with missing field', () => {
 // // // //   it('should return distinct Array', () => {

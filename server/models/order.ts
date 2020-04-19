@@ -97,6 +97,11 @@ export interface IOrder {
   delivered?: string;
   created?: string;
   modified?: string;
+
+  utcDelivered?: string;
+  utcCreated?: string;
+  utcModified?: string;
+
   items?: IOrderItem[];
   tax?: number;
   tips?: number;
@@ -380,78 +385,6 @@ export class Order extends Model {
     return moment(sUTC).local().format('YYYY-MM-DDTHH:mm:ss') + '.000Z';
   }
 
-  // if over 11:30, the return dt is 11:20, this shouldn't happen
-  // return --- local date time string
-  // created --- must be local date time string!!! '2019-11-03T11:20:00.000Z'
-  getDeliveryDateTimeByPhase(sCreated: string, phases: IPhase[], dateType: string): string {
-    const created = moment(sCreated);
-
-    if (dateType === 'today') {
-      for (let i = 0; i < phases.length; i++) {
-        const phase = phases[i];
-        const orderEndTime = this.setLocalTime(moment(sCreated), phase.orderEnd);
-
-        if (i === 0) {
-          if (created.isSameOrBefore(orderEndTime)) {
-            return this.setLocalTime(moment(sCreated), phase.pickup).toISOString();
-          } else {
-            // pass
-          }
-        } else {
-          const prePhase = phases[i - 1];
-          const preEndTime = this.setLocalTime(moment(sCreated), prePhase.orderEnd);
-
-          if (created.isAfter(preEndTime) && created.isSameOrBefore(orderEndTime)) {
-            return this.setLocalTime(moment(sCreated), phase.pickup).toISOString();
-          } else {
-            // pass
-          }
-        }
-      }
-      // if none of the phase hit, use the first
-      const first = phases[0];
-      return this.setLocalTime(moment(sCreated), first.pickup).toISOString();
-    } else {
-      const phase = phases[0];
-      return this.setLocalTime(moment(sCreated), phase.pickup).add(1, 'day').toISOString();
-    }
-  }
-
-  // dateType --- 'today' or 'tomorrow'
-  getDeliveryDateTime(orderType: string, dateType: string, clientId: string, phases: IPhase[], created: string): Promise<string> {
-    // const orderType = order.type;
-    // const dateType: any = order.dateType;
-    // const clientId = order.clientId;
-    // const merchantId = order.merchantId;
-
-    return new Promise((resolve, reject) => {
-      const local = moment();
-      if (orderType === OrderType.MOBILE_PLAN_MONTHLY || orderType === OrderType.MOBILE_PLAN_SETUP) {
-        const delivered = this.setLocalTime(local, '23:30').toISOString();
-        resolve(delivered);
-      } else {
-        let delivered = '';
-        this.accountModel.findOne({ _id: clientId }).then((account: IAccount) => {
-          if (account.pickup) {
-            if (dateType) {
-              const date = (dateType === 'today') ? moment() : moment().add(1, 'day');
-              delivered = this.setLocalTime(date, account.pickup).toISOString();
-            } else {
-              delivered = this.setLocalTime(local, '23:30').toISOString();
-            }
-          } else {
-            if (phases && phases.length > 0) {
-              // const created: any = order.created; // utc date time string
-              delivered = this.getDeliveryDateTimeByPhase(created, phases, dateType);
-            } else {
-              delivered = this.setLocalTime(local, '23:30').toISOString();
-            }
-          }
-          resolve(delivered);
-        });
-      }
-    });
-  }
 
   createMobilePlanOrders() {
     // const self = this;
@@ -508,34 +441,27 @@ export class Order extends Model {
 
 
   // should not directly call this function, use placeOrders instead.
-  doInsertOneV2(order: IOrder): Promise<IOrder> {
+  async doInsertOneV2(order: IOrder) {
     const location: ILocation = order.location;
     const date = order.deliverDate + 'T' + order.deliverTime + ':00.000Z';
     const time: any = order.deliverTime;
     const delivered = order.deliverDate + 'T15:00:00.000Z'; // this.getUtcTime(date, time).toISOString(); //tmp fix!!!
 
-    return new Promise((resolve, reject) => {
-      if (order.code) {
-        order.created = moment().toISOString();
-        order.delivered = delivered;
-        this.insertOne(order).then((savedOrder: IOrder) => {
-          this.accountModel.updateOne({ _id: order.clientId }, { type: 'client' }).then(() => {
-            resolve(savedOrder);
-          });
-        });
-      } else {
-        this.sequenceModel.reqSequence().then((sequence: number) => {
-          order.code = this.sequenceModel.getCode(location, sequence);
-          order.created = moment().toISOString();
-          order.delivered = delivered;
-          this.insertOne(order).then((savedOrder: IOrder) => {
-            this.accountModel.updateOne({ _id: order.clientId }, { type: 'client' }).then(() => {
-              resolve(savedOrder);
-            });
-          });
-        });
-      }
-    });
+    if (order.code) {
+      order.created = moment.utc().toISOString();
+      order.delivered = delivered;
+      const savedOrder = await this.insertOne(order)
+      await this.accountModel.updateOne({ _id: order.clientId }, { type: 'client' });
+      return savedOrder;
+    } else {
+      const sequence = await this.sequenceModel.reqSequence();
+      order.code = this.sequenceModel.getCode(location, sequence);
+      order.created = moment().toISOString();
+      order.delivered = delivered;
+      const savedOrder = await this.insertOne(order);
+      await this.accountModel.updateOne({ _id: order.clientId }, { type: 'client' });
+      return savedOrder;
+    }
   }
 
   reqPlaceOrders(req: Request, res: Response) {
@@ -570,51 +496,6 @@ export class Order extends Model {
   }
 
 
-  // doInsertOne(order: IOrder) {
-  //   const location: ILocation = order.location;
-
-  //   return new Promise((resolve, reject) => {
-  //     this.sequenceModel.reqSequence().then((sequence: number) => {
-  //       order.code = this.sequenceModel.getCode(location, sequence);
-  //       order.created = moment.utc().toISOString();
-
-  //       const orderType: any = order.type;
-  //       const dateType: any = order.dateType;
-  //       const clientId = order.clientId;
-  //       const merchantId = order.merchantId.toString();
-  //       const createdStr = order.created;
-
-  //       this.merchantModel.findOne({ _id: merchantId }).then((merchant: IDbMerchant) => {
-  //         const phases = merchant ? merchant.phases : [];
-  //         this.getDeliveryDateTime(orderType, dateType, clientId, phases, createdStr).then((utcDeliveredStr) => {
-  //           order.delivered = utcDeliveredStr;
-  //           delete order.dateType;
-
-  //           this.insertOne(order).then((savedOrder: IOrder) => {
-  //             const merchantName = order.merchantName;
-  //             const clientId: string = order.clientId.toString();
-  //             const clientName = order.clientName;
-  //             const cost = order.cost;
-  //             const total = order.total;
-  //             const delivered: any = order.delivered;
-
-  //             // temporary order didn't update transaction until paid
-  //             if (order.status === OrderStatus.TEMP) { // fix me
-  //               resolve(savedOrder);
-  //             } else {
-  //               const orderId: any = savedOrder._id;
-  //               const merchantAccountId = merchant.accountId.toString();
-  //               this.transactionModel.saveTransactionsForPlaceOrder(orderId.toString(), orderType,
-  //                 merchantAccountId, merchantName, clientId, clientName, cost, total, delivered).then(() => {
-  //                   resolve(savedOrder);
-  //                 });
-  //             }
-  //           });
-  //         });
-  //       });
-  //     });
-  //   });
-  // }
 
   async doRemoveOne(orderId: string) {
     // return new Promise((resolve, reject) => {
@@ -677,77 +558,6 @@ export class Order extends Model {
     }
   }
 
-  // deprecated !!!
-  //---------------------------------------------------------------------
-  // The client has to have the balance entry {accountId: x, amount: y}
-  // body --- {clientId:c, delivered:x, address:y, groupDiscount: z}
-  // createOne(body: any, cb: any) {
-  //   const date = body.delivered;
-  //   const address = body.address;
-  //   this.find({ delivered: date, address: address, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } }).then(orders => {
-  //     let newGroupDiscount = body.groupDiscount;
-  //     const others = orders.filter((x: any) => x.clientId && x.clientId !== body.clientId);
-  //     const orderUpdates = this.getUpdatesForAddGroupDiscount(others, newGroupDiscount);
-
-  //     if (orderUpdates && orderUpdates.length > 0) {
-  //       this.bulkUpdate(orderUpdates, {}).then((r: BulkWriteOpResultObject) => {
-  //         const clientIds: string[] = [];
-  //         orderUpdates.map(item => { clientIds.push(item.data.clientId) });
-  //         this.clientBalanceModel.find({ accountId: { $in: clientIds } }).then((bs: any[]) => {
-  //           if (bs && bs.length > 0) {
-  //             // const balanceUpdates = this.getUpdatesForAddGroupDiscount(others, bs, newGroupDiscount);
-  //             // this.clientBalanceEntity.bulkUpdate(balanceUpdates, {}).then((r1: BulkWriteOpResultObject) => {
-  //             //   this.insertOne(body).then((x: any) => {
-  //             //     cb(x);
-  //             //   });
-  //             // });
-  //           } else {
-  //             this.insertOne(body).then((x: any) => {
-  //               cb(x);
-  //             });
-  //           }
-  //         });
-  //       });
-  //     } else {
-  //       this.insertOne(body).then((x: any) => {
-  //         cb(x);
-  //       });
-  //     }
-  //   });
-  // }
-
-  // date: string, address: string
-  // addGroupDiscounts(clientId: string, orders: any[]): Promise<any> {
-  //   // this.find({ delivered: date, address: address, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } }).then(orders => {
-  //   const others = orders.filter((x: any) => x.clientId && x.clientId.toString() !== clientId.toString()); // fix me!!!
-  //   // others > 0 then affect other orders and balances
-  //   const orderUpdates = this.getUpdatesForAddGroupDiscount(others, 2);
-
-  //   return new Promise((resolve, reject) => {
-  //     if (orderUpdates && orderUpdates.length > 0) {
-  //       this.bulkUpdate(orderUpdates, {}).then((r: BulkWriteOpResultObject) => {
-  //         resolve(orderUpdates);
-  //       });
-  //     } else {
-  //       resolve(orderUpdates);
-  //     }
-  //   });
-  // }
-
-  // date: string, address: string
-  // removeGroupDiscounts(orders: any[]): Promise<any> {
-  //   const orderUpdates = this.getUpdatesForRemoveGroupDiscount(orders, 2);
-  //   return new Promise((resolve, reject) => {
-  //     if (orderUpdates && orderUpdates.length > 0) {
-  //       this.bulkUpdate(orderUpdates, {}).then((r: BulkWriteOpResultObject) => {
-  //         resolve(orderUpdates);
-  //       });
-  //     } else {
-  //       resolve(orderUpdates);
-  //     }
-  //   });
-  // }
-
   // deprecated
   replace(req: Request, res: Response) {
     this.replaceById(req.body.id, req.body).then((x: any) => {
@@ -755,128 +565,6 @@ export class Order extends Model {
       // io.emit('updateOrders', x);
       res.send(JSON.stringify(x, null, 3));
     });
-  }
-
-  // deprecated
-  //--------------------------------------------------------------------------------
-  // The client can only get one group discount, if he/she has multiple orders.
-  // getUpdatesForAddGroupDiscount(orders: IOrder[], groupDiscount: number) {
-  //   const groups = this.groupBy(orders, 'clientId');
-  //   const a: any[] = [];
-  //   Object.keys(groups).map(key => {
-  //     const os = groups[key];
-  //     if (os && os.length > 0) {
-  //       const hasGroupDiscount = os.find((x: IOrder) => x.groupDiscount !== 0);
-  //       if (hasGroupDiscount) {
-  //         // pass
-  //       } else {
-  //         const order = os[0];
-  //         const amount = Math.round(((order.total ? order.total : 0) - groupDiscount) * 100) / 100;
-  //         a.push({
-  //           query: { _id: order._id.toString() },
-  //           data: { total: amount, groupDiscount: groupDiscount }
-  //         });
-  //       }
-  //     }
-  //   });
-  //   return a;
-  // }
-
-  // deprecated
-  // checkGroupDiscount(req: Request, res: Response) {
-  //   const clientId: string = req.body.clientId;
-  //   const merchantId: string = req.body.merchantId;
-  //   const dateType: string = req.body.dateType;
-  //   const address: string = req.body.address;
-
-  //   this.eligibleForGroupDiscount(clientId, merchantId, dateType, address).then((bEligible: boolean) => {
-  //     res.setHeader('Content-Type', 'application/json');
-  //     res.send(JSON.stringify(bEligible, null, 3));
-  //   });
-  // }
-
-  // deprecated
-  // eligibleForGroupDiscount(clientId: string, merchantId: string, dateType: string, address: string) {
-  // const date = dateType === 'today' ? moment() : moment().add(1, 'day');
-  // const range = { $gte: date.startOf('day').toISOString(), $lte: date.endOf('day').toISOString() };
-  // const query = { delivered: range, address: address, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
-
-  // return new Promise((resolve, reject) => {
-  //   this.find(query).then(orders => {
-  //     const groups = this.groupBy(orders, 'clientId');
-  //     const clientIds = Object.keys(groups);
-
-  //     if (clientIds && clientIds.length > 0) {
-  //       const found = clientIds.find(x => x === clientId);
-  //       if (found) {
-  //         if (clientIds.length === 1) { // only me
-  //           resolve(false);
-  //         } else { // > 1, has other clients
-  //           const os = groups[clientId];
-  //           if (os && os.length > 0) {
-  //             const hasGroupDiscount = os.find((x: any) => x.groupDiscount !== 0);
-  //             if (hasGroupDiscount) {
-  //               resolve(false);
-  //             } else {
-  //               resolve(true);
-  //             }
-  //           } else {
-  //             resolve(true); // [] should not happen
-  //           }
-  //         }
-  //       } else {
-  //         resolve(true);
-  //       }
-  //     } else {
-  //       resolve(false);
-  //     }
-  //   });
-  // });
-  // }
-
-  // deprecated
-  //--------------------------------------------------------------------------------
-  // call after remove order
-  // The client can only get one group discount, if he/she has multiple orders.
-  getUpdatesForRemoveGroupDiscount(orders: any[], groupDiscount: number) {
-    const groups = this.groupBy(orders, 'clientId');
-    const clientIds = Object.keys(groups);
-
-    if (clientIds && clientIds.length > 1) { // only need to check update current client's 2nd order
-      const a: any[] = [];
-      Object.keys(groups).map(key => {
-        const group = groups[key];
-        if (group && group.length > 0) {
-          const order = group.find((x: any) => x.groupDiscount !== 0);
-          if (order) {
-            // pass this group
-          } else {
-            const newOrderWithGroupDiscount = group[0];
-            const amount = Math.round((newOrderWithGroupDiscount.total - groupDiscount) * 100) / 100;
-            a.push({
-              query: { _id: newOrderWithGroupDiscount._id.toString() },
-              data: { total: amount, groupDiscount: groupDiscount, clientId: newOrderWithGroupDiscount.clientId }
-            });
-          }
-        }
-      });
-      return a;
-    } else { // <= 1
-      const a: any[] = [];
-      Object.keys(groups).map(key => {
-        const os = groups[key];
-        if (os && os.length > 0) {
-          const order = os.find((x: any) => x.groupDiscount !== 0);
-          if (order) {
-            const amount = Math.round(((order.total ? order.total : 0) + groupDiscount) * 100) / 100;
-            a.push({ query: { _id: order._id.toString() }, data: { total: amount, groupDiscount: 0, clientId: order.clientId } });
-          } else {
-            // pass this group
-          }
-        }
-      });
-      return a;
-    }
   }
 
   // deprecated
@@ -893,75 +581,6 @@ export class Order extends Model {
     return a;
   }
 
-  // doRemoveOne(orderId: string,  cb?: any){
-  //   this.find({ id: orderId }).then(docs => {
-  //     if (docs && docs.length > 0) {
-  //       const date = docs[0].delivered;
-  //       const address = docs[0].address;
-
-  //       this.updateOne({ id: orderId }, { status: OrderStatus.DELETED }).then(x => { // set order status to del
-
-  //         this.find({ delivered: date, address: address, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } }).then(orders => {
-
-  //           const orderUpdates = this.getUpdatesForRemoveGroupDiscount(orders,  2);
-  //           // const balanceUpdates = this.getUpdatesForRemoveGroupDiscount(orders, balances, 2);
-
-  //           this.bulkUpdate(orderUpdates, {}).then((r) => {
-  //             cb();
-  //           //       this.clientBalanceEntity.find({ accountId: order.clientId }).then((bs: any[]) => {
-  //           //         if (bs && bs.length > 0) {
-  //           //           const b = bs[0];
-  //           //           this.clientBalanceEntity.updateOne({ accountId: order.clientId }, { amount: b.amount - 2 }).then(() => {
-  //           //             res.setHeader('Content-Type', 'application/json');
-  //           //             res.send(JSON.stringify(x, null, 3));
-  //           //           });
-  //           //         } else {
-  //           //           res.setHeader('Content-Type', 'application/json');
-  //           //           res.send(JSON.stringify(x, null, 3));
-  //           //         }
-  //           //       });
-  //           //     });
-  //           //   } else {
-  //           //     res.setHeader('Content-Type', 'application/json');
-  //           //     res.send(JSON.stringify(x, null, 3));
-  //           //   }
-  //           // } else {
-  //           //   res.setHeader('Content-Type', 'application/json');
-  //           //   res.send(JSON.stringify(x, null, 3));
-  //           // }
-  //           });
-  //         });
-  //       });
-  //     } else {
-  //       cb();
-  //       // res.setHeader('Content-Type', 'application/json');
-  //       // res.send(JSON.stringify(null, null, 3));
-  //     }
-  //   });
-  // }
-
-
-
-  // updateMyBalanceForRemoveOrder(order: any): Promise<any> {
-  //   const clientId = order.clientId;
-  //   return new Promise((resolve, reject) => {
-  //     this.find({ accountId: clientId }).then((balances: any[]) => {
-  //       if (balances && balances.length > 0) {
-  //         const balance = balances[0];
-  //         const newAmount = this.getMyBalanceForRemoveOrder(balance.amount, order.paymentMethod, order.total);
-  //         if (newAmount === null) {
-  //           resolve(null);
-  //         } else {
-  //           this.updateOne({ clientId: clientId }, { amount: newAmount }).then(x => {
-  //             resolve(x);
-  //           });
-  //         }
-  //       } else {
-  //         resolve(null);
-  //       }
-  //     });
-  //   });
-  // }
 
   //-------------------------------------------------------
   // admin API
@@ -983,62 +602,6 @@ export class Order extends Model {
     });
   }
 
-  // v1 deprecated
-  // --------------------------------------------------------------------------------------
-  // process after payment gateway success
-  // 1.update payment status to 'paid'
-  // 2.add two transactions for place order and add another transaction for deposit to bank
-  // 3.update account balance
-  // doProcessPayment(order: IOrder, actionCode: string, paid: number, chargeId: string) {
-  //   const orderId: any = order._id;
-  //   const orderType: any = order.type;
-  //   const merchantId: string = order.merchantId.toString();
-  //   const merchantName = order.merchantName;
-  //   const clientId: string = order.clientId.toString();
-  //   const clientName = order.clientName;
-  //   const cost = order.cost;
-  //   const total = order.total;
-  //   const delivered: any = order.delivered;
-
-  //   const tr: ITransaction = {
-  //     fromId: clientId,
-  //     fromName: clientName,
-  //     toId: BANK_ID,
-  //     toName: BANK_NAME,
-  //     actionCode: actionCode,
-  //     amount: Math.round(paid * 100) / 100,
-  //     delivered: delivered
-  //   };
-
-  //   return new Promise((resolve, reject) => {
-  //     this.merchantModel.findOne({ _id: merchantId }).then((merchant: IDbMerchant) => {
-  //       const merchantAccountId = merchant.accountId.toString();
-  //       this.transactionModel.saveTransactionsForPlaceOrder(
-  //         orderId.toString(),
-  //         orderType,
-  //         merchantAccountId,
-  //         merchantName,
-  //         clientId,
-  //         clientName,
-  //         cost,
-  //         total,
-  //         delivered
-  //       ).then(() => {
-  //         this.transactionModel.doInsertOne(tr).then(t => {
-  //           if (t) {
-  //             // change the status tmp to new !!!
-  //             const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID, chargeId: chargeId, transactionId: t._id };
-  //             this.updateOne({ _id: orderId }, data).then((r: any) => { // result eg. {n: 1, nModified: 0, ok: 1}
-  //               resolve(r);
-  //             });
-  //           } else {
-  //             resolve();
-  //           }
-  //         });
-  //       });
-  //     });
-  //   });
-  // }
   saveTransactionsForPlaceOrder(orders: any[], merchant: any) {
     let promises = [];
     for (let i = 0; i < orders.length; i++) {
@@ -1165,6 +728,7 @@ export class Order extends Model {
   }
 
 
+  // driver side api
   // pay order and update assignment to status 'done'
   payOrder(req: Request, res: Response) {
     const toId = req.body.toId;
