@@ -11,9 +11,10 @@ import { Model } from "../models/model";
 export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
-
+  
   // v2
-  router.get('/wxLogin', (req, res) => { controller.reqWxLogin(req, res); });
+  router.post('/wechatLoginByOpenId', (req, res) => { controller.wechatLoginByOpenId(req, res); });
+  router.get('/wechatLoginByCode', (req, res) => { controller.wechatLoginByCode(req, res); });
   router.get('/qFind', (req, res) => { controller.list(req, res); }); // deprecated
   router.get('/', (req, res) => { controller.list(req, res); });
   router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
@@ -110,18 +111,34 @@ export class AccountController extends Model {
   }
 
 
-  // return {account, tokenId}
-  reqWxLogin(req: Request, res: Response) {
+  // return {tokenId}
+  wechatLoginByCode(req: Request, res: Response) {
     const wxLoginCode: any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
-    this.accountModel.wxLogin(wxLoginCode).then((r: any) => {
-      if (r) {
-        res.send(JSON.stringify(r, null, 3));
+    this.accountModel.wechatLoginByCode(wxLoginCode).then((tokenId: any) => {
+      if (tokenId) {
+        res.send(JSON.stringify({tokenId}, null, 3));
       } else {
         res.send(JSON.stringify('', null, 3));
       }
     });
   }
+
+  // return {tokenId}
+  wechatLoginByOpenId(req: Request, res: Response) {
+    const openId = req.body.openId;
+    const accessToken = req.body.accessToken;
+
+    res.setHeader('Content-Type', 'application/json');
+    this.accountModel.wechatLoginByOpenId(accessToken, openId).then((tokenId: any) => {
+      if (tokenId) {
+        res.send(JSON.stringify({tokenId}, null, 3));
+      } else {
+        res.send(JSON.stringify('', null, 3));
+      }
+    });
+  }
+
 
   // req --- require accountId, username and phone fields
   sendVerifyMsg(req: Request, res: Response) {

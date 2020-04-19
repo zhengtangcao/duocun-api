@@ -57,7 +57,6 @@ export class Utils {
             resolve({code: -2, msg: 'wechat no response'});
           }
         });
-
       });
     });
   }
