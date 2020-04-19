@@ -85,7 +85,7 @@ export class AccountController extends Model {
 
   wechatLogin(req: Request, res: Response) {
 
-    const authCode:any = req.query.code;
+    const authCode: any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
 
     this.utils.getWechatAccessToken(authCode).then((r: any) => {
@@ -112,7 +112,7 @@ export class AccountController extends Model {
 
   // return {account, tokenId}
   reqWxLogin(req: Request, res: Response) {
-    const wxLoginCode:any = req.query.code;
+    const wxLoginCode: any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
     this.accountModel.wxLogin(wxLoginCode).then((r: any) => {
       if (r) {
@@ -195,13 +195,21 @@ export class AccountController extends Model {
   list(req: Request, res: Response) {
     let query = {};
     let fields: any[];
+    const params = req.query;
+
     if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
     }
+    query = this.accountModel.convertIdFields(query);
+
     if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
       fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
     }
-    query = this.accountModel.convertIdFields(query);
+
+    if (params && params.keyword) {
+      query = { ...query, username: new RegExp(params.keyword) };
+    }
+
     this.accountModel.find(query).then(accounts => {
       accounts.map((account: any) => {
         if (account && account.password) {
