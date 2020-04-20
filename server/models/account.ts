@@ -607,7 +607,11 @@ export class Account extends Model {
     try {
       const r = await this.utils.getWechatAccessToken(code);
       if (r && r.access_token && r.openid) {
-        const tokenId = await this.wechatLoginByOpenId(r.access_token, r.openid);
+        const accessToken = r.access_token;
+        const openId = r.openid;
+        const expiresIn = r.expires_in;
+        const refreshToken = r.refresh_token;
+        const tokenId = await this.wechatLoginByOpenId(accessToken, openId);
         return tokenId;
       } else {
         const message = 'code:' + code + ', errCode:' + r.code + ', errMsg:' + r.msg;
