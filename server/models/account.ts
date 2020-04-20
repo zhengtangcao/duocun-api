@@ -602,7 +602,7 @@ export class Account extends Model {
 
 
   // code [string] --- wechat authentication code
-  // return tokenId
+  // return {tokenId, accessToken, openId, expiresIn}
   async wechatLoginByCode(code: string) {
     try {
       const r = await this.utils.getWechatAccessToken(code);
@@ -612,7 +612,7 @@ export class Account extends Model {
         const expiresIn = r.expires_in;
         const refreshToken = r.refresh_token;
         const tokenId = await this.wechatLoginByOpenId(accessToken, openId);
-        return tokenId;
+        return {tokenId, accessToken, openId, expiresIn};
       } else {
         const message = 'code:' + code + ', errCode:' + r.code + ', errMsg:' + r.msg;
         await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', message);

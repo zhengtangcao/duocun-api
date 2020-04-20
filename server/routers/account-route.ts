@@ -111,13 +111,13 @@ export class AccountController extends Model {
   }
 
 
-  // return {tokenId}
+  // return  {tokenId, accessToken, openId, expiresIn}
   wechatLoginByCode(req: Request, res: Response) {
     const wxLoginCode: any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
-    this.accountModel.wechatLoginByCode(wxLoginCode).then((tokenId: any) => {
-      if (tokenId) {
-        res.send(JSON.stringify({tokenId}, null, 3));
+    this.accountModel.wechatLoginByCode(wxLoginCode).then((r: any) => {
+      if (r && r.tokenId) {
+        res.send(JSON.stringify(r, null, 3));
       } else {
         res.send(JSON.stringify('', null, 3));
       }
