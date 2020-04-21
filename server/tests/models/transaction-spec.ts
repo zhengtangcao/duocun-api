@@ -75,36 +75,6 @@
 
 
 
-// // describe('getDeliveryDateTimeByPhase', () => {
-// //   it('should return delivered date time', () => {
-// //     const db = new DB();
-// //     const transactionModel = new Transaction(db);
-// //     const phases: IPhase[] = [
-// //       {
-// //         transactionEnd: '10:45',
-// //         pickup: '11:20'
-// //       },
-// //       {
-// //         transactionEnd: '11:30',
-// //         pickup: '12:00'
-// //       },
-// //     ];
-
-// //     // utc time
-// //     const datas = [
-// //       { created: '2019-11-03T14:52:59.566Z', phases: phases, type: 'today', ret: '2019-11-03T16:20:00.000Z' },
-// //       { created: '2019-11-03T15:52:59.566Z', phases: phases, type: 'today', ret: '2019-11-03T17:00:00.000Z' },
-// //       { created: '2019-11-03T16:52:59.566Z', phases: phases, type: 'today', ret: '2019-11-03T16:20:00.000Z' },
-// //     ];
-
-// //     datas.map(d => {
-// //       const r: string = transactionModel.getDeliveryDateTimeByPhase(d.created, d.phases, d.type);
-// //       expect(r).to.equal(d.ret);
-// //     });
-
-// //   });
-// // });
-
 // // describe('transaction doInsertOne, find success', () => {
 // //   const db: any = new DB();
 // //   const cfg: any = new Config();

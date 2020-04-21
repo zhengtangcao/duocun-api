@@ -35,6 +35,8 @@ export function OrderRouter(db: DB) {
   router.post('/checkStripePay', (req, res) => { model.checkStripePay(req, res); });
   router.post('/checkWechatpay', (req, res) => { model.checkWechatpay(req, res); });
   router.post('/bulk', (req, res) => { model.reqPlaceOrders(req, res); });
+
+  //
   router.post('/payOrder', (req, res) => { model.payOrder(req, res); });
   router.post('/', (req, res) => { model.create(req, res); });
 

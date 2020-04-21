@@ -150,4 +150,18 @@ export class EventLog extends Model {
       });
     // });
   }
+
+
+  async addLogToDB(accountId: string, type: string, code: string, message: string) {
+    const eventLog = {
+      accountId,
+      type,
+      code: code,
+      decline_code: "",
+      message,
+      created: moment().toISOString(),
+    };
+    await this.insertOne(eventLog);
+    return;
+  }
 }

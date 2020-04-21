@@ -77,16 +77,9 @@ export class Product extends Model {
     }
   }
 
-  list(req: Request, res: Response) {
-    let query = {};
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-
-    this.joinFind(query).then(ps => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(ps, null, 3));
-    });
+  async list(query: any) {
+    const products = await this.joinFind(query);
+    return products;
   }
 
   joinFind(query: any): Promise<IProduct[]> {

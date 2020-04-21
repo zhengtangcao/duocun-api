@@ -11,9 +11,10 @@ import { Model } from "../models/model";
 export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
-
+  
   // v2
-  router.get('/wxLogin', (req, res) => { controller.reqWxLogin(req, res); });
+  router.post('/wechatLoginByOpenId', (req, res) => { controller.wechatLoginByOpenId(req, res); });
+  router.get('/wechatLoginByCode', (req, res) => { controller.wechatLoginByCode(req, res); });
   router.get('/qFind', (req, res) => { controller.list(req, res); }); // deprecated
   router.get('/', (req, res) => { controller.list(req, res); });
   router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
@@ -85,7 +86,7 @@ export class AccountController extends Model {
 
   wechatLogin(req: Request, res: Response) {
 
-    const authCode:any = req.query.code;
+    const authCode: any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
 
     this.utils.getWechatAccessToken(authCode).then((r: any) => {
@@ -110,18 +111,34 @@ export class AccountController extends Model {
   }
 
 
-  // return {account, tokenId}
-  reqWxLogin(req: Request, res: Response) {
-    const wxLoginCode:any = req.query.code;
+  // return  {tokenId, accessToken, openId, expiresIn}
+  wechatLoginByCode(req: Request, res: Response) {
+    const wxLoginCode: any = req.query.code;
     res.setHeader('Content-Type', 'application/json');
-    this.accountModel.wxLogin(wxLoginCode).then((r: any) => {
-      if (r) {
+    this.accountModel.wechatLoginByCode(wxLoginCode).then((r: any) => {
+      if (r && r.tokenId) {
         res.send(JSON.stringify(r, null, 3));
       } else {
         res.send(JSON.stringify('', null, 3));
       }
     });
   }
+
+  // return {tokenId}
+  wechatLoginByOpenId(req: Request, res: Response) {
+    const openId = req.body.openId;
+    const accessToken = req.body.accessToken;
+
+    res.setHeader('Content-Type', 'application/json');
+    this.accountModel.wechatLoginByOpenId(accessToken, openId).then((tokenId: any) => {
+      if (tokenId) {
+        res.send(JSON.stringify({tokenId}, null, 3));
+      } else {
+        res.send(JSON.stringify('', null, 3));
+      }
+    });
+  }
+
 
   // req --- require accountId, username and phone fields
   sendVerifyMsg(req: Request, res: Response) {
@@ -195,13 +212,21 @@ export class AccountController extends Model {
   list(req: Request, res: Response) {
     let query = {};
     let fields: any[];
+    const params = req.query;
+
     if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
     }
+    query = this.accountModel.convertIdFields(query);
+
     if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
       fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
     }
-    query = this.accountModel.convertIdFields(query);
+
+    if (params && params.keyword) {
+      query = { ...query, username: new RegExp(params.keyword) };
+    }
+
     this.accountModel.find(query).then(accounts => {
       accounts.map((account: any) => {
         if (account && account.password) {

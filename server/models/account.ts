@@ -9,6 +9,9 @@ import moment from 'moment';
 import { EventLog } from "./event-log";
 
 const saltRounds = 10;
+
+export const DEBUG_ACCOUNT_ID = '5e9517761b9d9e01d8b44275';
+
 export const VerificationError = {
   NONE: 'N',
   WRONG_CODE: 'WC',
@@ -78,12 +81,14 @@ export class Account extends Model {
   cfg: Config;
   twilioClient: any;
   eventLogModel: EventLog;
-
+  utils: Utils;
+  
   constructor(dbo: DB) {
     super(dbo, 'users');
     this.eventLogModel = new EventLog(dbo);
     this.cfg = new Config();// JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
     this.twilioClient = require('twilio')(this.cfg.TWILIO.SID, this.cfg.TWILIO.TOKEN);
+    this.utils = new Utils();
   }
 
   jwtSign(accountId: string) {
@@ -570,49 +575,52 @@ export class Account extends Model {
     });
   }
 
+  // return tokenId
+  async wechatLoginByOpenId(accessToken: string, openId: string){
+    try{
+      const x = await this.utils.getWechatUserInfo(accessToken, openId);
+      if (x && x.openid) {
+        const account = await this.doWechatSignup(x.openid, x.nickname, x.headimgurl, x.sex);
+        if (account) {
+          const accountId = account._id.toString();
+          const tokenId = jwt.sign(accountId, this.cfg.JWT.SECRET); // SHA256
+          return tokenId;
+        } else {
+          await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'signup by wechat', '', 'signup by wechat fail');
+          return null;
+        }
+      }else{
+        await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by openid', '', 'wechat get user info fail');
+        return null;
+      }
+    } catch(err){
+      const message = 'accessToken:' + accessToken + ', openId:' + openId + ', msg:' + err.toString();
+      await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by openid', '', message);
+      return null;
+    }
+  }
+
 
   // code [string] --- wechat authentication code
-  wxLogin(code: string) {
-    const utils = new Utils();
-    const cfg = new Config();
-    return new Promise((resolve, reject) => {
-      try {
-        utils.getWechatAccessToken(code).then((r: any) => {
-          if (r && r.access_token && r.openid) {
-            utils.getWechatUserInfo(r.access_token, r.openid).then((x: any) => {
-              if (x && x.openid) {
-                this.doWechatSignup(x.openid, x.nickname, x.headimgurl, x.sex).then((account: IAccount) => {
-                  if (account) {
-                    const accountId = account._id.toString();
-                    const tokenId = jwt.sign(accountId, cfg.JWT.SECRET); // SHA256
-                    resolve({ tokenId });
-                  } else {
-                    resolve();
-                  }
-                });
-              } else {
-                resolve();
-              }
-            });
-          } else {
-            const eventLog = {
-              accountId: '5e9517761b9d9e01d8b44275',
-              type: "login error",
-              code: r && r.code? r.code: 'N/A',
-              decline_code: "",
-              message: r && r.msg? r.msg: 'N/A',
-              created: moment().toISOString(),
-            };
-    
-            this.eventLogModel.insertOne(eventLog).then(() => {
-              resolve(r);
-            });
-          }
-        });
-      } catch (e) {
-        resolve();
+  // return {tokenId, accessToken, openId, expiresIn}
+  async wechatLoginByCode(code: string) {
+    try {
+      const r = await this.utils.getWechatAccessToken(code); // error code 40163
+      if (r && r.access_token && r.openid) { // wechat token
+        const accessToken = r.access_token;
+        const openId = r.openid;
+        const expiresIn = r.expires_in;  // 2h
+        const refreshToken = r.refresh_token;
+        const tokenId = await this.wechatLoginByOpenId(accessToken, openId);
+        return {tokenId, accessToken, openId, expiresIn};
+      } else {
+        const message = 'code:' + code + ', errCode:' + r.code + ', errMsg:' + r.msg;
+        await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', message);
+        return null;
       }
-    });
+    } catch (e) {
+      return null;
+    }
   }
 
 
