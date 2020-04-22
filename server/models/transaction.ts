@@ -115,25 +115,7 @@ export class Transaction extends Model {
     return ts;
   }
 
-  listV2(req: Request, res: Response) {
-    let query = null;
-    let fields;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-    if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
-      fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
-    }
 
-    this.joinFindV2(query).then((rs: IDBTransaction[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      if (rs) {
-        res.send(JSON.stringify(rs, null, 3));
-      } else {
-        res.send(JSON.stringify(null, null, 3))
-      }
-    });
-  }
   // v1
   // use in admin, $in
   list(req: Request, res: Response) {
