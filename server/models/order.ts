@@ -155,8 +155,12 @@ export class Order extends Model {
     this.locationModel = new Location(dbo);
   }
 
-  // v2
-  async joinFindV2(query: any, fields: any) {
+  // v2 return [{
+  //  _id,
+  //  client:{ _id, username, phone },
+  //  merchant: { _id, name }
+  //  items: [{productId, productName, price, cost, quantity}]}];
+  async joinFindV2(query: any) {
     let q = query ? query : {};
     const rs = await this.find(q);
     const clientAccountIds = rs.map((r: any) => r.clientId);
@@ -170,23 +174,27 @@ export class Order extends Model {
       const items: any[] = [];
 
       if (order.clientId) {
-        order.client = clientAccounts.find((a: any) => a._id.toString() === order.clientId.toString());
+        const c = clientAccounts.find((a: any) => a._id.toString() === order.clientId.toString());
+        order.client = { _id: c._id.toString(), username: c.username, phone: c.phone };
       }
 
       if (order.merchantId) {
-        order.merchant = merchants.find((m: any) => m._id.toString() === order.merchantId.toString());
+        const m = merchants.find((m: any) => m._id.toString() === order.merchantId.toString());
+        order.merchant = { _id: m._id.toString(), name: m.name };
       }
 
       if (order.merchant && order.merchant.accountId) {
         const merchantAccount = merchantAccounts.find((a: any) => a && a._id.toString() === order.merchant.accountId.toString());
         if (merchantAccount) {
-          order.merchantAccount = merchantAccount;
+          const m = merchantAccount;
+          order.merchantAccount = { _id: m._id.toString(), name: m.name };
         }
       }
 
       if (order.driverId) {
         const driver = driverAccounts.find((a: IAccount) => a._id.toString() === order.driverId.toString());
-        order.driver = driver;
+        const d = driver;
+        order.driver = { _id: d._id.toString(), username: d.username, phone: d.phone };
       }
 
       if (order.items) {
@@ -199,7 +207,23 @@ export class Order extends Model {
         order.items = items;
       }
     });
-    return this.filterArray(rs, fields);
+
+    return rs.map(r => ({ 
+      _id: r._id,
+      items: r.items,
+      price: r.price,
+      cost: r.cost,
+      paymentMethod: r.paymentMethod,
+      paymentStatus: r.paymentStatus,
+      status: r.status,
+      client: r.client, 
+      merchant: r.merchant,
+      // merchantAccount: r.merchantAccount,
+      driver: r.driver,
+      note: r.note,
+      delivered: r.deliverd,
+      created: r.creaded
+     }));
   }
 
   // get transactions with items
@@ -207,7 +231,7 @@ export class Order extends Model {
     const ts = await this.transactionModel.find(query, fields);
     if (fields.indexOf('items') !== -1) {
       const ids = ts.map((t: any) => t.orderId);
-      const orders = await this.joinFindV2({ _id: { $in: ids } }, ['_id', 'items']);
+      const orders = await this.joinFindV2({ _id: { $in: ids } });
       const orderMap: any = {};
       orders.map(order => { orderMap[order._id.toString()] = order.items; });
       ts.map((t: any) => t.items = t.orderId ? orderMap[t.orderId.toString()] : []);

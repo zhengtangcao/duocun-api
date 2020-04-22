@@ -10,6 +10,8 @@ export function OrderRouter(db: DB) {
   const controller = new OrderController(db);
   // v2
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
+  router.get('/v2/', (req, res) => { controller.listV2(req, res); });
+
   // tools
   // router.post('/missingWechatpayments', (req, res) => { model.reqMissingWechatPayments(req, res); });
   // router.post('/missingPaid', (req, res) => { model.reqFixMissingPaid(req, res); });
@@ -63,6 +65,23 @@ export class OrderController extends Model {
   constructor(db: DB) {
     super(db, 'orders');
     this.model = new Order(db);
+  }
+
+  listV2(req: Request, res: Response) {
+    let query = null;
+
+    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
+      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    }
+
+    this.model.joinFindV2(query).then((rs: any[]) => {
+      res.setHeader('Content-Type', 'application/json');
+      if (rs) {
+        res.send(JSON.stringify(rs, null, 3));
+      } else {
+        res.send(JSON.stringify(null, null, 3))
+      }
+    });
   }
 
   loadPage(req: Request, res: Response) {
