@@ -10,6 +10,7 @@ export function OrderRouter(db: DB) {
   const controller = new OrderController(db);
   // v2
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
+  router.get('/v2/paymentHistory/:currentPageNumber/:itemsPerPage', (req, res) => { controller.getPaymentHistory(req, res); });
   // tools
   // router.post('/missingWechatpayments', (req, res) => { model.reqMissingWechatPayments(req, res); });
   // router.post('/missingPaid', (req, res) => { model.reqFixMissingPaid(req, res); });
@@ -124,4 +125,28 @@ export class OrderController extends Model {
   }
 
 
+  // return a list of payments
+  getPaymentHistory(req: Request, res: Response) {
+    const itemsPerPage = +req.params.itemsPerPage;
+    const currentPageNumber = +req.params.currentPageNumber;
+
+    let query = null;
+    // let fields = null;
+    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
+      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    }
+
+    // if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
+    //   fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
+    // }
+
+    // let q = query ? query : {};
+    let clientId = query.clientId;
+
+    this.model.getPaymentHistory(clientId, itemsPerPage, currentPageNumber).then(payments => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({ payments }, null, 3));
+    });
+  }
+  
 }

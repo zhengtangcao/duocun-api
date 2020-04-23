@@ -885,6 +885,69 @@ export class Order extends Model {
     }
   }
 
+  // orders - [ order21...]
+  groupByDeliverDate(orders: any[]){
+
+  }
+
+  // orders --- all the orders belong to a client
+  groupByPaymentId(orders: any[]){
+    const paymentMap: any = {};
+    // initialize map
+    orders.forEach(order => {
+      const paymentId = order.paymentId.toString();
+      paymentMap[paymentId] = { paymentId, orders: [] };
+    });
+    
+    orders.forEach(order => {
+      const paymentId = order.paymentId.toString();
+      paymentMap[paymentId].orders.push(order);
+    });
+
+    // payemntMap :  { 
+    //     pyid1: { paymentId: pyid1, orders:[ order11...]}, 
+    //     pyid2: { paymentId: pyid2, orders:[ order21...]} 
+    // }
+    const keys = Object.keys(paymentMap); // [pyid1, pyid2 ....]
+    const vals = keys.map(key => paymentMap[key]);
+
+    return vals;
+  }
+
+  // return [{ paymentId: pyid2, phone, created, delivered, items:[ 
+  // order21...
+  // ]}]
+  async getPaymentHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
+    const client = await this.accountModel.findOne({ _id: clientId });
+    const ps = await this.productModel.find({});
+    const query = { clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
+    const orders = await this.find(query);
+
+    // // paging --- do it on last step
+    // const arrSorted = this.sortByDeliverDate(orders);
+    // const start = (currentPageNumber - 1) * itemsPerPage;
+    // const end = start + itemsPerPage;
+    // const orderArray = arrSorted.slice(start, end);
+
+    // group by paymentId
+    return orders.map((order: any) => {
+      const items: any[] = [];
+      order.items.map((it: any) => {
+        const product = ps.find((p: any) => p._id.toString() === it.productId.toString());
+        if (product) {
+          items.push({ product, quantity: it.quantity, price: it.price });
+        }
+      });
+
+      const description = this.getDescription(order, 'zh');
+      const clientPhoneNumber = client.phone;
+      const address = this.locationModel.getAddrString(order.location);
+      return { ...order, address, description, items, clientPhoneNumber };
+    });
+  }
+
+
+  // deprecated
   // return [{_id, address description,items, merchantName, clientPhoneNumber, price, total, tax, delivered, created}, ...]
   async loadHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
     const client = await this.accountModel.findOne({ _id: clientId });
