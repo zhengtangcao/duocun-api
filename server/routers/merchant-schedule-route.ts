@@ -1,25 +1,49 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { DB } from "../db";
 import { MerchantSchedule } from "../models/merchant-schedule";
+import { Model } from "../models/model";
 
 export function MerchantScheduleRouter(db: DB){
   const router = express.Router();
-  const controller = new MerchantSchedule(db);
+  const model = new MerchantSchedule(db);
+  const controller = new MerchantScheduleController(db);
 
   // v2
-  router.get('/qFind', (req, res) => { controller.quickFind(req, res); });
+  router.patch('/cu', (req, res) => { controller.createOrUpdate(req, res); });
+  router.get('/qFind', (req, res) => { model.quickFind(req, res); });
 
   // v1
-  router.get('/availableMerchants', (req, res) => { controller.getAvailableMerchants(req, res); });
-  router.get('/availables', (req, res) => { controller.getAvailableSchedules(req, res); });
-  router.get('/', (req, res) => { controller.list(req, res); });
-  router.get('/:id', (req, res) => { controller.get(req, res); });
+  router.get('/availableMerchants', (req, res) => { model.getAvailableMerchants(req, res); });
+  router.get('/availables', (req, res) => { model.getAvailableSchedules(req, res); });
+  router.get('/', (req, res) => { model.list(req, res); });
+  router.get('/:id', (req, res) => { model.get(req, res); });
   
-  router.post('/', (req, res) => { controller.create(req, res); });
+  router.post('/', (req, res) => { model.create(req, res); });
 
-  router.put('/', (req, res) => { controller.replace(req, res); });
-  router.patch('/', (req, res) => { controller.update(req, res); });
-  router.delete('/', (req, res) => { controller.remove(req, res); });
+  router.put('/', (req, res) => { model.replace(req, res); });
+  router.patch('/', (req, res) => { model.update(req, res); });
+  router.delete('/', (req, res) => { model.remove(req, res); });
 
   return router;
 };
+
+export class MerchantScheduleController extends Model {
+  model: MerchantSchedule;
+
+  constructor(db: DB) {
+    super(db, 'merchant_schedules');
+    this.model = new MerchantSchedule(db);
+  }
+
+  createOrUpdate(req: Request, res: Response) {
+    const self = this;
+    const data = req.body;
+    this.model.createOrUpdate(data).then(() => {
+      setTimeout(() => {
+        self.model.find({}).then(ms => {
+          res.send(JSON.stringify(ms, null, 3));
+        });
+      }, 500);
+    });
+  }
+}

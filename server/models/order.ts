@@ -1473,23 +1473,23 @@ export class Order extends Model {
   }
 
   // rs --- [{paymentId, orders[]}]
-  addCreditTransactions(rs: any[]) {
-    let promises = [];
-    for (let i = 0; i < rs.length; i++) {
-      const r = rs[i];
-      promises.push(
-        this.addCreditTransaction(
-          r.paymentId,
-          r.clientId,
-          r.clientName,
-          r.amount,
-          r.actionCode,
-          r.delivered
-        )
-      );
-    }
-    return Promise.all(promises);
-  }
+  // addCreditTransactions(rs: any[]) {
+  //   let promises = [];
+  //   for (let i = 0; i < rs.length; i++) {
+  //     const r = rs[i];
+  //     promises.push(
+  //       this.addCreditTransaction(
+  //         r.paymentId,
+  //         r.clientId,
+  //         r.clientName,
+  //         r.amount,
+  //         r.actionCode,
+  //         r.delivered
+  //       )
+  //     );
+  //   }
+  //   return Promise.all(promises);
+  // }
 
   async findMissingUnpaid() {
     const actionCode = TransactionAction.PAY_BY_CARD.code;
