@@ -112,19 +112,18 @@ export class ClientPayment extends Model {
     this.cfg = new Config();
   }
 
-  // actionCode --- code of PaymentAction
-  async payBySnappay(actionCode: string, appCode: string, accountId: string, amount: number, orders: any[]) {
-    if (actionCode === PaymentAction.PAY.code) {
-      const order = orders[0];
-      const paymentId = order.paymentId;
-      const description = order.merchantName;
+  // paymentActionCode --- code of PaymentAction
+  async payBySnappay(paymentActionCode: string, appCode: string, accountId: string, amount: number, returnUrl: string, paymentId: string, merchantName?:string) {
+    if (paymentActionCode === PaymentAction.PAY.code) {
+      const description: any = merchantName;
       // returnUrl = 'https://duocun.com.cn/cell?clientId=' + clientId + '&paymentMethod=' + paymentMethod + '&page=application_form';
 
       const rsp: any = await this.snappayPay(
         accountId,
         appCode,
-        actionCode,
+        paymentActionCode,
         amount,
+        returnUrl,
         description,
         paymentId
       );
@@ -155,7 +154,7 @@ export class ClientPayment extends Model {
       //     this.snappayPay(
       //       accountId,
       //       appCode,
-      //       actionCode,
+      //       paymentActionCode,
       //       amount,
       //       "Add Credit",
       //       paymentId
@@ -177,14 +176,15 @@ export class ClientPayment extends Model {
 
 
   // appCode --- '122':grocery, '123':food delivery
-  // actionCode --- P: Pay, A: Add credit
+  // paymentActionCode --- P: Pay, A: Add credit
   // paymentId --- paymentId represent a batch of orders
   getSnappayData(
     appCode: string,
-    actionCode: string,
+    paymentActionCode: string,
     accountId: string,
     paymentId: string,
     amount: number,
+    returnUrl: string,
     description: string
   ) {
     // const cfgs = await this.cfgModel.find({});
@@ -192,9 +192,9 @@ export class ClientPayment extends Model {
     // const method = cfg.snappay.methods.find((m: any) => m.code = 'WECHATPAY');
     // const app = method.apps.find((a: any) => a.code === appCode);
     // const notify_url = app ? app.notifyUrl : ''; // 'https://duocun.com.cn/api/ClientPayments/notify';
-    // const returnUrl = app ? app.returnUrls.find((r: any) => r.action === actionCode) : { url: '' }; 'https://duocun.ca/grocery?p=h&cId='
+    // const returnUrl = app ? app.returnUrls.find((r: any) => r.action === paymentActionCode) : { url: '' }; 'https://duocun.ca/grocery?p=h&cId='
     // const return_url = returnUrl.url + accountId; // 'https://duocun.ca/grocery?p=h&cId=' + accountId;
-    const return_url = "https://duocun.ca/grocery?p=h&cId=" + accountId;
+    const return_url = returnUrl ? returnUrl : "https://duocun.ca/grocery?p=h&cId=" + accountId;
     const notify_url = "https://duocun.com.cn/api/ClientPayments/notify";
     const trans_amount = Math.round(amount * 100) / 100;
 
@@ -231,8 +231,8 @@ export class ClientPayment extends Model {
 
   // This request could response multiple times !!!
   async processSnappayNotify(paymentId: string, amount: number) {
-    const actionCode = TransactionAction.PAY_BY_WECHAT.code;
-    await this.orderEntity.processAfterPay(paymentId, actionCode, amount, '');
+    const paymentActionCode = TransactionAction.PAY_BY_WECHAT.code;
+    await this.orderEntity.processAfterPay(paymentId, paymentActionCode, amount, '');
     return;
   }
 
@@ -240,8 +240,9 @@ export class ClientPayment extends Model {
   snappayPay(
     accountId: string,
     appCode: string,
-    actionCode: string,
+    paymentActionCode: string,
     amount: number,
+    returnUrl: string,
     description: string,
     paymentId: string
   ) {
@@ -250,10 +251,11 @@ export class ClientPayment extends Model {
     return new Promise((resolve, reject) => {
       const data = this.getSnappayData(
         appCode,
-        actionCode,
+        paymentActionCode,
         accountId,
         paymentId,
         amount,
+        returnUrl,
         description
       );
       const params = this.snappaySignParams(data);
@@ -404,18 +406,15 @@ export class ClientPayment extends Model {
   }
 
 
-  async payByStripe(paymentMethodId: string, accountId: string, accountName: string,
-    orders: any[], amount: number, note: string) {
+  async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string,
+    orders: any[], amount: number, note: string, paymentId: string, merchantNames: string[]) {
     // const appType = req.body.appType;
     let metadata = {};
     let description = "";
-    let paymentId = new ObjectID().toString();
-
-    if (orders && orders.length > 0) {
-      const order = orders[0];
-      metadata = { paymentId: order.paymentId };
-      description = accountName + " pay " + orders[0].merchantName;
-      paymentId = order.paymentId;
+    
+    if (paymentActionCode === PaymentAction.PAY.code) {
+      metadata = { paymentId };
+      description = accountName + " - " + merchantNames.join(',');
     } else {
       metadata = { customerId: accountId, customerName: accountName };
       description = accountName + "add credit";
@@ -436,7 +435,7 @@ export class ClientPayment extends Model {
       total: Math.round(amount * 100) / 100,
       paymentMethod: PaymentMethod.CREDIT_CARD,
       note,
-      paymentId,
+      paymentId: paymentId ? paymentId : new ObjectID().toString(),
       status: PaymentStatus.UNPAID,
     };
 
@@ -476,7 +475,7 @@ export class ClientPayment extends Model {
   // payBySnappay(req: Request, res: Response) {
   //   const appCode = req.body.appCode;
   //   const orders = req.body.orders;
-  //   const actionCode =
+  //   const paymentActionCode =
   //     orders && orders.length > 0
   //       ? PaymentAction.PAY.code
   //       : PaymentAction.ADD_CREDIT.code;
@@ -488,7 +487,7 @@ export class ClientPayment extends Model {
 
   //   res.setHeader("Content-Type", "application/json");
 
-  //   if (actionCode === PaymentAction.PAY.code) {
+  //   if (paymentActionCode === PaymentAction.PAY.code) {
   //     // pay order
   //     const order = orders[0];
   //     const paymentId = order.paymentId;
@@ -498,7 +497,7 @@ export class ClientPayment extends Model {
   //     this.snappayPay(
   //       accountId,
   //       appCode,
-  //       actionCode,
+  //       paymentActionCode,
   //       amount,
   //       description,
   //       paymentId
@@ -539,7 +538,7 @@ export class ClientPayment extends Model {
   //         this.snappayPay(
   //           accountId,
   //           appCode,
-  //           actionCode,
+  //           paymentActionCode,
   //           amount,
   //           "Add Credit",
   //           paymentId

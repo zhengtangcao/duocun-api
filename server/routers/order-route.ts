@@ -12,6 +12,13 @@ export function OrderRouter(db: DB) {
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
   router.get('/v2/', (req, res) => { controller.listV2(req, res); });
 
+  // Public
+  // input:
+  //  orders --- [ IOrders[] ], without _id and paymentId
+  // return:
+  //  orders ---- [IOrders[]],  new orders with _id and paymentId  
+  router.post('/placeOrders', (req, res) => { model.reqPlaceOrders(req, res); });
+
   // tools
   // router.post('/missingWechatpayments', (req, res) => { model.reqMissingWechatPayments(req, res); });
   // router.post('/missingPaid', (req, res) => { model.reqFixMissingPaid(req, res); });
@@ -36,7 +43,6 @@ export function OrderRouter(db: DB) {
   router.put('/', (req, res) => { model.replace(req, res); });
   router.post('/checkStripePay', (req, res) => { model.checkStripePay(req, res); });
   router.post('/checkWechatpay', (req, res) => { model.checkWechatpay(req, res); });
-  router.post('/bulk', (req, res) => { model.reqPlaceOrders(req, res); });
 
   //
   router.post('/payOrder', (req, res) => { model.payOrder(req, res); });

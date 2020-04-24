@@ -1,11 +1,8 @@
 import express, { Request, Response } from "express";
 
 import { DB } from "../db";
-import { ClientPayment, PaymentAction } from "../models/client-payment";
+import { ClientPayment } from "../models/client-payment";
 import { Model } from "../models/model";
-import { Client } from "../../node_modules/@types/twilio";
-import { PaymentMethod } from "../models/order";
-import { ObjectID } from "../../node_modules/@types/mongodb";
 
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
@@ -15,8 +12,38 @@ export function ClientPaymentRouter(db: DB) {
   const model = new ClientPayment(db);
   const controller = new ClientPaymentController(db);
 
+  // snappy related endpoints
+
+  // public endpoint
+  // description: if orders > 0 it means buy goods, if orders == null it means add credit
+  // Input:
+  // paymentActionCode --- [string] 'P' for purchase good, 'A' for add credit
+  // appCode --- [number], 123 for Grocery, 122 for Food Delivery
+  // accountId --- [string] client account Id;
+  // amount --- [number] client payable
+  // returnUrl --- [string]
+  // paymentId --- [string]     (optional for add credit)
+  // merchantNames --- [string[]]  (optional for add credit)
+  // Return: None, then wait snappy post notify 
   router.post('/payBySnappay', (req, res) => { controller.payBySnappay(req, res) });
+
+  // private 
   router.post('/notify', (req, res) => { controller.snappayNotify(req, res); });
+
+  // stripe related endpoints
+  // public
+  // description: if orders > 0 it means buy goods, if orders == null it means add credit
+
+  // Input:
+  // paymentActionCode --- [string] 'P' for purchase good, 'A' for add credit
+  // paymentMethodId = [string] get from stripe;
+  // accountId --- [string] client account Id;
+  // accountName --- [string]
+  // amount --- [number] client payable
+  // note --- [string]
+  // paymentId --- [string]     (optional for add credit)
+  // merchantNames --- [string[]]  (optional for add credit)
+  // Return: None
   router.post('/payByCreditCard', (req, res) => { controller.payByStripe(req, res); });
 
   // v1 api
@@ -58,20 +85,20 @@ export class ClientPaymentController extends Model {
     this.model = new ClientPayment(db);
   }
 
-  // input --- appCode, orders, accountId, amount
+  // input --- appCode, accountId, amount
   payBySnappay(req: Request, res: Response) {
     const appCode = req.body.appCode;
-    const orders = req.body.orders;
+    // const orders = req.body.orders;
+    const paymentActionCode = req.body.paymentActionCode;
+    const paymentId = req.body.paymentId;
+    const merchantNames = req.body.merchantNames;
     const accountId = req.body.accountId;
+    const returnUrl = req.body.returnUrl;
     const amount = Math.round(+req.body.amount * 100) / 100;
-
-    const actionCode =
-        orders && orders.length > 0
-        ? PaymentAction.PAY.code
-        : PaymentAction.ADD_CREDIT.code;
+    
 
     res.setHeader("Content-Type", "application/json");
-    this.model.payBySnappay(actionCode, appCode, accountId, amount, orders).then((r) => {
+    this.model.payBySnappay(paymentActionCode, appCode, accountId, amount, returnUrl, paymentId, merchantNames).then((r: any) => {
       res.send(JSON.stringify(r, null, 3)); // IPaymentResponse
     });
   }
@@ -101,15 +128,17 @@ export class ClientPaymentController extends Model {
 
   payByStripe(req: Request, res: Response) {
     // const appType = req.body.appType;
+    const paymentActionCode = req.body.paymentActionCode;
     const paymentMethodId = req.body.paymentMethodId;
+    const paymentId = req.body.paymentId;
+    const merchantNames = req.body.merchantNames
     const accountId = req.body.accountId;
     const accountName = req.body.accountName;
-    const orders = req.body.orders;
     const note = req.body.note;
     let amount = +req.body.amount;
 
     res.setHeader("Content-Type", "application/json");
-    this.model.payByStripe(paymentMethodId, accountId, accountName, orders, amount, note).then((rsp) => {
+    this.model.payByStripe(paymentActionCode, paymentMethodId, accountId, accountName, amount, note, paymentId, merchantNames).then((rsp: any) => {
       res.send(JSON.stringify(rsp, null, 3)); // IPaymentResponse
     });
   }
