@@ -211,6 +211,7 @@ export class Order extends Model {
     return rs.map(r => ({ 
       _id: r._id,
       code: r.code,
+      location: r.location,
       address: this.locationModel.getAddrString(r.location),
       items: r.items,
       price: r.price,

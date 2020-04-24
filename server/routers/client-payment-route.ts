@@ -13,6 +13,7 @@ export function ClientPaymentRouter(db: DB) {
   const controller = new ClientPaymentController(db);
 
   // snappy related endpoints
+  // https://localhost:8000/api/ClientPayments/payBySnappay
 
   // public endpoint
   // description: if orders > 0 it means buy goods, if orders == null it means add credit
@@ -20,11 +21,11 @@ export function ClientPaymentRouter(db: DB) {
   // paymentActionCode --- [string] 'P' for purchase good, 'A' for add credit
   // appCode --- [number], 123 for Grocery, 122 for Food Delivery
   // accountId --- [string] client account Id;
-  // amount --- [number] client payable
+  // amount --- [number] payable = purchase amount - balance
   // returnUrl --- [string]
   // paymentId --- [string]     (optional for add credit)
   // merchantNames --- [string[]]  (optional for add credit)
-  // Return: None, then wait snappy post notify 
+  // Return: {err, {url}}, then wait snappy post notify 
   router.post('/payBySnappay', (req, res) => { controller.payBySnappay(req, res) });
 
   // private 

@@ -12,7 +12,7 @@ export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
   
-  // v2
+  // v2 https://duocun.ca/api/Accounts/wechatLoginByOpenId
   router.post('/wechatLoginByOpenId', (req, res) => { controller.wechatLoginByOpenId(req, res); });
   router.get('/wechatLoginByCode', (req, res) => { controller.wechatLoginByCode(req, res); });
   router.get('/qFind', (req, res) => { controller.list(req, res); }); // deprecated
