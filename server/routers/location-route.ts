@@ -9,8 +9,8 @@ export function LocationRouter(db: DB){
   const controller = new LocationController(db);
 
   // yaml api
-  router.get('/getGeocode/:address', (req, res) => { controller.getGeocodeList(req, res); });
-  router.get('/getPlaces/:input', (req, res) => { controller.getPlaceList(req, res); });
+  router.get('/geocode/:address', (req, res) => { controller.getGeocodeList(req, res); });
+  router.get('/place/:input', (req, res) => { controller.getPlaceList(req, res); });
 
   // old api
   router.get('/suggest/:keyword', (req, res) => { model.reqSuggestAddressList(req, res)});
