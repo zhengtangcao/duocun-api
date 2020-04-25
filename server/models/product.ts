@@ -82,24 +82,18 @@ export class Product extends Model {
     return products;
   }
 
-  joinFind(query: any): Promise<IProduct[]> {
-    return new Promise((resolve, reject) => {
-      this.accountModel.find({}).then(accounts => {
-        this.categoryModel.find({}).then(cs => {
-          this.merchantModel.find({}).then(ms => { // fix me, arch design issue: merchant or account ???
-            this.find(query).then(ps => {
-              ps.map((p: IProduct) => {
-                p.category = cs.find((c: any) => c && c._id && p && p.categoryId && c._id.toString() === p.categoryId.toString());
-                p.merchant = ms.find((m: any) => m && m._id && p && p.merchantId && m._id.toString() === p.merchantId.toString());
-                const merchant: any = p.merchant;
-                p.merchantAccount = accounts.find((a: any) => a && merchant && a._id.toString() === merchant.accountId.toString());
-              });
-              resolve(ps);
-            });
-          });
-        });
-      });
+  async joinFind(query: any): Promise<IProduct[]> {
+    const accounts = await this.accountModel.find({});
+    const cs = await this.categoryModel.find({});
+    const ms = await this.merchantModel.find({}); // fix me, arch design issue: merchant or account ???
+    const ps = await this.find(query);
+    ps.map((p: IProduct) => {
+      p.category = cs.find((c: any) => c && c._id && p && p.categoryId && c._id.toString() === p.categoryId.toString());
+      p.merchant = ms.find((m: any) => m && m._id && p && p.merchantId && m._id.toString() === p.merchantId.toString());
+      const merchant: any = p.merchant;
+      p.merchantAccount = accounts.find((a: any) => a && merchant && a._id.toString() === merchant.accountId.toString());
     });
+    return ps
   }
 
   categorize(req: Request, res: Response) {
