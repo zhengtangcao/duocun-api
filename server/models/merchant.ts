@@ -3,7 +3,7 @@ import { Model } from "./model";
 import { Entity } from "../entity";
 import { Mall, IMall, IDbMall } from "./mall";
 import { Distance, ILocation, IDistance, IPlace } from "./distance";
-import { Area, ILatLng, IArea } from "./area";
+import { Area, ILatLng, IArea, AppType } from "./area";
 import { Range, IRange } from './range';
 
 import { Request, Response } from "express";
@@ -102,7 +102,7 @@ export class Merchant extends Model {
   // v2
   async getMyMerchants(location: ILocation, query: any, fields: any[]) {
     if(location && location.placeId){
-      const area = await this.areaModel.getMyArea(location);
+      const area = await this.areaModel.getMyArea(location, AppType.GROCERY);
       if (area) {
         const areaId = area._id.toString();
         const schedules = await this.scheduleModel.find({ areaId });
@@ -119,7 +119,7 @@ export class Merchant extends Model {
 
   async getMySchedules(location: ILocation, merchantId: string, fields: any[]) {
     if(location && location.placeId){
-      const area = await this.areaModel.getMyArea(location);
+      const area = await this.areaModel.getMyArea(location, AppType.GROCERY);
       if(area){
         const areaId = area._id.toString();
         return await this.scheduleModel.find({merchantId, areaId});

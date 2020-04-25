@@ -1,12 +1,16 @@
 import express from "express";
-import { Area, IArea } from "../models/area";
+import { Area, IArea, AppType } from "../models/area";
 import { DB } from "../db";
 import { Request, Response } from "express";
-import { Model } from "../models/model";
+import { Model, Code } from "../models/model";
 
 export function AreaRouter(db: DB){
   const router = express.Router();
   const controller = new AreaController(db);
+
+  router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+  router.get('/G/my', (req, res) => { controller.gv1_getMyArea(req, res); }); 
+
 
   router.get('/my', (req, res) => { controller.reqMyArea(req, res); }); // fix me
   router.get('/qFind', (req, res) => { controller.quickFind(req, res); });
@@ -56,7 +60,7 @@ export class AreaController extends Model{
         fields = JSON.parse(req.headers.fields);
       }
     }
-    this.model.getMyArea(data.location).then(area => {
+    this.model.getMyArea(data.location, AppType.GROCERY).then(area => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(area, null, 3));
     });
@@ -76,6 +80,35 @@ export class AreaController extends Model{
     this.model.find(query, null, fields).then((x: any) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(x, null, 3));
+    });
+  }
+
+
+  gv1_getMyArea(req: Request, res: Response) {
+    const lat = +req.query.lat;
+    const lng = +req.query.lng;
+    this.model.getMyArea({lat, lng}, AppType.GROCERY).then(area => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: area ? Code.SUCCESS : Code.FAIL,
+        data: area 
+      }));
+    });
+  }
+
+  
+  gv1_list(req: Request, res: Response) {
+    const status = req.query.status;
+    const appType = AppType.GROCERY;
+    const query = status ? {status, appType} : {appType};
+
+    this.model.find(query).then((areas) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: areas 
+      }));
     });
   }
 };

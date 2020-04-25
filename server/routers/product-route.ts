@@ -1,13 +1,17 @@
 import express, { Request, Response } from "express";
 import { DB } from "../db";
 import { Product } from "../models/product";
-import { Model } from "../models/model";
+import { Model, Code } from "../models/model";
 
 export function ProductRouter(db: DB){
   const router = express.Router();
   const model = new Product(db);
   const controller = new ProductController(db);
   
+  router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
+  router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+
+
   router.get('/', (req, res) => { controller.list(req, res); });
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
@@ -39,6 +43,37 @@ class ProductController extends Model{
     this.model.list(query).then((ps: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(ps, null, 3));
+    });
+  }
+
+  gv1_list(req: Request, res: Response) {
+    const status = req.query.status;
+    const merchantId = req.query.merchantId;
+    const query = status ? {status} : {};
+    res.setHeader('Content-Type', 'application/json');
+    
+    merchantId ? 
+    this.model.joinFind({...query, merchantId}).then((products: any[]) => {
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: products 
+      }));
+    })
+    :
+    res.send(JSON.stringify({
+      code: Code.FAIL,
+      data: [] 
+    }));
+  }
+
+  gv1_get(req: Request, res: Response) {
+    const id = req.params.id;
+    this.model.getById(id).then(product => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: product ? Code.SUCCESS : Code.FAIL,
+        data: product 
+      }));
     });
   }
 }

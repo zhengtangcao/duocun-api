@@ -1,28 +1,58 @@
-import express from "express";
+import express, {Request, Response} from "express";
 import { DB } from "../db";
 import { Location } from "../models/location";
+import { Model, Code } from "../models/model";
 
 export function LocationRouter(db: DB){
   const router = express.Router();
-  const controller = new Location(db);
+  const model = new Location(db);
+  const controller = new LocationController(db);
 
-  router.get('/suggest/:keyword', (req, res) => { controller.reqSuggestAddressList(req, res)});
-  router.get('/history', (req, res) => { controller.reqHistoryAddressList(req, res)});
-  router.get('/query', (req, res) => { controller.reqLocation(req, res)});
+  // yaml api
+  router.get('/geocode/:address', (req, res) => { model.getGeocodeList(req, res); });
 
-  router.get('/', (req, res) => { controller.list(req, res); });
-  router.get('/:id', (req, res) => { controller.get(req, res); });
-  router.get('/Places/:input', (req, res) => { controller.reqPlaces(req, res); });
+  // old api
+  router.get('/suggest/:keyword', (req, res) => { model.reqSuggestAddressList(req, res)});
+  router.get('/history', (req, res) => { model.reqHistoryAddressList(req, res)});
+  router.get('/query', (req, res) => { model.reqLocation(req, res)});
 
-  router.get('/Geocodes/:address', (req, res) => { controller.reqGeocodes(req, res); });
-  router.post('/upsertOne', (req, res) => { controller.upsertOne(req, res); });
-  router.post('/', (req, res) => { controller.create(req, res); });
+  router.get('/', (req, res) => { model.list(req, res); });
+  router.get('/:id', (req, res) => { model.get(req, res); });
+  router.get('/Places/:input', (req, res) => { model.reqPlaces(req, res); });
+
+  router.get('/Geocodes/:address', (req, res) => { model.reqGeocodes(req, res); });
+  router.post('/upsertOne', (req, res) => { model.upsertOne(req, res); });
+  router.post('/', (req, res) => { model.create(req, res); });
 
 
-  router.put('/updateLocations', (req, res) => { controller.updateLocations(req, res)});
-  router.put('/', (req, res) => { controller.replace(req, res); });
-  router.patch('/', (req, res) => { controller.update(req, res); });
-  router.delete('/', (req, res) => { controller.remove(req, res); });
+  router.put('/updateLocations', (req, res) => { model.updateLocations(req, res)});
+  router.put('/', (req, res) => { model.replace(req, res); });
+  router.patch('/', (req, res) => { model.update(req, res); });
+  router.delete('/', (req, res) => { model.remove(req, res); });
 
   return router;
 };
+
+
+export class LocationController extends Model {
+  model: Location;
+  constructor(db: DB) {
+    super(db, 'locations');
+    this.model = new Location(db);
+  }
+
+  
+  getGeocodeList(req: Request, res: Response) {
+    const addr = req.params.address;
+
+    this.model.getGeocodes(addr).then(rs => {
+      // res.send(rs);
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: rs 
+      }));
+    });
+  }
+
+}

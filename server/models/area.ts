@@ -51,10 +51,11 @@ export class Area extends Model {
   }
 
   // only for appType === G
-  async getMyArea(origin: ILatLng) {
+  async getMyArea(origin: ILatLng, appType: string) {
     try {
-      const areas: IArea[] = await this.find({ appType: AppType.GROCERY });
-      if (areas && areas.length > 0 && origin) {
+      const query = appType ? {appType} : {};
+      const areas: IArea[] = await this.find(query);
+      if (areas && areas.length > 0 && origin.lat && origin.lng) {
         let found = areas.find((area: IArea) => {
           if (area.coords && area.coords.length > 0) {
             return this.inPolygon(origin, area.coords);

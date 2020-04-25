@@ -191,8 +191,6 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
     }
   );
 
-  const merchantRouter = new MerchantRouter(dbo);
-
   // disable auth token for testing
   if (process.env.ENV != "dev") {
     app.use(apimw.auth);
@@ -200,7 +198,8 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
 
   // app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.use("/" + ROUTE_PREFIX + "/Accounts", AccountRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Restaurants", merchantRouter.init());
+  app.use("/" + ROUTE_PREFIX + "/Merchants", MerchantRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Restaurants", MerchantRouter(dbo)); // deprecated
   app.use("/" + ROUTE_PREFIX + "/Areas", AreaRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Tools", ToolRouter(dbo));
 

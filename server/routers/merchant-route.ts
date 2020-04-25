@@ -4,33 +4,42 @@ import moment from "moment";
 import { DB } from "../db";
 import { Merchant } from "../models/merchant";
 import { ObjectID } from "../../node_modules/@types/mongodb";
+import { Code, Model } from "../models/model";
 
-export class MerchantRouter {
-  router = express.Router();
+
+export function MerchantRouter(db: DB){
+  const router = express.Router();
+  const model = new Merchant(db);
+  const controller = new MerchantController(db);
+
+  router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
+  router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+
+  // v2
+  router.get('/v2/myMerchants', (req, res) => { controller.getMyMerchants(req, res); });
+  router.get('/v2/mySchedules', (req, res) => { controller.getMySchedules(req, res); })
+  router.get('/getByAccountId', (req, res) => { controller.getByAccountId(req, res); });
+  router.post('/load', (req, res) => { controller.load(req, res); });
+
+  router.get('/qFind', (req, res) => { model.quickFind(req, res); });
+  router.get('/:id', (req, res) => { model.get(req, res); });
+  router.get('/', (req, res) => { model.list(req, res); });
+
+  // v1
+
+  // router.post('/', (req, res) => { model.create(req, res); });
+  // router.put('/', (req, res) => { model.replace(req, res); });
+  // router.patch('/', (req, res) => { model.update(req, res); });
+  // router.delete('/', (req, res) => { model.remove(req, res); });
+
+  return router;
+}
+
+export class MerchantController extends Model {
   model: Merchant;
-
   constructor(db: DB) {
+    super(db, 'merchants');
     this.model = new Merchant(db);
-  }
-
-  init() {
-    // v2
-    this.router.get('/v2/myMerchants', (req, res) => { this.getMyMerchants(req, res); });
-    this.router.get('/v2/mySchedules', (req, res) => { this.getMySchedules(req, res); })
-    this.router.get('/getByAccountId', (req, res) => { this.getByAccountId(req, res); });
-    this.router.get('/qFind', (req, res) => { this.quickFind(req, res); });
-    this.router.get('/:id', (req, res) => { this.get(req, res); });
-    this.router.get('/', (req, res) => { this.model.list(req, res); });
-
-    // v1
-
-    this.router.post('/load', (req, res) => { this.load(req, res); });
-    // this.router.post('/', (req, res) => { this.create(req, res); });
-    // this.router.put('/', (req, res) => { this.replace(req, res); });
-    // this.router.patch('/', (req, res) => { this.update(req, res); });
-    // this.router.delete('/', (req, res) => { this.remove(req, res); });
-
-    return this.router;
   }
 
   list(req: Request, res: Response) {
@@ -168,4 +177,29 @@ export class MerchantRouter {
       }
     });
   }
+
+  gv1_list(req: Request, res: Response) {
+    const status = req.query.status;
+    const query = status ? {status} : {};
+
+    this.model.joinFind(query).then((merchants: any[]) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: merchants 
+      }));
+    });
+  }
+
+  gv1_get(req: Request, res: Response) {
+    const id = req.params.id;
+    this.model.getById(id).then(merchant => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: merchant ? Code.SUCCESS : Code.FAIL,
+        data: merchant 
+      }));
+    });
+  }
+
 };

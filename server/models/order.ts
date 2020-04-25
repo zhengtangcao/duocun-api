@@ -212,7 +212,7 @@ export class Order extends Model {
       _id: r._id,
       code: r.code,
       location: r.location,
-      address: this.locationModel.getAddrString(r.location),
+      address: this.locationModel.getAddrString(r.location), // deprecated
       items: r.items,
       price: r.price,
       cost: r.cost,

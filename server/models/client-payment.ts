@@ -113,9 +113,9 @@ export class ClientPayment extends Model {
   }
 
   // paymentActionCode --- code of PaymentAction
-  async payBySnappay(paymentActionCode: string, appCode: string, accountId: string, amount: number, returnUrl: string, paymentId: string, merchantName?:string) {
+  async payBySnappay(paymentActionCode: string, appCode: string, accountId: string, amount: number, returnUrl: string, paymentId: string, merchantNames:string[]) {
     if (paymentActionCode === PaymentAction.PAY.code) {
-      const description: any = merchantName;
+      const description: any = (merchantNames && merchantNames.length>0) ? merchantNames.join(',') : 'N/A';
       // returnUrl = 'https://duocun.com.cn/cell?clientId=' + clientId + '&paymentMethod=' + paymentMethod + '&page=application_form';
 
       const rsp: any = await this.snappayPay(
@@ -406,8 +406,7 @@ export class ClientPayment extends Model {
   }
 
 
-  async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string,
-    orders: any[], amount: number, note: string, paymentId: string, merchantNames: string[]) {
+  async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string, amount: number, note: string, paymentId: string, merchantNames: string[]) {
     // const appType = req.body.appType;
     let metadata = {};
     let description = "";

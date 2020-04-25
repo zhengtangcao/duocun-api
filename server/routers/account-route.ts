@@ -6,12 +6,18 @@ import { Account, AccountAttribute, IAccount } from "../models/account";
 import { MerchantStuff } from "../merchant-stuff";
 import { Utils } from "../utils";
 import { Config } from "../config";
-import { Model } from "../models/model";
+import { Model, Code } from "../models/model";
+import { ObjectID } from "../../node_modules/@types/mongodb";
 
 export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
   
+  // grocery api
+  router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+  router.get('/G/:id', (req, res) => { controller.gv1_getById(req, res); });
+  router.get('/G/token/:id', (req, res) => { controller.gv1_getByTokenId(req, res); });
+
   // v2 https://duocun.ca/api/Accounts/wechatLoginByOpenId
   router.post('/wechatLoginByOpenId', (req, res) => { controller.wechatLoginByOpenId(req, res); });
   router.get('/wechatLoginByCode', (req, res) => { controller.wechatLoginByCode(req, res); });
@@ -262,6 +268,51 @@ export class AccountController extends Model {
       res.setHeader('Content-Type', 'application/json');
       const tokenId = this.accountModel.jwtSign(account._id.toString());
       res.send(JSON.stringify(tokenId, null, 3));
+    });
+  }
+
+
+  // gv1
+
+  // optional --- status
+  gv1_list(req: Request, res: Response) {
+    const status = req.query.status;
+    const query = status ? {status} : {};
+    this.accountModel.find(query).then(accounts => {
+      accounts.map((account: any) => {
+        if (account && account.password) {
+          delete account.password;
+        }
+      });
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: accounts 
+      }));
+    });
+  }
+
+  // id
+  gv1_getById(req: Request, res: Response) {
+    const id = req.params.id;
+    this.accountModel.getById(id).then(account => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: account ? Code.SUCCESS : Code.FAIL,
+        data: account
+      }));
+    });
+  }
+
+  // id
+  gv1_getByTokenId(req: Request, res: Response) {
+    const tokenId: any = req.params.id;
+    this.accountModel.getAccountByToken(tokenId).then(account => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: account ? Code.SUCCESS : Code.FAIL,
+        data: account
+      }));
     });
   }
 }

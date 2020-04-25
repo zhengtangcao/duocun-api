@@ -7,6 +7,7 @@ import { Config } from "../config";
 import { Utils } from "../utils";
 import moment from 'moment';
 import { EventLog } from "./event-log";
+import { ObjectID } from "../../node_modules/@types/mongodb";
 
 const saltRounds = 10;
 
@@ -82,7 +83,7 @@ export class Account extends Model {
   twilioClient: any;
   eventLogModel: EventLog;
   utils: Utils;
-  
+
   constructor(dbo: DB) {
     super(dbo, 'users');
     this.eventLogModel = new EventLog(dbo);
@@ -265,7 +266,7 @@ export class Account extends Model {
   verifyPhoneNumber(phone: string, code: string, loggedInAccountId: string) {
     return new Promise((resolve, reject) => {
       const cfg = new Config();
-      
+
       this.findOne({ phone }).then((account) => {
         if (account && account.password) {
           delete account.password;
@@ -289,17 +290,17 @@ export class Account extends Model {
         } else { // enter from web page 
           if (account) {
             if (account.openId) {
-              resolve( { verified: false, err: VerificationError.PHONE_NUMBER_OCCUPIED, account });
+              resolve({ verified: false, err: VerificationError.PHONE_NUMBER_OCCUPIED, account });
             } else {
               if (account.verificationCode && code === account.verificationCode) {
                 const tokenId = jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
-                resolve( { verified: true, err: VerificationError.NONE, account, tokenId }); // tokenId: tokenId, 
+                resolve({ verified: true, err: VerificationError.NONE, account, tokenId }); // tokenId: tokenId, 
               } else {
-                resolve( { verified: false, err: VerificationError.WRONG_CODE, account });
+                resolve({ verified: false, err: VerificationError.WRONG_CODE, account });
               }
             }
           } else {
-            resolve( { verified: false, err: VerificationError.NO_PHONE_NUMBER_BIND, account }); // // please resend code
+            resolve({ verified: false, err: VerificationError.NO_PHONE_NUMBER_BIND, account }); // // please resend code
           }
         }
       });
@@ -576,8 +577,8 @@ export class Account extends Model {
   }
 
   // return tokenId
-  async wechatLoginByOpenId(accessToken: string, openId: string){
-    try{
+  async wechatLoginByOpenId(accessToken: string, openId: string) {
+    try {
       const x = await this.utils.getWechatUserInfo(accessToken, openId);
       if (x && x.openid) {
         const account = await this.doWechatSignup(x.openid, x.nickname, x.headimgurl, x.sex);
@@ -589,11 +590,11 @@ export class Account extends Model {
           await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'signup by wechat', '', 'signup by wechat fail');
           return null;
         }
-      }else{
+      } else {
         await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by openid', '', 'wechat get user info fail');
         return null;
       }
-    } catch(err){
+    } catch (err) {
       const message = 'accessToken:' + accessToken + ', openId:' + openId + ', msg:' + err.toString();
       await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by openid', '', message);
       return null;
@@ -612,7 +613,7 @@ export class Account extends Model {
         const expiresIn = r.expires_in;  // 2h
         const refreshToken = r.refresh_token;
         const tokenId = await this.wechatLoginByOpenId(accessToken, openId);
-        return {tokenId, accessToken, openId, expiresIn};
+        return { tokenId, accessToken, openId, expiresIn };
       } else {
         const message = 'code:' + code + ', errCode:' + r.code + ', errMsg:' + r.msg;
         await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', message);

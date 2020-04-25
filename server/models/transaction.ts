@@ -19,7 +19,6 @@ const SNAPPAY_BANK_ID = '5e60139810cc1f34dea85349';
 const SNAPPAY_BANK_NAME = 'SnapPay Bank';
 
 
-
 export const TransactionAction = {
   DECLINE_CREDIT_CARD: { code: 'DC', name: 'decline credit card payment' },
   PAY_DRIVER_CASH: { code: 'PDCH', name: 'client pay driver cash' }, // 'client pay cash', 'pay cash'
@@ -114,6 +113,33 @@ export class Transaction extends Model {
     // // }
     return ts;
   }
+
+  async loadPageV2(clientId: string, itemsPerPage: number, currentPageNumber: number) {
+    const query = { $or: [{ fromId: clientId }, { toId: clientId }], amount: { $ne: 0 } };
+
+    const rs = await this.find(query);
+    const arrSorted = rs.sort((a: any, b: any) => {
+      const aMoment = moment(a.created);
+      const bMoment = moment(b.created); // .set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+      if (aMoment.isAfter(bMoment)) {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+
+    const start = (currentPageNumber - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const len = arrSorted.length;
+    const arr = arrSorted.slice(start, end);
+
+    if (arr && arr.length > 0) {
+      return { total: len, transactions: arr };
+    } else {
+      return { total: len, transactions: [] };
+    }
+  }
+
 
 
   // v1
@@ -434,7 +460,6 @@ export class Transaction extends Model {
       } else {
         res.send(JSON.stringify({ total: len, transactions: [] }, null, 3));
       }
-
     });
   }
 

@@ -11,11 +11,31 @@ export const TimeMap = [
   { pickup: '14:00', deliver: '16:00' }
 ];
 
+export const Status = {
+  ACTIVE: 'A',
+  INACTIVE: 'I'
+}
+
+export const Code = {
+  SUCCESS: 'success',
+  FAIL: 'fail'
+}
+
 export class Model extends Entity {
   constructor(dbo: DB, tableName: string) {
     super(dbo, tableName);
   }
 
+  async getById(id: string) {
+    if (id && ObjectID.isValid(id)) {
+      const r = await this.findOne({ _id: id });
+      if (r) {
+        return r;
+      }
+    } else {
+      return null;
+    }
+  }
 
   // Wrong !
   // m --- local moment object for date, m.isUTC() must be false
