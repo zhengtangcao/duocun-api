@@ -12,6 +12,7 @@ export function LocationRouter(db: DB){
   router.get('/geocode/:address', (req, res) => { controller.getGeocodeList(req, res); });
   router.get('/place/:input', (req, res) => { controller.getPlaceList(req, res); });
 
+
   // old api
   router.get('/suggest/:keyword', (req, res) => { model.reqSuggestAddressList(req, res)});
   router.get('/history', (req, res) => { model.reqHistoryAddressList(req, res)});
@@ -42,7 +43,6 @@ export class LocationController extends Model {
     this.model = new Location(db);
   }
 
-  
   getGeocodeList(req: Request, res: Response) {
     const addr = req.params.address;
 
