@@ -2,12 +2,17 @@ import express from "express";
 import { DB } from "../db";
 import { Order } from "../models/order";
 import { Request, Response } from "express";
-import { Model } from "../models/model";
+import { Model, Code } from "../models/model";
 
 export function OrderRouter(db: DB) {
   const router = express.Router();
   const model = new Order(db);
   const controller = new OrderController(db);
+
+  // yaml
+  router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
+
+
   // v2
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
   router.get('/v2/', (req, res) => { controller.listV2(req, res); });
@@ -142,11 +147,22 @@ export class OrderController extends Model {
     // let q = query ? query : {};
     let clientId = query.clientId;
 
-    this.model.loadHistory(clientId, itemsPerPage, currentPageNumber).then(orders => {
+    this.model.loadHistory(clientId, itemsPerPage, currentPageNumber).then(r => {
       res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({ orders }, null, 3));
+      res.send(JSON.stringify(r, null, 3));
     });
   }
 
 
+
+  placeOrders(req: Request, res: Response) {
+    const orders = req.body;
+    this.model.placeOrders(orders).then((savedOrders: any[]) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: savedOrders 
+      }));
+    });
+  }
 }
