@@ -1,6 +1,6 @@
 import express, {Request, Response} from "express";
 import { DB } from "../db";
-import { Location } from "../models/location";
+import { Location, IGooglePlace } from "../models/location";
 import { Model, Code } from "../models/model";
 
 export function LocationRouter(db: DB){
@@ -10,6 +10,8 @@ export function LocationRouter(db: DB){
 
   // yaml api
   router.get('/geocode/:address', (req, res) => { controller.getGeocodeList(req, res); });
+  router.get('/place/:input', (req, res) => { controller.getPlaceList(req, res); });
+
 
   // old api
   router.get('/suggest/:keyword', (req, res) => { model.reqSuggestAddressList(req, res)});
@@ -47,6 +49,16 @@ export class LocationController extends Model {
     this.model.getGeocodes(addr).then(rs => {
       // res.send(rs);
       res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: rs 
+      }));
+    });
+  }
+  getPlaceList(req: Request, res: Response) {
+    const keyword = req.params.input;
+    this.model.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {
+      // res.send(rs);
       res.send(JSON.stringify({
         code: Code.SUCCESS,
         data: rs 
