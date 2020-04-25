@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import moment from "moment";
 import { DB } from "../db";
 import { Merchant } from "../models/merchant";
-import { ObjectID } from "../../node_modules/@types/mongodb";
 import { Code, Model } from "../models/model";
 
 
@@ -14,7 +13,7 @@ export function MerchantRouter(db: DB){
 
   router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
-
+  router.get('/G/deliverSchedules', (req, res) => { controller.gv1_getDeliverySchedule(req, res); });
   // v2
   router.get('/v2/myMerchants', (req, res) => { controller.getMyMerchants(req, res); });
   router.get('/v2/mySchedules', (req, res) => { controller.getMySchedules(req, res); })
@@ -26,7 +25,6 @@ export function MerchantRouter(db: DB){
   router.get('/', (req, res) => { model.list(req, res); });
 
   // v1
-
   // router.post('/', (req, res) => { model.create(req, res); });
   // router.put('/', (req, res) => { model.replace(req, res); });
   // router.patch('/', (req, res) => { model.update(req, res); });
@@ -202,4 +200,18 @@ export class MerchantController extends Model {
     });
   }
 
+  gv1_getDeliverySchedule(req: Request, res: Response) {
+    const myLocalTime = req.params.dt;
+    const merchantId = req.params.merchant;
+    const lat = +req.params.lat;
+    const lng = +req.params.lng;
+
+    this.model.getDeliverSchedule(myLocalTime, merchantId, lat, lng).then(schedules => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: schedules ? Code.SUCCESS : Code.FAIL,
+        data: schedules 
+      }));
+    });
+  }
 };

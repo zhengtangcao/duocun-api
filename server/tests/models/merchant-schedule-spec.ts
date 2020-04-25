@@ -4,28 +4,28 @@ import moment from 'moment';
 import { expect } from 'chai';
 import {MerchantSchedule} from "../../models/merchant-schedule";
 
-describe('mall getScheduledMallIds', () => {
-  const db: any = new DB();
-  const cfg: any = new Config();
-  let scheduleModel: MerchantSchedule;
-  // let connection;
+// describe('mall getScheduledMallIds', () => {
+//   const db: any = new DB();
+//   const cfg: any = new Config();
+//   let scheduleModel: MerchantSchedule;
+//   // let connection;
 
-  before(function (done) {
-    db.init(cfg.DATABASE).then((dbClient: any) => {
-      // connection = dbClient;
-      scheduleModel = new MerchantSchedule(db);
-      done();
-    });
-  });
+//   before(function (done) {
+//     db.init(cfg.DATABASE).then((dbClient: any) => {
+//       // connection = dbClient;
+//       scheduleModel = new MerchantSchedule(db);
+//       done();
+//     });
+//   });
 
-  after(function (done) {
-    // connection.close();
-    done();
-  });
+//   after(function (done) {
+//     // connection.close();
+//     done();
+//   });
 
-  it('should return merchants with mall and account fileld', () => {
+//   it('should return merchants with mall and account fileld', () => {
 
-  });
+//   });
 
   // // myDateTime -- '2020-03-23 23:58:00'
   // // ms --- moment objects

@@ -18,7 +18,7 @@ export function MerchantScheduleRouter(db: DB){
   
 
   // v1
-  router.get('/availableMerchants', (req, res) => { model.getAvailableMerchants(req, res); });
+  router.get('/availableMerchants', (req, res) => { controller.getAvailableMerchants(req, res); });
   router.get('/availables', (req, res) => { controller.getAvailableSchedules(req, res); });
 
   router.get('/', (req, res) => { model.list(req, res); });
@@ -77,6 +77,26 @@ export class MerchantScheduleController extends Model {
         });
       }else{
         res.send(JSON.stringify(null, null, 3));
+      }
+    });
+  }
+
+  // deprecated
+  getAvailableMerchants(req: Request, res: Response) {
+    let data: any;
+    if (req.headers) {
+      if (req.headers.data && typeof req.headers.data === 'string') {
+        data = JSON.parse(req.headers.data);
+      }
+    }
+    
+    const areaId = data.areaId;
+    this.find({areaId}).then(mss =>{
+      if(mss && mss.length > 0){
+        const merchantIds = mss.map((ms: any) => ms.merchantId.toString());
+        res.send(JSON.stringify(merchantIds));
+      }else{
+        res.send(JSON.stringify(null));
       }
     });
   }
