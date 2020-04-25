@@ -406,8 +406,12 @@ export class ClientPayment extends Model {
   }
 
 
-  async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string, amount: number, note: string, paymentId: string, merchantNames: string[]) {
+
+  async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string,
+ amount: number, note: string, paymentId: string, merchantNames: string[]) {
     // const appType = req.body.appType;
+
+
     let metadata = {};
     let description = "";
     
