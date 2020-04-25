@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 
 import { DB } from "../db";
 import { ClientPayment } from "../models/client-payment";
-import { Model } from "../models/model";
+import { Model, Code } from "../models/model";
 
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
@@ -11,6 +11,13 @@ export function ClientPaymentRouter(db: DB) {
   const router = express.Router();
   const model = new ClientPayment(db);
   const controller = new ClientPaymentController(db);
+
+
+
+  //yaml api
+  router.post('/snappay', (req, res) => { controller.gv1_payBySnappay(req, res) });
+  router.post('/stripe', (req, res) => { controller.gv1_payByStripe(req, res); });
+
 
   // snappy related endpoints
   // https://localhost:8000/api/ClientPayments/payBySnappay
@@ -104,6 +111,28 @@ export class ClientPaymentController extends Model {
     });
   }
 
+  gv1_payBySnappay(req: Request, res: Response) {
+    const appCode = req.body.appCode;
+    // const orders = req.body.orders;
+    const paymentActionCode = req.body.paymentActionCode;
+    const paymentId = req.body.paymentId;
+    const merchantNames = req.body.merchantNames;
+    const accountId = req.body.accountId;
+    const returnUrl = req.body.returnUrl;
+    const amount = Math.round(+req.body.amount * 100) / 100;
+    
+
+    res.setHeader("Content-Type", "application/json");
+    this.model.payBySnappay(paymentActionCode, appCode, accountId, amount, returnUrl, paymentId, merchantNames).then((r: any) => {
+      res.send(JSON.stringify(
+        {code: r ? Code.SUCCESS : Code.FAIL,
+          data: r,
+         }
+    
+        )); // IPaymentResponse
+    });
+  }
+
   // This request could response multiple times !!!
   // return rsp: IPaymentResponse
   snappayNotify(req: Request, res: Response) {
@@ -141,6 +170,26 @@ export class ClientPaymentController extends Model {
     res.setHeader("Content-Type", "application/json");
     this.model.payByStripe(paymentActionCode, paymentMethodId, accountId, accountName, amount, note, paymentId, merchantNames).then((rsp: any) => {
       res.send(JSON.stringify(rsp, null, 3)); // IPaymentResponse
+    });
+  }
+
+  gv1_payByStripe(req: Request, res: Response) {
+    // const appType = req.body.appType;
+    const paymentActionCode = req.body.paymentActionCode;
+    const paymentMethodId = req.body.paymentMethodId;
+    const paymentId = req.body.paymentId;
+    const merchantNames = req.body.merchantNames
+    const accountId = req.body.accountId;
+    const accountName = req.body.accountName;
+    const note = req.body.note;
+    let amount = +req.body.amount;
+
+    res.setHeader("Content-Type", "application/json");
+    this.model.payByStripe(paymentActionCode, paymentMethodId, accountId, accountName, amount, note, paymentId, merchantNames).then((rsp: any) => {
+      res.send(JSON.stringify({
+        code: rsp ? Code.SUCCESS : Code.FAIL,
+        data: rsp,
+      })); // IPaymentResponse
     });
   }
 }
