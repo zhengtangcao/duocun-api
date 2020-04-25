@@ -1,8 +1,9 @@
 import { DB } from "../db";
 import { Model } from "./model";
-import { Request, Response } from "express";
-import { Area } from "./area";
-import moment from 'moment';
+import { Area, AppType } from "./area";
+import {DateTime} from "./date-time";
+
+const N_WEEKS = 2;
 
 export class MerchantSchedule extends Model{
   areaModel: Area;
@@ -57,26 +58,114 @@ export class MerchantSchedule extends Model{
   }
 
 
-  getAvailableMerchants(req: Request, res: Response) {
-    let fields: any;
-    let data: any;
-    if (req.headers) {
-      if (req.headers.data && typeof req.headers.data === 'string') {
-        data = JSON.parse(req.headers.data);
-      }
-      if (req.headers.fields && typeof req.headers.fields === 'string') {
-        fields = JSON.parse(req.headers.fields);
-      }
-    }
-    
-    const areaId = data.areaId;
-    this.find({areaId}).then(mss =>{
-      if(mss && mss.length > 0){
-        const merchantIds = mss.map((ms: any) => ms.merchantId.toString());
-        res.send(JSON.stringify(merchantIds, null, 3));
-      }else{
-        res.send(JSON.stringify(null, null, 3));
+
+
+  // private
+  // s -- time string from databse, eg. 9:8
+  // return 09:08:00
+  patchTime(s: string) {
+    const [h, m] = s.split(':').map(x => +x);
+    return (h > 9 ? h : '0' + h) + ':' + (m > 9 ? m : '0' + m) + ':00';
+  }
+
+
+
+  // private
+  // myLocalTime -- local time string eg.'2020-03-23T23:58:00'
+  // orderEndList -- week and local time array eg. [{dow:2, time:'10:00'}, {dow:3, time:'23:59'}, {dow:5, time: '23:59'}]
+  // deliverDowList -- weeks eg.[2,4,6]
+  // return list of local time string 
+  getLatestMatchDateList(myLocalTime: string, orderEndList: any[], deliverDowList: number[]) {
+    const myLocalDate = myLocalTime.split('T');
+    const dt = new DateTime();
+
+    const orderEnds: any[] = [];
+    orderEndList.map(oe => {
+      const n = +oe.dow;
+      const t = this.patchTime(oe.time); // eg. 09:00 for meat shop
+      const localOrderEndTime = myLocalDate + 'T' + t;
+      orderEnds.push(dt.getMomentFromLocal(localOrderEndTime).day(n));    // current
+      orderEnds.push(dt.getMomentFromLocal(localOrderEndTime).day(n + 7)); // next
+    });
+
+    const latestOrderEnd = dt.getLatestMoment(myLocalTime, orderEnds);
+    const delivers: any[] = [];
+
+    deliverDowList.map(dow => {
+      const n = +dow;
+      // const dt = myLocalDate + 'T00:00:00';
+      const current = dt.getMomentFromLocal(myLocalTime).day(n);
+      const next = dt.getMomentFromLocal(myLocalTime).day(n + 7);
+      const other = dt.getMomentFromLocal(myLocalTime).day(n + 14);
+
+      if (current.isAfter(latestOrderEnd)) {
+        delivers.push(current);
+      } else if (next.isAfter(latestOrderEnd)) {
+        delivers.push(next);
+      } else {
+        delivers.push(other);
       }
     });
+
+    const sorted = delivers.sort((a, b) => {
+      if (a.isAfter(b)) {
+        return 1;
+      } else {
+        return -1;
+      }
+    });
+
+    return sorted.map(b => b.format('YYYY-MM-DDTHH:mm:ss'));
+  }
+
+  // private
+  // delivers --- special deliver date time, '2020-03-31T11:20'
+  // return local time list [{ date: 'YYYY-MM-DD', time:'HH:mm' }]
+  getSpecialSchedule(myLocalTime: string, delivers: string[]) {
+    const ds: any[] = [];
+    const dt = new DateTime();
+    delivers.map((d: string) => {
+      const s = d + ':00';
+      const orderEnd = dt.getMomentFromLocal(s).add(-1, 'days');
+      const deliver = dt.getMomentFromLocal(s);
+      ds.push({ orderEnd, deliver });
+    });
+
+    const rs = ds.filter(m => m.orderEnd.isAfter(dt.getMomentFromLocal(myLocalTime)));
+    return rs.map(r => {
+      return { date: r.deliver.format('YYYY-MM-DD'), time: r.deliver.format('HH:mm') };
+    });
+  }
+
+  // baseList --- local time list ['2020-03-24T00:00:00']
+  // deliverTimeList eg. ['11:20']
+  // return local time list [{ date: 'YYYY-MM-DD', time:'HH:mm' }]
+  expandDeliverySchedule(baseList: any[], deliverTimeList: any[]) {
+    const list: any[] = [];
+    const dt = new DateTime();
+    if (baseList && baseList.length > 0) {
+      for (let i = 0; i < N_WEEKS; i++) {
+        const dateList = baseList.map(b => dt.getMomentFromLocal(b).add(7 * i, 'days').format('YYYY-MM-DD'));
+        dateList.map(d => {
+          deliverTimeList.map(t => {
+            list.push({ date: d, time: t });
+          });
+        });
+      }
+      return list;
+    } else {
+      return list;
+    }
+  }
+
+
+  async getAvailableSchedule(merchantId: string, lat: number, lng: number, appType=AppType.GROCERY){
+    const area = await this.areaModel.getMyArea({lat, lng}, appType);
+    if(area){
+      const areaId = area._id.toString();
+      return this.findOne({merchantId, areaId});
+    }else{
+      return null;
+    }
   }
 }

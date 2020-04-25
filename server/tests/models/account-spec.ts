@@ -7,62 +7,62 @@ import { Account, IAccount, VerificationError } from "../../models/account";
 // import bcrypt from "bcrypt";
 // import jwt from "jsonwebtoken";
 
-describe('doVerfiyV2', () => {
-  const db: any = new DB();
-  const cfg: any = new Config();
-  let accountModel: Account;
-  let connection: any = null;
-  let account: IAccount;
+// describe('doVerfiyV2', () => {
+//   const db: any = new DB();
+//   const cfg: any = new Config();
+//   let accountModel: Account;
+//   let connection: any = null;
+//   let account: IAccount;
 
-  before(function (done) {
-    db.init(cfg.DATABASE).then((dbClient: any) => {
-      connection = dbClient;
-      accountModel = new Account(db);
-      done();
-    });
-  });
+//   before(function (done) {
+//     db.init(cfg.DATABASE).then((dbClient: any) => {
+//       connection = dbClient;
+//       accountModel = new Account(db);
+//       done();
+//     });
+//   });
 
-  after(function (done) {
-    connection.close();
-    done();
-  });
+//   after(function (done) {
+//     connection.close();
+//     done();
+//   });
 
-  it('should verify fail', (done) => {
-    const loggedInAccountId = '5e00d408d90bbb02130cc43c';
-    accountModel.doVerifyV2('416906546X', '1111', loggedInAccountId).then((x: any) => {
-      expect(x.verified).to.equal(false);
-      expect(x.err).to.equal(VerificationError.NO_PHONE_NUMBER_BIND);
-      done();
-    });
-  });
+//   it('should verify fail', (done) => {
+//     const loggedInAccountId = '5e00d408d90bbb02130cc43c';
+//     accountModel.doVerifyV2('416906546X', '1111', loggedInAccountId).then((x: any) => {
+//       expect(x.verified).to.equal(false);
+//       expect(x.err).to.equal(VerificationError.NO_PHONE_NUMBER_BIND);
+//       done();
+//     });
+//   });
 
-  it('should verify fail', (done) => {
-    const loggedInAccountId = '5d953ff91a3174727b9a7c70';
-    accountModel.doVerifyV2('4169065468', '1111', loggedInAccountId).then((x: any) => {
-      expect(x.verified).to.equal(false);
-      expect(x.err).to.equal(VerificationError.PHONE_NUMBER_OCCUPIED);
-      done();
-    });
-  });
+//   it('should verify fail', (done) => {
+//     const loggedInAccountId = '5d953ff91a3174727b9a7c70';
+//     accountModel.doVerifyV2('4169065468', '1111', loggedInAccountId).then((x: any) => {
+//       expect(x.verified).to.equal(false);
+//       expect(x.err).to.equal(VerificationError.PHONE_NUMBER_OCCUPIED);
+//       done();
+//     });
+//   });
 
-  it('should verify fail', (done) => {
-    const loggedInAccountId = '5d953ff91a3174727b9a7c70';
-    accountModel.doVerifyV2('123456', '1111', loggedInAccountId).then((x: any) => {
-      expect(x.verified).to.equal(false);
-      expect(x.err).to.equal(VerificationError.WRONG_CODE);
-      done();
-    });
-  });
+//   it('should verify fail', (done) => {
+//     const loggedInAccountId = '5d953ff91a3174727b9a7c70';
+//     accountModel.doVerifyV2('123456', '1111', loggedInAccountId).then((x: any) => {
+//       expect(x.verified).to.equal(false);
+//       expect(x.err).to.equal(VerificationError.WRONG_CODE);
+//       done();
+//     });
+//   });
 
-  it('should verify success', (done) => {
-    const loggedInAccountId = '5d953ff91a3174727b9a7c70';
-    accountModel.doVerifyV2('123456', '1234', loggedInAccountId).then((x: any) => {
-      expect(x.verified).to.equal(true);
-      expect(x.err).to.equal(VerificationError.NONE);
-      done();
-    });
-  });
-}); // end of getAccountByToken
+//   it('should verify success', (done) => {
+//     const loggedInAccountId = '5d953ff91a3174727b9a7c70';
+//     accountModel.doVerifyV2('123456', '1234', loggedInAccountId).then((x: any) => {
+//       expect(x.verified).to.equal(true);
+//       expect(x.err).to.equal(VerificationError.NONE);
+//       done();
+//     });
+//   });
+// }); // end of getAccountByToken
 
 
 // describe('account doSignup a new account and getAccountByToken', () => {

@@ -360,6 +360,31 @@ export class Merchant extends Model {
 
 
 
+  // myLocalTime --- eg. '2020-04-23T23:12:00'
+  // return local time list [{ date: 'YYYY-MM-DD', time:'HH:mm' }]
+  async getDeliverSchedule(myLocalTime: string, merchantId: string, lat: number, lng: number, appType=AppType.GROCERY){
+    const merchant = await this.findOne({ _id: merchantId });
 
+    if (merchant.delivers) {
+      const myDateTime = moment.utc().format('YYYY-MM-DD HH:mm:ss');
+      return this.scheduleModel.getSpecialSchedule(myDateTime, merchant.delivers);
+    } else {
+      const schedule = await this.scheduleModel.getAvailableSchedule(merchantId, lat, lng, appType);
+      if (schedule && merchant) {
+        const orderEndList = merchant.rules.map((r: any) => r.orderEnd);
+        const dows = schedule.rules.map((r: any) => +r.deliver.dow);
+        const bs = this.scheduleModel.getLatestMatchDateList(myLocalTime, orderEndList, dows);
+  
+        const deliverTimeMap: any = {};
+        schedule.rules.forEach((r: any) => {
+          deliverTimeMap[r.deliver.time] = true;
+        });
+        const timeList = Object.keys(deliverTimeMap);
+        return this.scheduleModel.expandDeliverySchedule(bs, timeList);
+      } else {
+        return [];
+      }
+    }
+  }
 
 }

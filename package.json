@@ -44,7 +44,7 @@
     "minimatch": "^3.0.4",
     "mocha": "^6.2.0",
     "moment": "^2.24.0",
-    "moment-timezone": "^0.5.27",
+    "moment-timezone": "^0.5.28",
     "multer": "^1.4.2",
     "node-cron": "^2.0.3",
     "node-rsa": "^1.0.5",
@@ -59,9 +59,9 @@
     "swagger-ui-express": "^4.1.4",
     "ts-md5": "^1.2.6",
     "twilio": "^3.34.0",
-    "yamljs": "^0.3.0",
     "winston": "^3.2.1",
-    "winston-daily-rotate-file": "^4.4.2"
+    "winston-daily-rotate-file": "^4.4.2",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.2",
