@@ -11,7 +11,7 @@ export function ProductRouter(db: DB){
   router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
 
-
+  // old api
   router.get('/', (req, res) => { controller.list(req, res); });
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
@@ -51,7 +51,7 @@ class ProductController extends Model{
     const merchantId = req.query.merchantId;
     const query = status ? {status} : {};
     res.setHeader('Content-Type', 'application/json');
-    
+
     merchantId ? 
     this.model.joinFind({...query, merchantId}).then((products: any[]) => {
       res.send(JSON.stringify({
