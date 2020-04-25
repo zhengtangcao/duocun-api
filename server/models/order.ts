@@ -924,7 +924,7 @@ export class Order extends Model {
     const end = start + itemsPerPage;
     const arr = arrSorted.slice(start, end);
 
-    return arr.map((order: any) => {
+    const orders = arr.map((order: any) => {
       const items: any[] = [];
       order.items.map((it: any) => {
         const product = ps.find((p: any) => p._id.toString() === it.productId.toString());
@@ -938,6 +938,8 @@ export class Order extends Model {
       const address = this.locationModel.getAddrString(order.location);
       return { ...order, address, description, items, clientPhoneNumber };
     });
+
+    return { total: arrSorted.length, orders};
   }
 
   async loadPage(query: any, itemsPerPage: number, currentPageNumber: number) {

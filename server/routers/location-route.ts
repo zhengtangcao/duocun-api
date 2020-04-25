@@ -41,7 +41,6 @@ export class LocationController extends Model {
     this.model = new Location(db);
   }
 
-  
   getGeocodeList(req: Request, res: Response) {
     const addr = req.params.address;
 
