@@ -81,7 +81,7 @@ export class MerchantScheduleController extends Model {
     });
   }
 
-  // deprecated
+
   getAvailableMerchants(req: Request, res: Response) {
     let data: any;
     if (req.headers) {

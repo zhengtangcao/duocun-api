@@ -95,17 +95,35 @@ export class Merchant extends Model {
     this.rangeModel = new Range(dbo);
     this.scheduleModel = new MerchantSchedule(dbo);
   }
+  // this.merchantSvc.quickFind(query).then((rs: IMerchant[]) => {
+  //   if (areaId) {
+  //     this.merchantSchduleSvc.getAvailableMerchants(areaId).then((merchantIds: any[]) => {
+  //       if (merchantIds && merchantIds.length > 0) {
+  //         const availables = rs.filter(m => merchantIds.indexOf(m._id) !== -1);
+  //         self.merchants = availables;
+  //         res(availables);
+  //       } else {
+  //         self.merchants = [];
+  //         res([]);
+  //       }
+  //     });
+  //   } else {
+  //     self.merchants = rs;
+  //     res(rs);
+  //   }
+  // });
 
   // v2
-  async getMyMerchants(location: ILocation, query: any, fields: any[]) {
-    if(location && location.placeId){
-      const area = await this.areaModel.getMyArea(location, AppType.GROCERY);
+  async getAvailableMerchants(lat: number, lng: number, status: string, appType=AppType.GROCERY) {
+    if(lat && lng){
+      const area = await this.areaModel.getMyArea({lat, lng}, appType);
       if (area) {
         const areaId = area._id.toString();
         const schedules = await this.scheduleModel.find({ areaId });
         const merchantIds = schedules.map((ms: any) => ms.merchantId.toString());
+        const query = status ? {status}: {};
         const q = { ...query, _id: { $in: merchantIds } };
-        return await this.find( q, fields);
+        return await this.find(q);
       } else {
         return [];
       }
