@@ -76,7 +76,7 @@ export class MerchantSchedule extends Model{
   // deliverDowList -- weeks eg.[2,4,6]
   // return list of local time string 
   getLatestMatchDateList(myLocalTime: string, orderEndList: any[], deliverDowList: number[]) {
-    const myLocalDate = myLocalTime.split('T');
+    const myLocalDate = myLocalTime.split('T')[0];
     const dt = new DateTime();
 
     const orderEnds: any[] = [];
