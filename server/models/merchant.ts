@@ -5,11 +5,8 @@ import { Mall, IMall, IDbMall } from "./mall";
 import { Distance, ILocation, IDistance, IPlace } from "./distance";
 import { Area, ILatLng, IArea, AppType } from "./area";
 import { Range, IRange } from './range';
-
-import { Request, Response } from "express";
 import { ObjectID, Collection, ObjectId } from "mongodb";
 import moment from "moment";
-import { resolve } from "path";
 import { IAccount, Account } from "./account";
 import { MerchantSchedule } from "./merchant-schedule";
 
