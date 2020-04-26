@@ -11,9 +11,10 @@ export function MerchantRouter(db: DB){
   const model = new Merchant(db);
   const controller = new MerchantController(db);
 
+  // The order matters
+  router.get('/G/deliverSchedules', (req, res) => { controller.gv1_getDeliverySchedule(req, res); });
   router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
-  router.get('/G/deliverSchedules', (req, res) => { controller.gv1_getDeliverySchedule(req, res); });
   // v2
   router.get('/v2/myMerchants', (req, res) => { controller.getMyMerchants(req, res); });
   router.get('/v2/mySchedules', (req, res) => { controller.getMySchedules(req, res); })
@@ -200,11 +201,12 @@ export class MerchantController extends Model {
     });
   }
 
+  // myLocalTime --- eg. '2020-04-23T10-09-00'
   gv1_getDeliverySchedule(req: Request, res: Response) {
-    const myLocalTime = req.params.dt;
-    const merchantId = req.params.merchant;
-    const lat = +req.params.lat;
-    const lng = +req.params.lng;
+    const myLocalTime = req.query.dt;
+    const merchantId = req.query.merchantId;
+    const lat = +req.query.lat;
+    const lng = +req.query.lng;
 
     this.model.getDeliverSchedule(myLocalTime, merchantId, lat, lng).then(schedules => {
       res.setHeader('Content-Type', 'application/json');
