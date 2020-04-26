@@ -1,5 +1,6 @@
 import { DateTime } from "../../models/date-time";
-import { expect } from 'chai';
+// import { expect } from 'chai';
+const {expect} = require('chai');
 // import moment from "../../../node_modules/moment";
 // import { Config } from "../../config";
 // import { ILocation } from "../../models/distance";

@@ -1,8 +1,8 @@
 import { DB } from "../../db";
-import { Config } from "../../config";
-import moment from 'moment';
-import { expect } from 'chai';
-import {MerchantSchedule} from "../../models/merchant-schedule";
+// import { Config } from "../../config";
+// import moment from 'moment';
+// import { expect } from 'chai';
+// import {MerchantSchedule} from "../../models/merchant-schedule";
 
 // describe('mall getScheduledMallIds', () => {
 //   const db: any = new DB();
@@ -157,4 +157,4 @@ import {MerchantSchedule} from "../../models/merchant-schedule";
   //   rs.map(d => console.log(d.date));
   //   expect(rs[0].date).to.equal('2020-04-03');
   // });
-});
+// });
