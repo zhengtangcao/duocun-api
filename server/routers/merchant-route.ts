@@ -13,10 +13,12 @@ export function MerchantRouter(db: DB){
 
   // The order matters
   router.get('/G/deliverSchedules', (req, res) => { controller.gv1_getDeliverySchedule(req, res); });
+  router.get('/G/available', (req, res) => { controller.gv1_getAvailableMerchants(req, res); });
   router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+
   // v2
-  router.get('/v2/myMerchants', (req, res) => { controller.getMyMerchants(req, res); });
+  router.get('/v2/myMerchants', (req, res) => { controller.gv1_getAvailableMerchants(req, res); });
   router.get('/v2/mySchedules', (req, res) => { controller.getMySchedules(req, res); })
   router.get('/getByAccountId', (req, res) => { controller.getByAccountId(req, res); });
   router.post('/load', (req, res) => { controller.load(req, res); });
@@ -82,24 +84,6 @@ export class MerchantController extends Model {
     });
   }
 
-  getMyMerchants(req: Request, res: Response) {
-    let fields: any;
-    let data: any;
-    if (req.headers) {
-      if (req.headers.filter && typeof req.headers.filter === 'string') {
-        data = JSON.parse(req.headers.filter);
-      }
-      if (req.headers.fields && typeof req.headers.fields === 'string') {
-        fields = JSON.parse(req.headers.fields);
-      }
-    }
-    const query = data.query;
-    const location = data.location;
-    this.model.getMyMerchants(location, query, fields).then((rs: any[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(rs, null, 3));
-    });
-  }
 
   getByAccountId(req: Request, res: Response) {
     let query = null;
@@ -213,6 +197,19 @@ export class MerchantController extends Model {
       res.send(JSON.stringify({
         code: schedules ? Code.SUCCESS : Code.FAIL,
         data: schedules 
+      }));
+    });
+  }
+
+  gv1_getAvailableMerchants(req: Request, res: Response) {
+    const lat = +req.query.lat;
+    const lng = +req.query.lng;
+    const status = req.query.status;
+    this.model.getAvailableMerchants(lat, lng, status).then((ms: any[]) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: ms ? Code.SUCCESS : Code.FAIL,
+        data: ms 
       }));
     });
   }
