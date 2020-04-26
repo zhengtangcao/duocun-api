@@ -11,6 +11,7 @@ export function LocationRouter(db: DB){
   // yaml api
   router.get('/geocode/:address', (req, res) => { controller.getGeocodeList(req, res); });
   router.get('/place/:input', (req, res) => { controller.getPlaceList(req, res); });
+  router.get('/history/:accountId', (req, res) => { controller.gv1_list(req, res); });
 
 
   // old api
@@ -21,8 +22,8 @@ export function LocationRouter(db: DB){
   router.get('/', (req, res) => { model.list(req, res); });
   router.get('/:id', (req, res) => { model.get(req, res); });
   router.get('/Places/:input', (req, res) => { model.reqPlaces(req, res); });
-
   router.get('/Geocodes/:address', (req, res) => { model.reqGeocodes(req, res); });
+
   router.post('/upsertOne', (req, res) => { model.upsertOne(req, res); });
   router.post('/', (req, res) => { model.create(req, res); });
 
@@ -55,6 +56,7 @@ export class LocationController extends Model {
       }));
     });
   }
+
   getPlaceList(req: Request, res: Response) {
     const keyword = req.params.input;
     this.model.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {
@@ -66,4 +68,21 @@ export class LocationController extends Model {
     });
   }
 
+  gv1_list(req: Request, res: Response) {
+    const accountId = req.params.accountId;
+    res.setHeader('Content-Type', 'application/json');
+    if(accountId){
+      this.model.find({accountId}).then((locations) => {
+        res.send(JSON.stringify({
+          code: Code.SUCCESS,
+          data: locations 
+        }));
+      });
+    }else{
+      res.send(JSON.stringify({
+        code: Code.FAIL,
+        data: []
+      }));
+    }
+  }
 }
