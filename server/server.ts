@@ -201,10 +201,11 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use("/" + ROUTE_PREFIX + "/Merchants", MerchantRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Restaurants", MerchantRouter(dbo)); // deprecated
   app.use("/" + ROUTE_PREFIX + "/Areas", AreaRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Tools", ToolRouter(dbo));
-
+  app.use("/" + ROUTE_PREFIX + "/Transactions", TransactionRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Categories", CategoryRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Products", ProductRouter(dbo));
+  
+  app.use("/" + ROUTE_PREFIX + "/Tools", ToolRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Contacts", ContactRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Ranges", RangeRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Malls", MallRouter(dbo));
@@ -226,7 +227,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use("/" + ROUTE_PREFIX + "/ClientPayments", ClientPaymentRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverPayments", DriverPaymentRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverBalances", DriverBalanceRouter(dbo));
-  app.use("/" + ROUTE_PREFIX + "/Transactions", TransactionRouter(dbo));
+  
   app.use("/" + ROUTE_PREFIX + "/OrderSequences", OrderSequenceRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverHours", DriverHourRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverShifts", DriverShiftRouter(dbo));

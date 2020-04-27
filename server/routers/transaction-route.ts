@@ -8,8 +8,10 @@ export function TransactionRouter(db: DB){
   const model = new Transaction(db);
   const controller = new TransactionController(db);
 
+  // grocery api
   router.get('/page/:clientId/:currentPageNumber/:itemsPerPage', (req, res) => { controller.getPage(req, res); });
 
+  // old api
   router.get('/getMerchantBalance', (req, res) => { model.getMerchantBalance(req, res); });
   router.get('/loadPage/:currentPageNumber/:itemsPerPage', (req, res) => { model.loadPage(req, res); });
   router.get('/sales', (req, res) => { model.getSales(req, res); });

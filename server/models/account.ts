@@ -601,7 +601,6 @@ export class Account extends Model {
     }
   }
 
-
   // code [string] --- wechat authentication code
   // return {tokenId, accessToken, openId, expiresIn}
   async wechatLoginByCode(code: string) {

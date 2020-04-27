@@ -8,8 +8,13 @@ export function ProductRouter(db: DB){
   const model = new Product(db);
   const controller = new ProductController(db);
   
+  // grocery api
   router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+
+  // admin api /products/admin
+  router.get('/admin', (req, res) => { controller.av1_list(req, res); });
+
 
   // old api
   router.get('/', (req, res) => { controller.list(req, res); });
@@ -73,6 +78,17 @@ class ProductController extends Model{
       res.send(JSON.stringify({
         code: product ? Code.SUCCESS : Code.FAIL,
         data: product 
+      }));
+    });
+  }
+
+
+  av1_list(req: Request, res: Response) {
+    res.setHeader('Content-Type', 'application/json');
+    this.model.joinFind({}).then((products: any[]) => {
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: products 
       }));
     });
   }

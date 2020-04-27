@@ -9,10 +9,13 @@ export function CategoryRouter(db: DB){
   const model = new Category(db);
   const controller = new CategoryController(db);
 
-  // yaml api
+  // grocery api
   router.get('/G/root', (req, res) => { controller.gv1_list(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
   router.get('/G/:id', (req, res) => { controller.gv1_getById(req, res); });
+
+  // admin api
+  router.get('/admin/', (req, res) => { controller.gv1_list(req, res); });
 
   // old api
   router.get('/', (req, res) => { model.list(req, res); });
@@ -46,8 +49,7 @@ export class CategoryController extends Model{
 
   gv1_list(req: Request, res: Response) {
     const status = req.query.status;
-    // const appType = AppType.GROCERY;
-    const query = {status}; // status ? {status, appType} : {appType};
+    const query = status ? {status} : {};
 
     this.model.find(query).then((categories) => {
       res.setHeader('Content-Type', 'application/json');
