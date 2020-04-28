@@ -10,7 +10,7 @@ export function OrderRouter(db: DB) {
   const controller = new OrderController(db);
   // v2
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
-  router.get('/v2/paymentHistory/:currentPageNumber/:itemsPerPage', (req, res) => { controller.getPaymentHistory(req, res); });
+  router.get('/paymentHistory/:clientId/:currentPageNumber/:itemsPerPage', (req, res) => { controller.getPaymentHistory(req, res); });
   // tools
   // router.post('/missingWechatpayments', (req, res) => { model.reqMissingWechatPayments(req, res); });
   // router.post('/missingPaid', (req, res) => { model.reqFixMissingPaid(req, res); });
@@ -129,6 +129,7 @@ export class OrderController extends Model {
   getPaymentHistory(req: Request, res: Response) {
     const itemsPerPage = +req.params.itemsPerPage;
     const currentPageNumber = +req.params.currentPageNumber;
+    const clientId = req.params.clientId;
 
     let query = null;
     // let fields = null;
@@ -141,7 +142,6 @@ export class OrderController extends Model {
     // }
 
     // let q = query ? query : {};
-    let clientId = query.clientId;
 
     this.model.getPaymentHistory(clientId, itemsPerPage, currentPageNumber).then(payments => {
       res.setHeader('Content-Type', 'application/json');

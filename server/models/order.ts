@@ -888,15 +888,15 @@ export class Order extends Model {
 
   // orders - [ order21...]
   // get DeliverDate orders by PaymentId
-  
-  groupByDeliverDate(orders: any[]){
+
+  groupByDeliverDate(orders: any[]) {
     const DeliverMap: any = {};
     // initialize map
     orders.forEach(order => {
       const deliverDate = order.deliverDate.toString();
       DeliverMap[deliverDate] = { deliverDate, orders: [] };
     });
-    
+
     orders.forEach(order => {
       const deliverDate = order.deliverDate.toString();
       DeliverMap[deliverDate].orders.push(order);
@@ -914,14 +914,14 @@ export class Order extends Model {
   }
 
   // orders --- all the orders belong to a client
-  groupByPaymentId(orders: any[]){
+  groupByPaymentId(orders: any[]) {
     const paymentMap: any = {};
     // initialize map
     orders.forEach(order => {
       const paymentId = order.paymentId.toString();
       paymentMap[paymentId] = { paymentId, orders: [] };
     });
-    
+
     orders.forEach(order => {
       const paymentId = order.paymentId.toString();
       paymentMap[paymentId].orders.push(order);
@@ -938,15 +938,15 @@ export class Order extends Model {
 
   }
 
-  groupByMerchant(orders: any[]){
+  groupByMerchant(orders: any[]) {
     const merchantMap: any = {};
     // initialize map
     orders.forEach(order => {
-      
+
       const merchantId = order.merchantId.toString();
       merchantMap[merchantId] = { merchantId, orders: [] };
     });
-    
+
     orders.forEach(order => {
       const merchantId = order.merchantId.toString();
       merchantMap[merchantId].orders.push(order);
@@ -963,7 +963,7 @@ export class Order extends Model {
 
   }
 
-  
+
 
   // return [{ paymentId: pyid2, phone, created, delivered, items:[ 
   // {merchantName,items:[{productName,quantity,price}]},...
@@ -971,17 +971,25 @@ export class Order extends Model {
   async getPaymentHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
     const client = await this.accountModel.findOne({ _id: clientId });
     const historyByDate: any = []
-    const history : any
+    // const history;
     const ps = await this.productModel.find({});
     const query = { clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
     const orders = await this.find(query);
-    const ordersByPid = this.groupByPaymentId(orders)
-    ordersByPid.values().forEach(orderByDate => {const subDate = []
-    const datas = this.groupByDeliverDate(orderByDate).values()
-    datas.forEach(orderbymerchant=>{const subMerchant = [] subMerchant.push(this.groupByMerchant(orderbymerchant))
-     }subDate.push(dates)}) 
-    const ordersByMerchants = ordersByDeliver
-    const productName =
+    const ordersByPid = this.groupByPaymentId(orders);
+
+    ordersByPid.values().forEach((ordersByDate: object[]) => {
+      const subDate = [];
+      const datas: any[] = this.groupByDeliverDate(ordersByDate).values();
+      
+      const subMerchant: any[] = [];
+      datas.forEach((orderbymerchant: any) => {
+        subMerchant.push(this.groupByMerchant(orderbymerchant.orders));
+      });
+      subDate.push(subMerchant);
+    });
+      // })
+    // const ordersByMerchants = ordersByDeliver
+    // const productName =
     //const quantity=
     // // paging --- do it on last step
     // const arrSorted = this.sortByDeliverDate(orders);
