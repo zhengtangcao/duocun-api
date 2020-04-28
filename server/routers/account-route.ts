@@ -224,7 +224,7 @@ export class AccountController extends Model {
     }
 
     if (params && params.keyword) {
-      query = { ...query, username: new RegExp(params.keyword) };
+      //query = { ...query, username: new RegExp(params.keyword) };
     }
 
     this.accountModel.find(query).then(accounts => {

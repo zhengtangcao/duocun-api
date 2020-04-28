@@ -17,6 +17,7 @@ import { ClientCredit } from "./client-credit";
 import fs from "fs";
 import { EventLog } from "./event-log";
 import { PaymentAction } from "./client-payment";
+import { config } from "dotenv/types";
 
 const CASH_ID = '5c9511bb0851a5096e044d10';
 const CASH_NAME = 'Cash';
@@ -886,8 +887,30 @@ export class Order extends Model {
   }
 
   // orders - [ order21...]
+  // get DeliverDate orders by PaymentId
+  
   groupByDeliverDate(orders: any[]){
+    const DeliverMap: any = {};
+    // initialize map
+    orders.forEach(order => {
+      const deliverDate = order.deliverDate.toString();
+      DeliverMap[deliverDate] = { deliverDate, orders: [] };
+    });
+    
+    orders.forEach(order => {
+      const deliverDate = order.deliverDate.toString();
+      DeliverMap[deliverDate].orders.push(order);
+    });
 
+    // payemntMap :  { 
+    //     pyid1: { paymentId: pyid1, orders:[ order11...]}, 
+    //     pyid2: { paymentId: pyid2, orders:[ order21...]} 
+    // }
+    const keys = Object.keys(DeliverMap); // [pyid1, pyid2 ....]
+    const vals = keys.map(key => DeliverMap[key]);
+
+    //return vals;
+    return DeliverMap
   }
 
   // orders --- all the orders belong to a client
@@ -911,18 +934,55 @@ export class Order extends Model {
     const keys = Object.keys(paymentMap); // [pyid1, pyid2 ....]
     const vals = keys.map(key => paymentMap[key]);
 
-    return vals;
+    return paymentMap;
+
   }
 
+  groupByMerchant(orders: any[]){
+    const merchantMap: any = {};
+    // initialize map
+    orders.forEach(order => {
+      
+      const merchantId = order.merchantId.toString();
+      merchantMap[merchantId] = { merchantId, orders: [] };
+    });
+    
+    orders.forEach(order => {
+      const merchantId = order.merchantId.toString();
+      merchantMap[merchantId].orders.push(order);
+    });
+
+    // payemntMap :  { 
+    //     pyid1: { paymentId: pyid1, orders:[ order11...]}, 
+    //     pyid2: { paymentId: pyid2, orders:[ order21...]} 
+    // }
+    const keys = Object.keys(merchantMap); // [pyid1, pyid2 ....]
+    const vals = keys.map(key => merchantMap[key]);
+
+    return merchantMap;
+
+  }
+
+  
+
   // return [{ paymentId: pyid2, phone, created, delivered, items:[ 
-  // order21...
+  // {merchantName,items:[{productName,quantity,price}]},...
   // ]}]
   async getPaymentHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
     const client = await this.accountModel.findOne({ _id: clientId });
+    const historyByDate: any = []
+    const history : any
     const ps = await this.productModel.find({});
     const query = { clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
     const orders = await this.find(query);
-
+    const ordersByPid = this.groupByPaymentId(orders)
+    ordersByPid.values().forEach(orderByDate => {const subDate = []
+    const datas = this.groupByDeliverDate(orderByDate).values()
+    datas.forEach(orderbymerchant=>{const subMerchant = [] subMerchant.push(this.groupByMerchant(orderbymerchant))
+     }subDate.push(dates)}) 
+    const ordersByMerchants = ordersByDeliver
+    const productName =
+    //const quantity=
     // // paging --- do it on last step
     // const arrSorted = this.sortByDeliverDate(orders);
     // const start = (currentPageNumber - 1) * itemsPerPage;
@@ -930,20 +990,20 @@ export class Order extends Model {
     // const orderArray = arrSorted.slice(start, end);
 
     // group by paymentId
-    return orders.map((order: any) => {
-      const items: any[] = [];
-      order.items.map((it: any) => {
-        const product = ps.find((p: any) => p._id.toString() === it.productId.toString());
-        if (product) {
-          items.push({ product, quantity: it.quantity, price: it.price });
-        }
-      });
+    // return orders.map((order: any) => {
+    //   const items: any[] = [];
+    //   order.items.map((it: any) => {
+    //     const product = ps.find((p: any) => p._id.toString() === it.productId.toString());
+    //     if (product) {
+    //       items.push({ product, quantity: it.quantity, price: it.price });
+    //     }
+    //   });
 
-      const description = this.getDescription(order, 'zh');
-      const clientPhoneNumber = client.phone;
-      const address = this.locationModel.getAddrString(order.location);
-      return { ...order, address, description, items, clientPhoneNumber };
-    });
+    //   const description = this.getDescription(order, 'zh');
+    //   const clientPhoneNumber = client.phone;
+    //   const address = this.locationModel.getAddrString(order.location);
+    //   return { ...order, address, description, items, clientPhoneNumber };
+    // });
   }
 
 

@@ -10,7 +10,7 @@
     "build": "tsc",
     "prestart": "npm run build",
     "lint": "eslint .",
-    "copy": "cp -r server/swagger dist/",
+    "copy": "",
     "start": "npm run copy && node ./dist/server.js",
     "test": "mocha -r ts-node/register server/tests/**/*-spec.ts",
     "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test",
