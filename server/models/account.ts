@@ -397,32 +397,33 @@ export class Account extends Model {
 
 
   // To do: test token is undefined or null
-  getAccountByToken(tokenId: string): Promise<IAccount> {
-    const cfg = new Config();
-    return new Promise((resolve, reject) => {
-      if (tokenId && tokenId !== 'undefined' && tokenId !== 'null') {
-        try {
-          const _id = jwt.verify(tokenId, cfg.JWT.SECRET);
-          if (_id) {
-            this.findOne({ _id }).then((account: IAccount) => {
-              if (account) {
-                delete account.password;
-              }
-              resolve(account);
-            });
-          } else {
-            resolve();
+  async getAccountByToken(tokenId: string) {
+    if (tokenId && tokenId !== 'undefined' && tokenId !== 'null') {
+      try {
+        const cfg = new Config();
+        const _id = jwt.verify(tokenId, cfg.JWT.SECRET);
+        if (_id) {
+          const account = await this.findOne({ _id });
+          if (account && account.password) {
+            delete account.password;
           }
-        } catch (e) {
-          resolve();
+          return account;
+        } else {
+          const message = 'getAccountByToken Fail: jwt verify fail, tokenId:' + tokenId;
+          await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'jwt', 'jwt verify fail', message);
+          return;
         }
-      } else {
-        resolve();
+      } catch (e) {
+        const message = 'getAccountByToken Fail: jwt verify exception, tokenId:' + tokenId + ', ' + (e ? e.toString() : '');
+        await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'jwt', 'jwt verify fail', message);
+        return ;
       }
-    });
+    } else {
+      const message = 'getAccountByToken Fail: Then tokenId is null, tokenId:' + tokenId;
+      await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'getAccountByToken', 'tokenId is null', message);
+      return ;
+    }
   }
-
-
 
   createTmpAccount(phone: string, verificationCode: string): Promise<IAccount> {
     return new Promise((resolve, reject) => {
