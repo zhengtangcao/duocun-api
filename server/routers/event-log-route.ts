@@ -3,6 +3,10 @@ import { DB } from "../db";
 import { EventLog } from "../models/event-log";
 import { Model } from "../models/model";
 
+import path from 'path';
+import { getLogger } from '../lib/logger'
+const logger = getLogger(path.basename(__filename));
+
 export function EventLogRouter(db: DB){
   const router = express.Router();
   const model = new EventLog(db);
@@ -34,6 +38,7 @@ class EventLogController extends Model{
   }
 
   create(req: Request, res: Response) {
+    logger.info( `[Log Event]: ${JSON.stringify(req.body) }`);
     this.insertOne(req.body).then((x: any) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(x, null, 3));
