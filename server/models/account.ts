@@ -605,21 +605,26 @@ export class Account extends Model {
   // code [string] --- wechat authentication code
   // return {tokenId, accessToken, openId, expiresIn}
   async wechatLoginByCode(code: string) {
-    try {
-      const r = await this.utils.getWechatAccessToken(code); // error code 40163
-      if (r && r.access_token && r.openid) { // wechat token
-        const accessToken = r.access_token;
-        const openId = r.openid;
-        const expiresIn = r.expires_in;  // 2h
-        const refreshToken = r.refresh_token;
-        const tokenId = await this.wechatLoginByOpenId(accessToken, openId);
-        return { tokenId, accessToken, openId, expiresIn };
-      } else {
-        const message = `code: ${code}, errCode: ${r && r.code}, errMsg: ${ (r & r.msg) ||  'LoginByCode Exception'}`;
-        await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', message);
+    if(code){
+      try {
+        const r = await this.utils.getWechatAccessToken(code); // error code 40163
+        if (r && r.access_token && r.openid) { // wechat token
+          const accessToken = r.access_token;
+          const openId = r.openid;
+          const expiresIn = r.expires_in;  // 2h
+          const refreshToken = r.refresh_token;
+          const tokenId = await this.wechatLoginByOpenId(accessToken, openId);
+          return { tokenId, accessToken, openId, expiresIn };
+        } else {
+          const message = `code: ${code}, errCode: ${r && r.code}, errMsg: ${ (r & r.msg) ||  'LoginByCode Exception'}`;
+          await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', message);
+          return null;
+        }
+      } catch (e) {
         return null;
       }
-    } catch (e) {
+    }else{
+      await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', 'Empty wechat authCode');
       return null;
     }
   }
