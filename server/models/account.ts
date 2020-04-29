@@ -414,7 +414,7 @@ export class Account extends Model {
           return;
         }
       } catch (e) {
-        const message = 'getAccountByToken Fail: jwt verify exception, tokenId:' + tokenId + ', ' + (e ? e.toString() : '');
+        const message = `getAccountByToken Fail: jwt verify exception, tokenId: ${tokenId}  , ${e || ' Exception'}`;
         await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'jwt', 'jwt verify fail', message);
         return ;
       }
