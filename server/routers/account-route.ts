@@ -127,6 +127,10 @@ export class AccountController extends Model {
       } else {
         res.send(JSON.stringify('', null, 3));
       }
+    }).catch( (error:any) => {
+      // even exception,  let user login again
+      // console.log(`err: ${error}`);
+      res.send(JSON.stringify('', null, 3));
     });
   }
 
@@ -142,6 +146,10 @@ export class AccountController extends Model {
       } else {
         res.send(JSON.stringify('', null, 3));
       }
+    }).catch( (error: any) => {
+      // even exception,  let user login again
+      // console.log(`err: ${error}`);
+      res.send(JSON.stringify('', null, 3));
     });
   }
 

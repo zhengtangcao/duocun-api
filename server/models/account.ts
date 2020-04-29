@@ -583,8 +583,8 @@ export class Account extends Model {
       const x = await this.utils.getWechatUserInfo(accessToken, openId);
       if (x && x.openid) {
         const account = await this.doWechatSignup(x.openid, x.nickname, x.headimgurl, x.sex);
-        if (account) {
-          const accountId = account._id.toString();
+        if (account && account._id) {
+          const accountId = `${account._id}`;
           const tokenId = jwt.sign(accountId, this.cfg.JWT.SECRET); // SHA256
           return tokenId;
         } else {
@@ -596,7 +596,7 @@ export class Account extends Model {
         return null;
       }
     } catch (err) {
-      const message = 'accessToken:' + accessToken + ', openId:' + openId + ', msg:' + (err ? err.toString() : 'ByOpenId Exception');
+      const message = `accessToken: ${accessToken}  , openId: ${openId}, msg: ${err || 'ByOpenId Exception'}`;
       await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by openid', '', message);
       return null;
     }
@@ -615,7 +615,7 @@ export class Account extends Model {
         const tokenId = await this.wechatLoginByOpenId(accessToken, openId);
         return { tokenId, accessToken, openId, expiresIn };
       } else {
-        const message = 'code:' + code + ', errCode:' + (r?r.code:' ') + ', errMsg:' + (r? r.msg : 'LoginByCode Exception');
+        const message = `code: ${code}, errCode: ${r && r.code}, errMsg: ${ (r & r.msg) ||  'LoginByCode Exception'}`;
         await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', message);
         return null;
       }
