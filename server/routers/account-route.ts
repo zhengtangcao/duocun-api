@@ -248,15 +248,9 @@ export class AccountController extends Model {
   getCurrentAccount(req: Request, res: Response) {
     const tokenId: any = req.query.tokenId;
 
-    let fields: string[];
-    if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
-      fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
-    }
-
     this.accountModel.getAccountByToken(tokenId).then(account => {
-      const r = this.accountModel.filter(account, fields);
       res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(r, null, 3));
+      res.send(JSON.stringify(account, null, 3));
     });
   }
 

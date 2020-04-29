@@ -189,6 +189,7 @@ export class MerchantController extends Model {
   gv1_getDeliverySchedule(req: Request, res: Response) {
     const myLocalTime = `${req.query.dt}`;
     const merchantId = `${req.query.merchantId}`;
+
     const lat = +req.query.lat;
     const lng = +req.query.lng;
 
@@ -205,6 +206,7 @@ export class MerchantController extends Model {
     const lat = +req.query.lat;
     const lng = +req.query.lng;
     const status = `${req.query.status}`;
+
     this.model.getAvailableMerchants(lat, lng, status).then((ms: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
