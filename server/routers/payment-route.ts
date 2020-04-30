@@ -31,4 +31,5 @@ export class PaymentController extends Model {
     //   res.send(JSON.stringify({status: 'success'}, null, 3));
     // });
   }
+  
 }

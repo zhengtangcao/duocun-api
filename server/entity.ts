@@ -69,9 +69,7 @@ export class Entity {
     query = this.convertIdFields(query);
 
     const c = await self.getCollection();
-    const docs = await c.find(query, options).toArray();
-    const rs = this.filterArray(docs, fields);
-    return rs;
+    return await c.find(query, options).toArray();
   }
 
   // v1

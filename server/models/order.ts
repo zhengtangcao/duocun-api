@@ -154,7 +154,105 @@ export class Order extends Model {
     this.eventLogModel = new EventLog(dbo);
     this.locationModel = new Location(dbo);
   }
+  
+  find_v2(where: any, options?: object, fields?: Array<object>) {
+    const query = this.convertIdFields(where);
+    return new Promise((resolve, reject) => {
+      this.getCollection().then(collection => {
+        collection.find(query, options).toArray((err, data) => {
+          if (err) {
+            reject(err);
+          } else {
+            collection.countDocuments(query, (err, count) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve({
+                  data,
+                  count
+                });
+              }
+            })
+          }
+        });
+      });
+    });
+  }
 
+  async join_find_v2(where: any, options?: object) {
+    const ret: any = await this.find_v2(where, options);
+    const rs = ret.data;
+    const clientAccountIds = rs.map((r: any) => r.clientId);
+    const merchantAccountIds = rs.map((r: any) => r.merchantId);
+    const driverAccounts = await this.accountModel.find({ type: 'driver' }, null, ['_id', 'username', 'phone']);
+    const clientAccounts = await this.accountModel.find({ _id: { $in: clientAccountIds } }, null, ['_id', 'username', 'phone']);
+    const merchantAccounts = await this.accountModel.find({ _id: { $in: merchantAccountIds } }, null, ['_id', 'username', 'merchants']);
+    const merchants = await this.merchantModel.find({});
+    const ps = await this.productModel.find({});
+    
+    rs.forEach((order: any) => {
+      const items: any[] = [];
+
+      if (order.clientId) {
+        const c = clientAccounts.find((a: any) => a._id.toString() === order.clientId.toString());
+        order.client = { _id: c._id.toString(), username: c.username, phone: c.phone };
+      }
+
+      if (order.merchantId) {
+        const m = merchants.find((m: any) => m._id.toString() === order.merchantId.toString());
+        order.merchant = { _id: m._id.toString(), name: m.name };
+      }
+
+      if (order.merchant && order.merchant.accountId) {
+        const merchantAccount = merchantAccounts.find((a: any) => a && a._id.toString() === order.merchant.accountId.toString());
+        if (merchantAccount) {
+          const m = merchantAccount;
+          order.merchantAccount = { _id: m._id.toString(), name: m.name };
+        }
+      }
+
+      if (order.driverId) {
+        const driver = driverAccounts.find((a: IAccount) => a._id.toString() === order.driverId.toString());
+        const d = driver;
+        order.driver = { _id: d._id.toString(), username: d.username, phone: d.phone };
+      }
+
+      if (order.items) {
+        order.items.forEach((it: IOrderItem) => {
+          const product = ps.find((p: any) => p && p._id.toString() === it.productId.toString());
+          if (product) {
+            items.push({ ...it, productName: product.name });
+          }
+        });
+        order.items = items;
+      }
+    });
+
+    const data = rs.map((r: any) => ({ 
+      _id: r._id,
+      code: r.code,
+      location: r.location,
+      address: this.locationModel.getAddrString(r.location), // deprecated
+      items: r.items,
+      price: r.price,
+      cost: r.cost,
+      paymentMethod: r.paymentMethod,
+      paymentStatus: r.paymentStatus,
+      status: r.status,
+      client: r.client, 
+      merchant: r.merchant,
+      // merchantAccount: r.merchantAccount,
+      driver: r.driver,
+      note: r.note,
+      delivered: r.delivered,
+      created: r.creaded
+     }));
+
+     return {
+       data,
+       count: ret.count
+     }
+  }
   // v2 return [{
   //  _id,
   //  client:{ _id, username, phone },

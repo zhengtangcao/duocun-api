@@ -25,6 +25,8 @@ import { Account } from "./account";
 import { SystemConfig } from "./system-config";
 
 import log from "../lib/logger";
+import { Product } from "./product";
+import {Location} from "./location";
 
 const CASH_BANK_ID = "5c9511bb0851a5096e044d10";
 const CASH_BANK_NAME = "Cash Bank";
@@ -97,19 +99,128 @@ export class ClientPayment extends Model {
   cellApplicationModel: CellApplication;
   eventLogModel: EventLog;
   accountModel: Account;
+  productModel: Product;
+  locationModel: Location;
   cfgModel: SystemConfig;
 
   constructor(dbo: DB) {
     super(dbo, "client_payments");
     this.accountModel = new Account(dbo);
     this.orderEntity = new Order(dbo);
+    this.productModel = new Product(dbo);
     this.merchantModel = new Merchant(dbo);
     this.transactionModel = new Transaction(dbo);
     this.clientCreditModel = new ClientCredit(dbo);
     this.cellApplicationModel = new CellApplication(dbo);
     this.eventLogModel = new EventLog(dbo);
     this.cfgModel = new SystemConfig(dbo);
+    this.locationModel = new Location(dbo);
     this.cfg = new Config();
+  }
+
+  getPaymentList(orders: any[]){
+    const paymentMap: any = {};
+    
+    orders.forEach((order: any) => {
+      const paymentId = order.paymentId.toString();
+      const created = order.created;
+      const client = order.client;
+      const address = this.locationModel.getAddrString(order.location)
+      paymentMap[paymentId] = {paymentId, client, address, created, orders:[]};
+    });
+    orders.forEach((order: any) => {
+      const paymentId = order.paymentId.toString();
+      paymentMap[paymentId].orders.push(order);
+    });
+
+    const rs: any = [];
+    Object.keys(paymentMap).forEach(paymentId => {
+      const it = paymentMap[paymentId];
+      const deliverMap = this.groupOrdersByDeliver(it.orders);
+      
+      const delivers: any[] = [];
+      let totalPrice = 0;
+      let totalTax = 0;
+      Object.keys(deliverMap).forEach(deliverDate => {
+        let price = 0;
+        let total = 0;
+        let tax = 0;
+        const deliver = deliverMap[deliverDate];
+        const merchants: any = [];
+        const mMap = this.groupOrdersByMerchant(deliver.orders);
+        Object.keys(mMap).forEach(mId => {
+          const name = mMap[mId].name;
+          const order = mMap[mId].order;
+          price += order.price;
+          total += order.total;
+          tax += order.taxt;
+          merchants.push({ name, items: order.items });
+        });
+        delivers.push({deliverDate, merchants, price, tax, total,
+          deliveryCost: 0,
+          deliveryDiscount: 0,
+          groupDiscount: 0,
+          overRangeCharge: 0
+         });
+
+         totalPrice += price;
+         totalTax += tax;
+      });
+      rs.push({paymentId, created: it.created, delivers, price: totalPrice, tax: totalTax, total: totalPrice + totalTax});
+    });
+
+    return rs;
+  }
+
+
+  // helper
+  groupOrdersByDeliver(orders: any[]){
+    const deliverMap:any = {};
+    orders.forEach((order: any) => {
+      const date = order.deliverDate;
+      const time = order.deliverTime;
+      deliverMap[date] = {date, time, orders:[]};
+    });
+    orders.forEach((order: any) => {
+      const date = order.deliverDate;
+      deliverMap[date].orders.push(order);
+    });
+    return deliverMap;
+  }
+
+  
+  // orders --- filter by payment and deliver
+  groupOrdersByMerchant(orders: any[]) {
+    const mMap: any = {};
+    orders.forEach((order: any) => {
+      const merchantId = order.merchantId;
+      const name = order.merchant.name;
+      mMap[merchantId] = { name, order }; // only one order !
+    });
+    return mMap;
+  }
+
+  // return [{paymentId, created, delivers:[{date, time, orders}]} ...]
+  async getHistory(clientId: string, itemsPerPage: number, currentPageNumber: number) {
+    const query = { clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
+    const r = await this.orderEntity.join_find_v2(query);
+    const payments = this.getPaymentList(r.data);
+
+    const arrSorted = payments.sort((a: any, b: any) => {
+      const ca = moment(a.created);
+      const cb = moment(b.created);
+      if (ca.isAfter(cb)) {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+
+    const start = (currentPageNumber - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const data = arrSorted.slice(start, end);
+
+    return { count: arrSorted.length, data };
   }
 
   // paymentActionCode --- code of PaymentAction
