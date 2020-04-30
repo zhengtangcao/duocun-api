@@ -934,7 +934,7 @@ export class Order extends Model {
     const keys = Object.keys(paymentMap); // [pyid1, pyid2 ....]
     const vals = keys.map(key => paymentMap[key]);
 
-    return paymentMap;
+    return vals;
 
   }
 
@@ -959,7 +959,7 @@ export class Order extends Model {
     const keys = Object.keys(merchantMap); // [pyid1, pyid2 ....]
     const vals = keys.map(key => merchantMap[key]);
 
-    return merchantMap;
+    return vals;
 
   }
 
@@ -975,18 +975,45 @@ export class Order extends Model {
     const ps = await this.productModel.find({});
     const query = { clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } };
     const orders = await this.find(query);
-    const ordersByPid = this.groupByPaymentId(orders);
+    // resort the orders according to the output
+    const ordersMap = this.groupByPaymentId(orders);
+    const datesMap = []
+    for(var date = 0; date<ordersMap.length;date++){
+      datesMap.push(this.groupByDeliverDate(ordersMap[date].orders))
+      var merchants = []
+      for(var merchant = 0; merchant<datesMap.length; merchant++){
+        merchants.push(this.groupByMerchant(datesMap[merchant].orders))
+      }
+    }
 
-    ordersByPid.values().forEach((ordersByDate: object[]) => {
-      const subDate = [];
-      const datas: any[] = this.groupByDeliverDate(ordersByDate).values();
+    //get the detail history information 
+    const groupByHishtory = []
+    for(var pid = 0; pid<datesMap.length;pid++){
+      const datesGroup: any = []
+      for (var dateId = 0; dateId<datesMap[pid];dateId++){
+        const MerchantsGroup : any=[]
+        for(var merId = 0; merId<datesMap[pid][dateId] ; merId++){
+          const products : any = []
+          for(var productId = 0; productId<datesMap[pid][dateId][merId].items.length;productId++){
+            products.push(datesMap[pid][dateId][merId].orders[0].items[productId].productId.toString(),datesMap[pid][dateId][merId].orders[0].items[productId].quantity.toString())
+          }
+          MerchantsGroup.push(datesMap[pid][dateId][merId].orders[0].merchantId.toString())
+        }
+        datesGroup.push(datesMap[pid][dateId][0].orders[0].delivered.toString())
+      }
+      groupByHishtory.push("paymentId",datesMap[pid][0][0].orders[0])
+    }
+
+    // ordersMap.forEach((ordersByDate: object[]) => {
+    //   const subDate = [];
+    //   const datas: any[] = this.groupByDeliverDate(ordersByDate).values();
       
-      const subMerchant: any[] = [];
-      datas.forEach((orderbymerchant: any) => {
-        subMerchant.push(this.groupByMerchant(orderbymerchant.orders));
-      });
-      subDate.push(subMerchant);
-    });
+    //   const subMerchant: any[] = [];
+    //   datas.forEach((orderbymerchant: any) => {
+    //     subMerchant.push(this.groupByMerchant(orderbymerchant.orders));
+    //   });
+    //   subDate.push(subMerchant);
+    // });
       // })
     // const ordersByMerchants = ordersByDeliver
     // const productName =
@@ -1012,6 +1039,7 @@ export class Order extends Model {
     //   const address = this.locationModel.getAddrString(order.location);
     //   return { ...order, address, description, items, clientPhoneNumber };
     // });
+  return groupByHishtory
   }
 
 
