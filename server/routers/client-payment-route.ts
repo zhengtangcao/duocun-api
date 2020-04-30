@@ -17,7 +17,7 @@ export function ClientPaymentRouter(db: DB) {
   //yaml api
   router.post('/snappay', (req, res) => { controller.gv1_payBySnappay(req, res) });
   router.post('/stripe', (req, res) => { controller.gv1_payByStripe(req, res); });
-  router.get('/history/:currentPageNumber/:itemsPerPage', (req, res) => { controller.getHistory(req, res); });
+  router.get('/history/:clientId/:currentPageNumber/:itemsPerPage', (req, res) => { controller.getHistory(req, res); });
 
   // snappy related endpoints
   // https://localhost:8000/api/ClientPayments/payBySnappay

@@ -122,15 +122,23 @@ export class ClientPayment extends Model {
     const paymentMap: any = {};
     
     orders.forEach((order: any) => {
-      const paymentId = order.paymentId.toString();
-      const created = order.created;
-      const client = order.client;
-      const address = this.locationModel.getAddrString(order.location)
-      paymentMap[paymentId] = {paymentId, client, address, created, orders:[]};
+      if(order.paymentId){
+        const paymentId = order.paymentId.toString();
+        const created = order.created;
+        const client = order.client;
+        const address = this.locationModel.getAddrString(order.location)
+        paymentMap[paymentId] = {paymentId, client, address, created, orders:[]};
+      }else{
+        // fix me
+      }
     });
     orders.forEach((order: any) => {
-      const paymentId = order.paymentId.toString();
-      paymentMap[paymentId].orders.push(order);
+      if(order.paymentId){
+        const paymentId = order.paymentId.toString();
+        paymentMap[paymentId].orders.push(order);
+      }else{
+        // fix me
+      }
     });
 
     const rs: any = [];
