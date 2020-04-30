@@ -149,22 +149,25 @@ export class ClientPayment extends Model {
       const delivers: any[] = [];
       let totalPrice = 0;
       let totalTax = 0;
-      Object.keys(deliverMap).forEach(deliverDate => {
+      let amount = 0;
+      Object.keys(deliverMap).forEach(delivered => {
         let price = 0;
         let total = 0;
         let tax = 0;
-        const deliver = deliverMap[deliverDate];
+        const deliver = deliverMap[delivered];
         const merchants: any = [];
         const mMap = this.groupOrdersByMerchant(deliver.orders);
         Object.keys(mMap).forEach(mId => {
           const name = mMap[mId].name;
           const order = mMap[mId].order;
           price += order.price;
-          total += order.total;
           tax += order.taxt;
+          total += order.total;
+          
           merchants.push({ name, items: order.items });
         });
-        delivers.push({deliverDate, merchants, price, tax, total,
+
+        delivers.push({delivered, merchants, price, tax, total,
           deliveryCost: 0,
           deliveryDiscount: 0,
           groupDiscount: 0,
@@ -173,8 +176,9 @@ export class ClientPayment extends Model {
 
          totalPrice += price;
          totalTax += tax;
+         amount += total;
       });
-      rs.push({paymentId, created: it.created, delivers, price: totalPrice, tax: totalTax, total: totalPrice + totalTax});
+      rs.push({paymentId, created: it.created, delivers, price: totalPrice, tax: totalTax, total: amount});
     });
 
     return rs;
@@ -185,12 +189,13 @@ export class ClientPayment extends Model {
   groupOrdersByDeliver(orders: any[]){
     const deliverMap:any = {};
     orders.forEach((order: any) => {
-      const date = order.deliverDate;
-      const time = order.deliverTime;
-      deliverMap[date] = {date, time, orders:[]};
+      // const date = order.deliverDate;
+      // const time = order.deliverTime;
+      const delivered = order.delivered;
+      deliverMap[delivered] = {delivered, orders:[]};
     });
     orders.forEach((order: any) => {
-      const date = order.deliverDate;
+      const date = order.delivered;
       deliverMap[date].orders.push(order);
     });
     return deliverMap;
@@ -201,7 +206,7 @@ export class ClientPayment extends Model {
   groupOrdersByMerchant(orders: any[]) {
     const mMap: any = {};
     orders.forEach((order: any) => {
-      const merchantId = order.merchantId;
+      const merchantId = order.merchant._id;
       const name = order.merchant.name;
       mMap[merchantId] = { name, order }; // only one order !
     });

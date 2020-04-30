@@ -230,12 +230,15 @@ export class Order extends Model {
 
     const data = rs.map((r: any) => ({ 
       _id: r._id,
+      paymentId: r.paymentId,
       code: r.code,
       location: r.location,
       address: this.locationModel.getAddrString(r.location), // deprecated
       items: r.items,
       price: r.price,
       cost: r.cost,
+      tax: r.tax,
+      total: r.total,
       paymentMethod: r.paymentMethod,
       paymentStatus: r.paymentStatus,
       status: r.status,
