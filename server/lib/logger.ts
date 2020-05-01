@@ -11,7 +11,7 @@ const logFormat = printf(({ level, message, timestamp }) => {
 
 const transport = new DailyRotateFile({
   filename: "duocun-api-%DATE%.log",
-  datePattern: "YYYY-MM-DD-HH",
+  datePattern: "YYYY-MM-DD",
   zippedArchive: false,
   maxSize: "20m",
   maxFiles: "14d",
