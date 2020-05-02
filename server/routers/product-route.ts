@@ -39,16 +39,17 @@ class ProductController extends Model{
     this.model = new Product(db);
   }
 
-  list(req: Request, res: Response) {
+  async list(req: Request, res: Response) {
     let query = {};
     if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    } else {
+      query = req.body;
     }
 
-    this.model.list(query).then((ps: any[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(ps, null, 3));
-    });
+    const ps = await this.model.list(query);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(ps, null, 3));
   }
 
   gv1_list(req: Request, res: Response) {
