@@ -11,13 +11,13 @@ export function ProductRouter(db: DB){
   // grocery api
   router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+  router.get('/', (req, res) => { controller.list(req, res); });
 
   // admin api /products/admin
   router.get('/admin', (req, res) => { controller.av1_list(req, res); });
 
 
   // old api
-  router.get('/', (req, res) => { controller.list(req, res); });
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
   router.get('/clearImage', (req, res) => { model.clearImage(req, res); });
@@ -39,16 +39,17 @@ class ProductController extends Model{
     this.model = new Product(db);
   }
 
-  list(req: Request, res: Response) {
+  async list(req: Request, res: Response) {
     let query = {};
     if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    } else {
+      query = req.body;
     }
 
-    this.model.list(query).then((ps: any[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(ps, null, 3));
-    });
+    const ps = await this.model.list(query);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(ps, null, 3));
   }
 
   gv1_list(req: Request, res: Response) {
