@@ -49,7 +49,7 @@ export class CategoryController extends Model{
 
   gv1_list(req: Request, res: Response) {
     const status = req.query.status;
-    const query = status ? {status} : {};
+    const query = status ? {status, type: 'G'} : {type: 'G'};
 
     this.model.find(query).then((categories) => {
       res.setHeader('Content-Type', 'application/json');

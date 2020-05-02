@@ -523,52 +523,50 @@ export class Order extends Model {
   }
 
 
-
+  // 
   async doRemoveOne(orderId: string) {
-    // return new Promise((resolve, reject) => {
-    const docs = await this.find({ _id: orderId });
-    if (docs && docs.length > 0) {
-      const order = docs[0];
-      const x = await this.updateOne({ _id: orderId }, { status: OrderStatus.DELETED });
+    const order = await this.findOne({ _id: orderId });
+    if (order) {
       // temporary order didn't update transaction until paid
-      if (order.status === OrderStatus.TEMP) {
-        return order;
-      } else {
-        const merchantId: string = order.merchantId.toString();
-        const merchantName = order.merchantName;
-        const clientId: string = order.clientId.toString();
+      if (order.status === OrderStatus.NEW || order.status === OrderStatus.MERCHANT_CHECKED) {
+        const merchantId: string = order.merchantId? order.merchant.toString() : null;
+        const merchantName: string = order.merchantName;
+        const clientId: string = order.clientId? order.clientId.toString() : null;
         const clientName = order.clientName;
         const cost = order.cost;
         const total = order.total;
         const delivered = order.delivered;
-
-        const ps = await this.productModel.find({});
-        const items: IOrderItem[] = [];
-        order.items.map((it: IOrderItem) => {
-          const product = ps.find((p: any) => p && p._id.toString() === it.productId.toString());
-          if (product) {
-            items.push({ productId: it.productId, quantity: it.quantity, price: it.price, cost: it.cost, product: product });
+        
+        if(merchantId && clientId){
+          const merchant = await this.merchantModel.findOne({ _id: merchantId });
+          if(merchant && merchant.accountId){
+            const merchantAccountId = merchant.accountId.toString();
+            const x = await this.updateOne({ _id: orderId }, { status: OrderStatus.DELETED });
+            const ps = await this.productModel.find({});
+            const items: IOrderItem[] = [];
+            order.items.forEach((it: IOrderItem) => {
+              const product = ps.find((p: any) => p && p._id.toString() === it.productId.toString());
+              if (product) {
+                items.push({ productId: it.productId, quantity: it.quantity, price: it.price, cost: it.cost, product: product });
+              }
+            });
+            
+            await this.transactionModel.updateMany({ orderId: orderId }, { status: 'del' });// This will affect balance calc
+            await this.transactionModel.saveTransactionsForRemoveOrder(orderId, merchantAccountId, merchantName, clientId, clientName, cost, total, delivered, items);
+            return order;
+          }else{
+            return;
           }
-        });
 
-        const merchant = await this.merchantModel.findOne({ _id: merchantId });
-        await this.transactionModel.updateMany({ orderId: orderId }, { status: 'del' });// This will affect balance calc
-        const merchantAccountId = merchant.accountId.toString();
-        await this.transactionModel.saveTransactionsForRemoveOrder(orderId, merchantAccountId, merchantName, clientId, clientName, cost, total, delivered, items);
-        return order;
+        }else{
+          return;
+        }
       }
     } else { // should never be here
       return;
     }
   }
 
-  removeOrder(req: Request, res: Response) {
-    const orderId = req.params.id;
-    this.doRemoveOne(orderId).then(x => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(x, null, 3));
-    });
-  }
 
   // obsoleted
   createV1(req: Request, res: Response) {

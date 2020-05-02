@@ -239,39 +239,35 @@ export class Transaction extends Model {
   }
 
 
-  saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
+  async saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
     cost: number, total: number, delivered: string, items: IOrderItem[]) {
 
-    return new Promise((resolve, reject) => {
-      const t1: ITransaction = {
-        fromId: CASH_BANK_ID,
-        fromName: clientName,
-        toId: merchantAccountId,
-        toName: merchantName,
-        actionCode: TransactionAction.CANCEL_ORDER_FROM_MERCHANT.code, // 'duocun cancel order from merchant',
-        amount: Math.round(cost * 100) / 100,
-        orderId: orderId,
-        items: items,
-        delivered: delivered
-      };
+    const t1: ITransaction = {
+      fromId: CASH_BANK_ID,
+      fromName: clientName,
+      toId: merchantAccountId,
+      toName: merchantName,
+      actionCode: TransactionAction.CANCEL_ORDER_FROM_MERCHANT.code, // 'duocun cancel order from merchant',
+      amount: Math.round(cost * 100) / 100,
+      orderId: orderId,
+      items: items,
+      delivered: delivered
+    };
 
-      const t2: ITransaction = {
-        fromId: clientId,
-        fromName: clientName,
-        toId: CASH_BANK_ID,
-        toName: merchantName,
-        amount: Math.round(total * 100) / 100,
-        actionCode: TransactionAction.CANCEL_ORDER_FROM_DUOCUN.code, // 'client cancel order from duocun',
-        orderId: orderId,
-        delivered: delivered
-      };
+    const t2: ITransaction = {
+      fromId: clientId,
+      fromName: clientName,
+      toId: CASH_BANK_ID,
+      toName: merchantName,
+      amount: Math.round(total * 100) / 100,
+      actionCode: TransactionAction.CANCEL_ORDER_FROM_DUOCUN.code, // 'client cancel order from duocun',
+      orderId: orderId,
+      delivered: delivered
+    };
 
-      this.doInsertOne(t1).then((x) => {
-        this.doInsertOne(t2).then((y) => {
-          resolve();
-        });
-      });
-    });
+    await this.doInsertOne(t1);
+    await this.doInsertOne(t2);
+    return;
   }
 
   doGetSales() {

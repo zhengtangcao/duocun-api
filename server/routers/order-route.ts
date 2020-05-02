@@ -165,4 +165,15 @@ export class OrderController extends Model {
       }));
     });
   }
+
+  async removeOrder(req: Request, res: Response) {
+    const orderId = req.params.id;
+    if(orderId){
+      const x = await this.model.doRemoveOne(orderId);
+      res.setHeader('Content-Type', 'application/json');
+      res.send(x);
+    }else{
+      res.send();
+    }
+  }
 }

@@ -48,8 +48,9 @@ class ProductController extends Model{
       query = req.query;
       if (query) {
         query = JSON.parse(query.query);
+        query.type = 'G';
       } else {
-        query = {};
+        query = {type: 'G'};
       }
     }
     const ps = await this.model.list(query);
@@ -60,7 +61,7 @@ class ProductController extends Model{
   gv1_list(req: Request, res: Response) {
     const status = req.query.status;
     const merchantId = req.query.merchantId;
-    const query = status ? {status} : {};
+    const query = status ? {status, type: 'G'} : {type: 'G'};
     res.setHeader('Content-Type', 'application/json');
 
     merchantId ? 
