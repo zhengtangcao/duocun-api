@@ -156,8 +156,7 @@ export class OrderController extends Model {
 
 
   async placeOrders(req: Request, res: Response) {
-    const order: any = req.body;
-    const orders = [order]; // fix me
+    const orders: any = req.body;
     const savedOrders: any[] = await this.model.placeOrders(orders);
     res.setHeader('Content-Type', 'application/json');
     res.send({
