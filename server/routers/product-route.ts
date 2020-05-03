@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { DB } from "../db";
 import { Product } from "../models/product";
 import { Model, Code } from "../models/model";
+import { ObjectId } from "mongodb";
 
 export function ProductRouter(db: DB){
   const router = express.Router();
@@ -18,7 +19,7 @@ export function ProductRouter(db: DB){
 
   // old api
   router.get('/', (req, res) => { controller.list(req, res); });
-
+  router.get('/paginate/:page/:size', (req, res) => { controller.paginate(req, res) });
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
   router.get('/clearImage', (req, res) => { model.clearImage(req, res); });
   router.get('/categorize', (req, res) => { model.categorize(req, res); });
@@ -56,6 +57,54 @@ class ProductController extends Model{
     const ps = await this.model.list(query);
     res.setHeader('Content-Type', 'application/json');
     res.send(ps);
+  }
+
+  async paginate(req: Request, res: Response) {
+    let query:any = {};
+    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
+      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    } else {
+      query = req.query;
+      if (query && query.query) {
+        query = JSON.parse(query.query);
+        query.type = 'G';
+      } else {
+        query = {type: 'G'};
+      }
+    }
+    let page = parseInt(req.params.page);
+    let size = parseInt(req.params.size);
+    if (page < 1) page = 1;
+    if (size < 1) size = 1;
+    const limit = size;
+    const skip = (page - 1) * size;
+    try {
+      if (query.categoryId) {
+        query.categoryId = new ObjectId(query.categoryId);
+      }
+      if (query.merchantId && query.merchantId['$in']) {
+        query.merchantId['$in'] = query.merchantId['$in'].map((id: string) => new ObjectId(id));
+      }
+    } catch (e) {
+      res.setHeader('Content-Type', 'application/json');
+      res.send({
+        code: Code.FAIL
+      });
+    }
+    
+    const collection = await this.model.getCollection();
+    const data = await collection.find(query, { skip, limit }).toArray();
+    const count = await collection.find(query).count();
+    res.setHeader('Content-Type', 'application/json');
+    res.send({
+      code: Code.SUCCESS,
+      data,
+      meta: {
+        page,
+        size,
+        count
+      }
+    });
   }
 
   gv1_list(req: Request, res: Response) {
