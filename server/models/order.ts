@@ -528,8 +528,10 @@ export class Order extends Model {
     const order = await this.findOne({ _id: orderId });
     if (order) {
       // temporary order didn't update transaction until paid
-      if (order.status === OrderStatus.NEW || order.status === OrderStatus.MERCHANT_CHECKED) {
-        const merchantId: string = order.merchantId? order.merchant.toString() : null;
+      if (order.status === OrderStatus.NEW
+        || order.status === OrderStatus.MERCHANT_CHECKED
+      ) {
+        const merchantId: string = order.merchantId? order.merchantId.toString() : null;
         const merchantName: string = order.merchantName;
         const clientId: string = order.clientId? order.clientId.toString() : null;
         const clientName = order.clientName;
@@ -541,7 +543,8 @@ export class Order extends Model {
           const merchant = await this.merchantModel.findOne({ _id: merchantId });
           if(merchant && merchant.accountId){
             const merchantAccountId = merchant.accountId.toString();
-            const x = await this.updateOne({ _id: orderId }, { status: OrderStatus.DELETED });
+
+            await this.updateOne({ _id: orderId }, { status: OrderStatus.DELETED });
             const ps = await this.productModel.find({});
             const items: IOrderItem[] = [];
             order.items.forEach((it: IOrderItem) => {

@@ -37,6 +37,14 @@ export class Model extends Entity {
     }
   }
 
+
+  async findOne(query: any, options?: any, fields?: any[]): Promise<any> {
+    const self = this;
+    const c: Collection = await self.getCollection();
+    const q = this.convertIdFields(query);
+    return await c.findOne(q, options);
+  }
+
   // Wrong !
   // m --- local moment object for date, m.isUTC() must be false
   // t --- string, eg: '11:20'

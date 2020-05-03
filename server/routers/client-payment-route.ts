@@ -135,7 +135,7 @@ export class ClientPaymentController extends Model {
 
   // This request could response multiple times !!!
   // return rsp: IPaymentResponse
-  snappayNotify(req: Request, res: Response) {
+  async snappayNotify(req: Request, res: Response) {
     const rsp = req.body;
     // console.log('snappayNotify trans_status:' + b.trans_status);
     // console.log('snappayNotify trans_no:' + b.trans_no);
@@ -149,10 +149,9 @@ export class ClientPaymentController extends Model {
     this.model.addLogToDB(accountId, 'snappay notify', '', message).then(() => { });
 
     if (rsp && rsp.trans_status === "SUCCESS") {
-      this.model.processSnappayNotify(paymentId, amount).then(() => {
-        res.setHeader("Content-Type", "application/json");
-        res.send({ code: "0" }); // must return as snappay gateway required
-      });
+      await this.model.processSnappayNotify(paymentId, amount);
+      res.setHeader("Content-Type", "application/json");
+      res.send({ code: "0" }); // must return as snappay gateway required
     }
   }
 

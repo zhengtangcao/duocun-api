@@ -155,14 +155,14 @@ export class OrderController extends Model {
 
 
 
-  placeOrders(req: Request, res: Response) {
-    const orders = req.body;
-    this.model.placeOrders(orders).then((savedOrders: any[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
-        code: Code.SUCCESS,
-        data: savedOrders 
-      }));
+  async placeOrders(req: Request, res: Response) {
+    const order: any = req.body;
+    const orders = [order]; // fix me
+    const savedOrders: any[] = await this.model.placeOrders(orders);
+    res.setHeader('Content-Type', 'application/json');
+    res.send({
+      code: Code.SUCCESS,
+      data: savedOrders 
     });
   }
 

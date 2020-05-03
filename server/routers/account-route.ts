@@ -225,7 +225,6 @@ export class AccountController extends Model {
 
   list(req: Request, res: Response) {
     let query = {};
-    let fields: any[];
     const params = req.query;
 
     if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
@@ -233,23 +232,18 @@ export class AccountController extends Model {
     }
     query = this.accountModel.convertIdFields(query);
 
-    if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
-      fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
-    }
-
     if (params && params.keyword) {
-      // query = { ...query, username: new RegExp(params.keyword) };
+      query = { username: {'$regex': params.keyword} };
     }
 
     this.accountModel.find(query).then(accounts => {
-      accounts.map((account: any) => {
+      accounts.forEach((account: any) => {
         if (account && account.password) {
           delete account.password;
         }
       });
-      const rs = this.accountModel.filterArray(accounts, fields);
       res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(rs, null, 3));
+      res.send(accounts);
     });
   }
 

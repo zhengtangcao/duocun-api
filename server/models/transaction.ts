@@ -160,13 +160,14 @@ export class Transaction extends Model {
     });
   }
 
+  // update balance of debit and credit
   async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.toId;     // must be account id
     const amount: number = tr.amount;
-    
-    const fromAccount: any = await this.accountModel.find({fromId});
-    const toAccount: any = await this.accountModel.find({toId});
+
+    const fromAccount: any = await this.accountModel.findOne({ _id: fromId });
+    const toAccount: any = await this.accountModel.findOne({ _id: toId });
 
     if (fromAccount && toAccount) {
       tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
@@ -201,43 +202,40 @@ export class Transaction extends Model {
   }
 
 
-  saveTransactionsForPlaceOrder(orderId: string, orderType: string, merchantAccountId: string, merchantName: string,
-    clientId: string, clientName: string, cost: number, total: number, delivered: string): Promise<string> {
+  async saveTransactionsForPlaceOrder(orderId: string, orderType: string, merchantAccountId: string, merchantName: string,
+    clientId: string, clientName: string, cost: number, total: number, delivered: string): Promise<any> {
 
-    return new Promise((resolve, reject) => {
-      const t1: ITransaction = {
-        fromId: merchantAccountId,
-        fromName: merchantName,
-        toId: CASH_BANK_ID,
-        toName: clientName,
-        actionCode: TransactionAction.ORDER_FROM_MERCHANT.code, // 'duocun order from merchant',
-        amount: Math.round(cost * 100) / 100,
-        orderId: orderId,
-        orderType: orderType,
-        delivered: delivered,
-      };
+    const t1: ITransaction = {
+      fromId: merchantAccountId,
+      fromName: merchantName,
+      toId: CASH_BANK_ID,
+      toName: clientName,
+      actionCode: TransactionAction.ORDER_FROM_MERCHANT.code, // 'duocun order from merchant',
+      amount: Math.round(cost * 100) / 100,
+      orderId: orderId,
+      orderType: orderType,
+      delivered: delivered,
+    };
 
-      const t2: ITransaction = {
-        fromId: CASH_BANK_ID,
-        fromName: merchantName,
-        toId: clientId,
-        toName: clientName,
-        amount: Math.round(total * 100) / 100,
-        actionCode: TransactionAction.ORDER_FROM_DUOCUN.code, // 'client order from duocun',
-        orderId: orderId,
-        orderType: orderType,
-        delivered: delivered,
-      };
+    const t2: ITransaction = {
+      fromId: CASH_BANK_ID,
+      fromName: merchantName,
+      toId: clientId,
+      toName: clientName,
+      amount: Math.round(total * 100) / 100,
+      actionCode: TransactionAction.ORDER_FROM_DUOCUN.code, // 'client order from duocun',
+      orderId: orderId,
+      orderType: orderType,
+      delivered: delivered,
+    };
 
-      this.doInsertOne(t1).then((x) => {
-        this.doInsertOne(t2).then((y) => {
-          resolve();
-        });
-      });
-    });
+    await this.doInsertOne(t1);
+    await this.doInsertOne(t2);
+    return;
   }
 
 
+  // add cancel transactions for merchant and client
   async saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
     cost: number, total: number, delivered: string, items: IOrderItem[]) {
 
