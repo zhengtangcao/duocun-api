@@ -63,6 +63,7 @@ class ProductController extends Model{
     let query:any = {};
     if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+      query = {...query, type: 'G'};
     } else {
       query = req.query;
       if (query && query.query) {
