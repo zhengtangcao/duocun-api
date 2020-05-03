@@ -170,8 +170,10 @@ export class Transaction extends Model {
     const toAccount: any = await this.accountModel.findOne({ _id: toId });
 
     if (fromAccount && toAccount) {
-      tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
-      tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
+      const fromBalance = isNaN(fromAccount.balance) ? 0 : fromAccount.balance;
+      const toBalance = isNaN(toAccount.balance) ? 0 : toAccount.balance;
+      tr.fromBalance = Math.round((fromBalance + amount) * 100) / 100;
+      tr.toBalance = Math.round((toBalance - amount) * 100) / 100;
 
       const x = await this.insertOne(tr);
       const updates = [
