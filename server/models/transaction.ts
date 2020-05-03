@@ -164,10 +164,9 @@ export class Transaction extends Model {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.toId;     // must be account id
     const amount: number = tr.amount;
-    const accountQuery = { _id: { $in: [fromId, toId] } };
-    const accounts = await this.accountModel.find(accountQuery);
-    const fromAccount: any = accounts.find(x => x._id.toString() === fromId);
-    const toAccount: any = accounts.find(x => x._id.toString() === toId);
+    
+    const fromAccount: any = await this.accountModel.find({fromId});
+    const toAccount: any = await this.accountModel.find({toId});
 
     if (fromAccount && toAccount) {
       tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;

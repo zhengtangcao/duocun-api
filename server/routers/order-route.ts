@@ -11,7 +11,7 @@ export function OrderRouter(db: DB) {
 
   // yaml
   router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
-
+  router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });
 
   // v2
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
@@ -61,7 +61,7 @@ export function OrderRouter(db: DB) {
   router.patch('/updateDelivered', (req, res) => { model.updateDeliveryTime(req, res); });
   router.patch('/', (req, res) => { model.update(req, res); });
   router.delete('/', (req, res) => { model.remove(req, res); });
-  router.delete('/:id', (req, res) => { model.removeOrder(req, res); });
+  
 
   // router.post('/checkGroupDiscount', (req, res) => { model.checkGroupDiscount(req, res); });
 
