@@ -639,14 +639,25 @@ export class Transaction extends Model {
   // v2 api
   async updateBalanceList(accountIds: string[]) {
     const self = this;
-    const trs = await this.find({ status: {$nin: ['del']}}); //  'user'
-    let list = this.sortTransactions(trs);
 
     for (let i = 0; i < accountIds.length; i++) {
-      const id = accountIds[i];
-      console.log(`updating balance for ${id}`);
-      await self.updateBalanceByAccountId(id, list);
-      
+      const accountId = accountIds[i];
+      console.log(`updating balance for ${accountId}`);
+
+      const trs = await this.find({
+        $or: [
+          {
+            fromId: accountId,
+          },
+          {
+            toId: accountId,
+          },
+        ],
+        status: { $nin: ['del'] }
+      }); //  'user'
+
+      let list = this.sortTransactions(trs);
+      await self.updateBalanceByAccountId(accountId, list);
     }
     return accountIds.length;
   }
@@ -692,24 +703,20 @@ export class Transaction extends Model {
     return trs.sort((a: any, b: any) => {
       const aMoment = moment(a.created);
       const bMoment = moment(b.created);
-      if (aMoment.isSame(bMoment, 'day')) {
-        if (aMoment.isAfter(bMoment)) {
-          return 1; // a to bottom
-        } else {
-          return -1;
-        }
+      if (aMoment.isAfter(bMoment)) {
+        return 1; // a to bottom
       } else {
-        if (aMoment.isAfter(bMoment)) {
-          return 1;
-        } else {
-          return -1;
-        }
+        return -1;
       }
     });
   }
 
-  async updateBalances(created: string){
-    const accounts = await this.accountModel.find({created: {$gte: created}, type: {$in: ['driver', 'client', 'merchant']}});
+  async updateBalances(createStart: string, createEnd: string) {
+    const accounts = await this.accountModel.find({
+      created: { $gte: createStart, $lte: createEnd },
+      type: { $in: ['driver', 'client'] }
+    }
+    );
     const accountIds = accounts.map(account => account._id.toString());
     await this.updateBalanceList(accountIds);
     return accounts.length;

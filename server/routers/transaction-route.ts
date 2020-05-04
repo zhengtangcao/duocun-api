@@ -68,9 +68,11 @@ export class TransactionController extends Model {
   }
 
   async updateBalances(req: Request, res: Response) {
-    const createDate = req.query.createDate;
-    const created = createDate + 'T00:00:00.000Z';
-    const count = await this.model.updateBalances(created);
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate
+    const start = startDate + 'T00:00:00.000Z';
+    const end = endDate + 'T00:00:00.000Z';
+    const count = await this.model.updateBalances(start, end);
     res.setHeader('Content-Type', 'application/json');
     res.send('success update ' + count + 'accounts');
   }
