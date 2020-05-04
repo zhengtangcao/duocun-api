@@ -150,7 +150,7 @@ export class Transaction extends Model {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
     }
 
-    this.find(query).then((rs: IDBTransaction[]) => {
+    this.find(query).then((rs: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       if (rs) {
         res.send(JSON.stringify(rs, null, 3));
@@ -180,7 +180,8 @@ export class Transaction extends Model {
         { query: { _id: fromId }, data: { balance: tr.fromBalance } },
         { query: { _id: toId }, data: { balance: tr.toBalance } }
       ];
-
+      console.log(`update transactions from:${fromAccount.username}, balance:${fromAccount.balance}, amount:${amount}, newBalance:${tr.fromBalance}, action:${tr.actionCode}`);
+      console.log(`update transactions to:${toAccount.username}, balance:${toAccount.balance}, amount:${amount}, newBalance:${tr.toBalance}, action:${tr.actionCode}`);
       await this.accountModel.bulkUpdate(updates);
       return x;
     } else {
@@ -232,7 +233,9 @@ export class Transaction extends Model {
     };
 
     await this.doInsertOne(t1);
+    // console.log(`Add transactions for order Id:${orderId}, merchant`);
     await this.doInsertOne(t2);
+    // console.log(`Add transactions for order Id:${orderId}, client: ${clientName}, amount:${t2.amount}`);
     return;
   }
 

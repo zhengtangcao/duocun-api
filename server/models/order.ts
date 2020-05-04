@@ -17,6 +17,7 @@ import { ClientCredit } from "./client-credit";
 import fs from "fs";
 import { EventLog } from "./event-log";
 import { PaymentAction } from "./client-payment";
+import { memoryStorage } from "../../node_modules/@types/multer";
 
 const CASH_ID = '5c9511bb0851a5096e044d10';
 const CASH_NAME = 'Cash';
@@ -508,10 +509,11 @@ export class Order extends Model {
       for (let i = 0; i < orders.length; i++) {
         orders[i].paymentId = paymentId;
         const order: IOrder = orders[i];
-
-        const savedOrder: IOrder = await this.doInsertOneV2(order);
+        const savedOrder: IOrder = await this.doInsertOneV2(order); // just save order
+        // console.log(`saved order Id: ${savedOrder._id}`);
         savedOrders.push(savedOrder);
       }
+
       const paymentMethod = orders[0].paymentMethod;
       if (paymentMethod === PaymentMethod.CASH || paymentMethod === PaymentMethod.PREPAY) {
         await this.addDebitTransactions(savedOrders);
@@ -630,25 +632,43 @@ export class Order extends Model {
     });
   }
 
-  saveTransactionsForPlaceOrder(orders: any[], merchant: any) {
-    let promises = [];
-    for (let i = 0; i < orders.length; i++) {
-      const order = orders[i];
-      promises.push(
-        this.transactionModel.saveTransactionsForPlaceOrder(
-          order._id.toString(),
-          order.type,
-          merchant.accountId.toString(),
-          merchant.name,
-          order.clientId.toString(),
-          order.clientName,
-          order.cost,
-          order.total,
-          order.delivered
-        )
+  async saveTransactionsForPlaceOrder(orders: any[], merchant: any) {
+    // let promises = [];
+    // for (let i = 0; i < orders.length; i++) {
+    //   const order = orders[i];
+    //   promises.push(
+    //     this.transactionModel.saveTransactionsForPlaceOrder(
+    //       order._id.toString(),
+    //       order.type,
+    //       merchant.accountId.toString(),
+    //       merchant.name,
+    //       order.clientId.toString(),
+    //       order.clientName,
+    //       order.cost,
+    //       order.total,
+    //       order.delivered
+    //     )
+    //   );
+    // }
+    // return Promise.all(promises);
+    await orders.reduce(async (memo: Promise<any>, order) => {
+      const retPromise = await memo;
+      await this.transactionModel.saveTransactionsForPlaceOrder(
+        order._id.toString(),
+        order.type,
+        merchant.accountId.toString(),
+        merchant.name,
+        order.clientId.toString(),
+        order.clientName,
+        order.cost,
+        order.total,
+        order.delivered
       );
-    }
-    return Promise.all(promises);
+      // console.log(`Add transactions for order Id:${order._id}`);
+      return retPromise;
+    }, new Promise((resolve) => { resolve(0);}));
+
+    return;
   }
 
   // add transactions for placing order for duocun and merchant
