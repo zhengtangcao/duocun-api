@@ -1,13 +1,13 @@
 import express from "express";
 import { Request, Response } from "express";
-
+import jwt from "jsonwebtoken";
 import { DB } from "../db";
 import { Account, AccountAttribute, IAccount } from "../models/account";
 import { MerchantStuff } from "../merchant-stuff";
 import { Utils } from "../utils";
 import { Config } from "../config";
 import { Model, Code } from "../models/model";
-import { ObjectID } from "../../node_modules/@types/mongodb";
+import { ObjectId } from "mongodb";
 
 export function AccountRouter(db: DB) {
   const router = express.Router();
@@ -50,7 +50,8 @@ export function AccountRouter(db: DB) {
   router.post('/loginByPhone', (req, res) => { controller.loginByPhone(req, res); });
   router.route('/signup').post((req, res) => { controller.signup(req, res); });
 
-
+  router.post('/sendVerificationCode', (req, res) => { controller.gv1_sendVerificationCode(req, res) });
+  router.post('/verifyCode', (req, res) => { controller.gv1_verifyCode(req, res) });
   return router;
 };
 
@@ -304,6 +305,9 @@ export class AccountController extends Model {
   gv1_getByTokenId(req: Request, res: Response) {
     const tokenId: any = req.params.id;
     this.accountModel.getAccountByToken(tokenId).then(account => {
+      delete account.password;
+      delete account.newPhone;
+      delete account.verificationCode;
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
         code: account ? Code.SUCCESS : Code.FAIL,
@@ -311,4 +315,108 @@ export class AccountController extends Model {
       }));
     });
   }
+
+  async gv1_sendVerificationCode(req: Request, res: Response) {
+    res.setHeader('Content-Type', 'application/json');
+    let token: string = req.get('Authorization') || "";
+    token = token.replace("Bearer ", "");
+    const cfg = new Config();
+    let accountId = "";
+    try {
+      accountId = jwt.verify(token, cfg.JWT.SECRET).toString();
+    } catch (e) {
+      console.error(e);
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "authentication failed"
+      }));
+    }
+    let newPhone = req.body.phone;
+    if (!newPhone) {
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "phone number missing"
+      }));
+    }
+    const account = await this.accountModel.findOne({_id: new ObjectId(accountId)});
+    if (!account) {
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "no such account"
+      }));
+    }
+    newPhone = newPhone.substring(0,2) === "+1" ? newPhone.substring(2) : newPhone;
+    account.newPhone = newPhone;
+    const code = this.accountModel.getRandomCode();
+    account.verificationCode = code;
+    try {
+      await this.accountModel.sendMessage(account.newPhone, account.verificationCode);
+      await this.accountModel.updateOne({ _id: accountId }, account);
+    } catch (e) {
+      console.error(e);
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: e
+      }));
+    }
+    res.send(JSON.stringify({
+      code: Code.SUCCESS,
+      /**
+       * for development purpose only
+       */
+      // message: account.verificationCode
+    }));
+  }
+
+  async gv1_verifyCode(req: Request, res: Response) {
+    res.setHeader('Content-Type', 'application/json');
+    let token: string = req.get('Authorization') || "";
+    token = token.replace("Bearer ", "");
+    const cfg = new Config();
+    let accountId = "";
+    try {
+      accountId = jwt.verify(token, cfg.JWT.SECRET).toString();
+    } catch (e) {
+      console.error(e);
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "authentication failed"
+      }));
+    }
+    let newPhone = req.body.newPhone;
+    let code = req.body.code;
+    if (!newPhone || !code) {
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "phone number or verification code is missing"
+      }));
+    }
+    const account = await this.accountModel.findOne({ _id: new ObjectId(accountId) });
+    if (!account) {
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "no such account"
+      }));
+    }
+    if (account.newPhone == newPhone && account.verificationCode == code) {
+      account.phone = account.newPhone;
+      delete(account.newPhone);
+      delete(account.verficationCode);
+      account.verified = true;
+      await this.accountModel.updateOne({ _id: accountId }, account);
+      return res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: account
+      }));
+    } else {
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        /**
+         * for development purpose only
+         */
+        // data: account
+      }));
+    }
+  }
+
 }
