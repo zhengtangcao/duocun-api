@@ -13,8 +13,7 @@ export function ToolRouter(db: DB) {
   const router = express.Router();
   const controller = new ToolController(db);
 
-  // v2
-  router.get('/updateBalances', (req, res) => { controller.updateBalances(req, res); });
+
   return router;
 }
 
@@ -28,11 +27,4 @@ export class ToolController {
     this.toolModel = new Tool(db);
   }
 
-  updateBalances(req: Request, res: Response) {
-    // const phone = req.body.phone;
-    this.toolModel.updateBalances().then((r: any) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(r, null, 3));
-    });
-  }
 }

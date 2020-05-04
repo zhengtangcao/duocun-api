@@ -639,13 +639,14 @@ export class Transaction extends Model {
   // v2 api
   async updateBalanceList(accountIds: string[]) {
     const self = this;
-    const trs = await this.find({ type: 'user' }); // type: {$in: ['driver', 'client', 'merchant']}
-
+    const trs = await this.find({ status: {$nin: ['del']}}); //  'user'
     let list = this.sortTransactions(trs);
 
     for (let i = 0; i < accountIds.length; i++) {
       const id = accountIds[i];
+      console.log(`updating balance for ${id}`);
       await self.updateBalanceByAccountId(id, list);
+      
     }
     return accountIds.length;
   }
@@ -707,6 +708,13 @@ export class Transaction extends Model {
     });
   }
 
+  async updateBalances(created: string){
+    const accounts = await this.accountModel.find({created: {$gte: created}, type: {$in: ['driver', 'client', 'merchant']}});
+    const accountIds = accounts.map(account => account._id.toString());
+    await this.updateBalanceList(accountIds);
+    return accounts.length;
+  }
+
   // ----------------------------------------------------
   // update single account
   updateBalance(accountId: string) {
@@ -720,7 +728,7 @@ export class Transaction extends Model {
           let balance = 0;
           let list = this.sortTransactions(trs);
 
-          list.map((t: ITransaction) => {
+          list.forEach((t: ITransaction) => {
             const oId: any = t._id;
             if (t.fromId.toString() === accountId) {
               balance += t.amount;
@@ -763,14 +771,5 @@ export class Transaction extends Model {
     });
   }
 
-  updateBalances(req: Request, res: Response) {
-    const self = this;
-    this.accountModel.find({}, null, ['_id']).then(accounts => {
-      const accountIds = accounts.map(account => account._id.toString());
-      this.updateBalanceList(accountIds).then(n => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify('success update ' + n + 'accounts', null, 3));
-      });
-    });
-  }
+
 }

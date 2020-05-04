@@ -510,7 +510,7 @@ export class Entity {
     const clonedArray: any[] = [...items];
     const a: any[] = [];
 
-    clonedArray.map(item => {
+    clonedArray.forEach(item => {
       let query = item.query;
       let doc = item.data;
 
@@ -519,7 +519,9 @@ export class Entity {
       a.push({ updateOne: { filter: query, update: { $set: doc }, upsert: true } });
     });
 
-    await c.bulkWrite(a, options);
+    if(a && a.length > 0){
+      await c.bulkWrite(a, options);
+    }
     return { status: DbStatus.SUCCESS, msg: '' };
   }
 

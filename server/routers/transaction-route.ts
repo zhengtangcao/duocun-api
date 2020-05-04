@@ -29,7 +29,9 @@ export function TransactionRouter(db: DB){
   // tools
   // admin tools
   router.patch('/updateAccount', (req, res) => { model.updateAccount(req, res); });
-  router.patch('/updateBalances', (req, res) => { model.updateBalances(req, res); });
+
+  // query -- createDate
+  router.put('/bulk', (req, res) => { controller.updateBalances(req, res); });
   // router.patch('/fixCancelTransactions', (req, res) => { model.fixCancelTransactions(req, res); });
   // router.patch('/changeAccount', (req, res) => { model.changeAccount(req, res); });
   router.patch('/', (req, res) => { model.update(req, res); });
@@ -63,5 +65,13 @@ export class TransactionController extends Model {
         data: data.transactions 
       }));
     });
+  }
+
+  async updateBalances(req: Request, res: Response) {
+    const createDate = req.query.createDate;
+    const created = createDate + 'T00:00:00.000Z';
+    const count = await this.model.updateBalances(created);
+    res.setHeader('Content-Type', 'application/json');
+    res.send('success update ' + count + 'accounts');
   }
 }
