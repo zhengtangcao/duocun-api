@@ -305,6 +305,9 @@ export class AccountController extends Model {
   gv1_getByTokenId(req: Request, res: Response) {
     const tokenId: any = req.params.id;
     this.accountModel.getAccountByToken(tokenId).then(account => {
+      delete account.password;
+      delete account.newPhone;
+      delete account.verificationCode;
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
         code: account ? Code.SUCCESS : Code.FAIL,
