@@ -24,7 +24,6 @@ export function TransactionRouter(db: DB){
   router.get('/:id', (req, res) => { model.get(req, res); });
 
   router.post('/', (req, res) => { model.create(req, res); });
-
   router.put('/', (req, res) => { model.replace(req, res); });
 
   // tools

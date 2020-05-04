@@ -109,9 +109,9 @@ class ProductController extends Model{
   }
 
   gv1_list(req: Request, res: Response) {
-    const status = req.query.status;
+    // const status = req.query.status;
     const merchantId = req.query.merchantId;
-    const query = status ? {status, type: 'G'} : {type: 'G'};
+    const query = {status: 'A', type: 'G'}; // status ? {status, type: 'G'} : {type: 'G'};
     res.setHeader('Content-Type', 'application/json');
 
     merchantId ? 
