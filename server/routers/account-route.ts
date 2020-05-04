@@ -52,6 +52,7 @@ export function AccountRouter(db: DB) {
 
   router.post('/sendVerificationCode', (req, res) => { controller.gv1_sendVerificationCode(req, res) });
   router.post('/verifyCode', (req, res) => { controller.gv1_verifyCode(req, res) });
+  router.post('/saveProfile', (req, res) => { controller.gv1_update(req, res) });
   return router;
 };
 
@@ -415,6 +416,50 @@ export class AccountController extends Model {
          * for development purpose only
          */
         // data: account
+      }));
+    }
+  }
+
+  async gv1_update(req: Request, res: Response) {
+    res.setHeader('Content-Type', 'application/json');
+    let token: string = req.get('Authorization') || "";
+    token = token.replace("Bearer ", "");
+    const cfg = new Config();
+    let accountId = "";
+    try {
+      accountId = jwt.verify(token, cfg.JWT.SECRET).toString();
+    } catch (e) {
+      console.error(e);
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "authentication failed"
+      }));
+    }
+    const account = await this.accountModel.findOne({ _id: new ObjectId(accountId) });
+    if (!account) {
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "no such account"
+      }));
+    }
+    let { location, secondPhone } = req.body;
+    account.location = location;
+    if (!location) {
+      account.location = null;
+    }
+    if (secondPhone) {
+      secondPhone = secondPhone.substring(0,2) === "+1" ? secondPhone.substring(2) : secondPhone;
+      account.secondPhone = secondPhone;
+    }
+    try {
+      await this.accountModel.updateOne({ _id: new ObjectId(accountId) }, account);
+      return res.send(JSON.stringify({
+        code: Code.SUCCESS
+      }));
+    } catch(e) {
+      return res.send(JSON.stringify({
+        code: Code.FAIL,
+        message: "save failed"
       }));
     }
   }
