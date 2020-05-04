@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { DB } from "../db";
-import { Product } from "../models/product";
+import { Product, ProductStatus } from "../models/product";
 import { Model, Code } from "../models/model";
 import { ObjectId } from "mongodb";
 
@@ -54,6 +54,7 @@ class ProductController extends Model{
         query = {type: 'G'};
       }
     }
+    query.status = ProductStatus.ACTIVE;
     const ps = await this.model.list(query);
     res.setHeader('Content-Type', 'application/json');
     res.send(ps);
