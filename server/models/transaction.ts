@@ -639,14 +639,15 @@ export class Transaction extends Model {
   // v2 api
   async updateBalanceList(accountIds: string[]) {
     const self = this;
-    const trs = await this.find({}); //  'user'
-    let list = this.sortTransactions(trs);
+    // const trs = await this.find({}); //  'user'
+    // let list = this.sortTransactions(trs);
 
     for (let i = 0; i < accountIds.length; i++) {
       const accountId = accountIds[i];
       // const q = { '$or': [{ fromId: accountId }, { toId: accountId }] };
       console.log(`updating balance for ${accountId}`);
-      await self.updateBalanceByAccountId(accountId, list);
+      // await self.updateBalanceByAccountId(accountId, list);
+      await this.updateBalance(accountId);
     }
 
     // await accountIds.reduce(async (memo: Promise<any>, accountId) => {
