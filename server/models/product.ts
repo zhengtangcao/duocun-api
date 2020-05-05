@@ -11,11 +11,18 @@ import { Account, IAccount } from "./account";
 import { resolve } from "../../node_modules/@types/q";
 
 
-export enum ProductStatus {
-  ACTIVE = 1,
-  INACTIVE,
-  NEW,
-  PROMOTE
+// export enum ProductStatus {
+//   ACTIVE = 1,
+//   INACTIVE,
+//   NEW,
+//   PROMOTE
+// }
+
+export const ProductStatus = {
+  ACTIVE: 'A',
+  INACTIVE: 'I',
+  NEW: 'N',
+  PROMOTE: 'P'
 }
 
 export interface ICategory {
@@ -47,7 +54,7 @@ export interface IProduct {
   pictures: IPicture[];
   dow?: string[];
   order?: number;
-  status?: ProductStatus;
+  status?: any;
 
   created?: string;
   modified?: string;

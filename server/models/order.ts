@@ -651,23 +651,37 @@ export class Order extends Model {
     //   );
     // }
     // return Promise.all(promises);
-    await orders.reduce(async (memo: Promise<any>, order) => {
-      const retPromise = await memo;
-      await this.transactionModel.saveTransactionsForPlaceOrder(
-        order._id.toString(),
-        order.type,
-        merchant.accountId.toString(),
-        merchant.name,
-        order.clientId.toString(),
-        order.clientName,
-        order.cost,
-        order.total,
-        order.delivered
-      );
-      // console.log(`Add transactions for order Id:${order._id}`);
-      return retPromise;
-    }, new Promise((resolve) => { resolve(0);}));
+    // await orders.reduce(async (memo: Promise<any>, order) => {
+    //   const retPromise = await memo;
+    //   await this.transactionModel.saveTransactionsForPlaceOrder(
+    //     order._id.toString(),
+    //     order.type,
+    //     merchant.accountId.toString(),
+    //     merchant.name,
+    //     order.clientId.toString(),
+    //     order.clientName,
+    //     order.cost,
+    //     order.total,
+    //     order.delivered
+    //   );
+    //   // console.log(`Add transactions for order Id:${order._id}`);
+    //   return retPromise;
+    // }, new Promise((resolve) => { resolve(0);}));
 
+    for (let i = 0; i < orders.length; i++) {
+      const order = orders[i];
+      await this.transactionModel.saveTransactionsForPlaceOrder(
+          order._id.toString(),
+          order.type,
+          merchant.accountId.toString(),
+          merchant.name,
+          order.clientId.toString(),
+          order.clientName,
+          order.cost,
+          order.total,
+          order.delivered
+        )
+    }
     return;
   }
 
