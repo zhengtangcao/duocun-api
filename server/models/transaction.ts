@@ -645,11 +645,19 @@ export class Transaction extends Model {
 
     let list = this.sortTransactions(trs);
 
-    for (let i = 0; i < accountIds.length; i++) {
-      const accountId = accountIds[i];
+    // for (let i = 0; i < accountIds.length; i++) {
+    //   const accountId = accountIds[i];
+    //   console.log(`updating balance for ${accountId}`);
+    //   await self.updateBalanceByAccountId(accountId, list);
+    // }
+
+    await accountIds.reduce(async (memo: Promise<any>, accountId) => {
+      const retPromise = await memo;
       console.log(`updating balance for ${accountId}`);
       await self.updateBalanceByAccountId(accountId, list);
-    }
+      return retPromise;
+    }, new Promise((resolve) => { resolve(0); }));
+
     return accountIds.length;
   }
 
@@ -715,50 +723,47 @@ export class Transaction extends Model {
 
   // ----------------------------------------------------
   // update single account
-  updateBalance(accountId: string) {
-    return new Promise((resolve, reject) => {
-      const q = { '$or': [{ fromId: accountId }, { toId: accountId }] };
-      const datas: any[] = [];
+  async updateBalance(accountId: string) {
+    if(!accountId){
+      return;
+    }
+    const q = { '$or': [{ fromId: accountId }, { toId: accountId }] };
+    const datas: any[] = [];
 
-      this.find(q).then(trs => {
+    const trs = await this.find(q);
+    if (trs && trs.length > 0) {
+      let balance = 0;
+      let list = this.sortTransactions(trs);
 
-        if (trs && trs.length > 0) {
-          let balance = 0;
-          let list = this.sortTransactions(trs);
-
-          list.forEach((t: ITransaction) => {
-            const oId: any = t._id;
-            if (t.fromId.toString() === accountId) {
-              balance += t.amount;
-              datas.push({
-                query: { _id: oId.toString() },
-                data: {
-                  fromBalance: Math.round(balance * 100) / 100
-                }
-              });
-            } else if (t.toId.toString() === accountId) {
-              balance -= t.amount;
-              datas.push({
-                query: { _id: oId.toString() },
-                data: {
-                  toBalance: Math.round(balance * 100) / 100,
-                }
-              });
+      list.forEach((t: ITransaction) => {
+        const oId: any = t._id;
+        if (t.fromId.toString() === accountId) {
+          balance += t.amount;
+          datas.push({
+            query: { _id: oId.toString() },
+            data: {
+              fromBalance: Math.round(balance * 100) / 100
             }
           });
-
-          balance = Math.round(balance * 100) / 100;
-
-          this.bulkUpdate(datas).then(() => {
-            this.accountModel.updateOne({ _id: accountId }, { balance: balance }).then(() => {
-              resolve({ status: ResponseStatus.SUCCESS });
-            });
+        } else if (t.toId.toString() === accountId) {
+          balance -= t.amount;
+          datas.push({
+            query: { _id: oId.toString() },
+            data: {
+              toBalance: Math.round(balance * 100) / 100,
+            }
           });
-        } else {
-          resolve({ status: ResponseStatus.FAIL });
         }
       });
-    });
+
+      balance = Math.round(balance * 100) / 100;
+
+      await this.bulkUpdate(datas);
+      await this.accountModel.updateOne({ _id: accountId }, { balance: balance })
+      return { status: ResponseStatus.SUCCESS };
+    } else {
+      return { status: ResponseStatus.FAIL };
+    }
   }
 
   updateAccount(req: Request, res: Response) {
@@ -769,5 +774,11 @@ export class Transaction extends Model {
     });
   }
 
-
+  updateAccountV2(req: Request, res: Response) {
+    const accountId = req.params.id;
+    this.updateBalance(accountId).then((r) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(r, null, 3));
+    });
+  }
 }
