@@ -639,9 +639,7 @@ export class Transaction extends Model {
   // v2 api
   async updateBalanceList(accountIds: string[]) {
     const self = this;
-    const trs = await this.find({
-      status: { $nin: ['del'] }
-    }); //  'user'
+    const trs = await this.find({}); //  'user'
 
     let list = this.sortTransactions(trs);
 
@@ -733,7 +731,7 @@ export class Transaction extends Model {
     const trs = await this.find(q);
     if (trs && trs.length > 0) {
       let balance = 0;
-      let list = this.sortTransactions(trs);
+      const list = this.sortTransactions(trs);
 
       list.forEach((t: ITransaction) => {
         const oId: any = t._id;
@@ -745,6 +743,7 @@ export class Transaction extends Model {
               fromBalance: Math.round(balance * 100) / 100
             }
           });
+          // console.log(`${t.created} ${balance}`);
         } else if (t.toId.toString() === accountId) {
           balance -= t.amount;
           datas.push({
@@ -753,6 +752,7 @@ export class Transaction extends Model {
               toBalance: Math.round(balance * 100) / 100,
             }
           });
+          // console.log(`${t.created} ${balance}`);
         }
       });
 
