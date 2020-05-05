@@ -640,21 +640,21 @@ export class Transaction extends Model {
   async updateBalanceList(accountIds: string[]) {
     const self = this;
     const trs = await this.find({}); //  'user'
-
     let list = this.sortTransactions(trs);
 
-    // for (let i = 0; i < accountIds.length; i++) {
-    //   const accountId = accountIds[i];
-    //   console.log(`updating balance for ${accountId}`);
-    //   await self.updateBalanceByAccountId(accountId, list);
-    // }
-
-    await accountIds.reduce(async (memo: Promise<any>, accountId) => {
-      const retPromise = await memo;
+    for (let i = 0; i < accountIds.length; i++) {
+      const accountId = accountIds[i];
+      // const q = { '$or': [{ fromId: accountId }, { toId: accountId }] };
       console.log(`updating balance for ${accountId}`);
       await self.updateBalanceByAccountId(accountId, list);
-      return retPromise;
-    }, new Promise((resolve) => { resolve(0); }));
+    }
+
+    // await accountIds.reduce(async (memo: Promise<any>, accountId) => {
+    //   const retPromise = await memo;
+    //   console.log(`updating balance for ${accountId}`);
+    //   await self.updateBalanceByAccountId(accountId, list);
+    //   return retPromise;
+    // }, new Promise((resolve) => { resolve(0); }));
 
     return accountIds.length;
   }
