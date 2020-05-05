@@ -29,11 +29,14 @@ export function TransactionRouter(db: DB){
   // tools
   // admin tools
   router.patch('/updateAccount', (req, res) => { model.updateAccount(req, res); });
-  router.put('/:id', (req, res) => { model.updateAccountV2(req, res); });
-
 
   // query -- createDate
   router.put('/bulk', (req, res) => { controller.updateBalances(req, res); });
+  
+  router.put('/:id', (req, res) => { model.updateAccountV2(req, res); });
+
+
+
   // router.patch('/fixCancelTransactions', (req, res) => { model.fixCancelTransactions(req, res); });
   // router.patch('/changeAccount', (req, res) => { model.changeAccount(req, res); });
   router.patch('/', (req, res) => { model.update(req, res); });
@@ -70,12 +73,19 @@ export class TransactionController extends Model {
   }
 
   async updateBalances(req: Request, res: Response) {
+    let count = 0;
+    try{
     const startDate = req.query.startDate;
     const endDate = req.query.endDate
     const start = startDate + 'T00:00:00.000Z';
     const end = endDate + 'T23:59:59.000Z';
-    const count = await this.model.updateBalances(start, end);
-    res.setHeader('Content-Type', 'application/json');
-    res.send('success update ' + count + 'accounts');
+    count = await this.model.updateBalances(start, end);
+    }catch(e){
+      console.log(`${e}`);
+    }finally{
+      res.setHeader('Content-Type', 'application/json');
+      res.send('success update ' + count + 'accounts');
+    }
+
   }
 }
