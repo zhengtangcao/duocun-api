@@ -8,18 +8,18 @@ describe('merchant schedules', () => {
   const db: any = new DB();
   const cfg: any = new Config();
   let scheduleModel: MerchantSchedule;
-  // let connection;
+  let connection: any;
 
   before(function (done) {
     db.init(cfg.DATABASE).then((dbClient: any) => {
-      // connection = dbClient;
+      connection = dbClient;
       scheduleModel = new MerchantSchedule(db);
       done();
     });
   });
 
   after(function (done) {
-    // connection.close();
+    connection.close();
     done();
   });
 
