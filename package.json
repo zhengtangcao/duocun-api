@@ -14,7 +14,6 @@
     "start": "npm run copy && node ./dist/server.js",
     "test": "mocha -r ts-node/register server/tests/**/*-spec.ts",
     "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test",
-    "posttest": "npm run lint",
     "prod": "npm run build && npm run start"
   },
   "dependencies": {
@@ -72,6 +71,7 @@
     "@types/swagger-ui-express": "^4.1.2",
     "@types/yamljs": "^0.2.30",
     "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
     "express": "^4.17.1",
     "mongodb": "^3.3.2",
     "nyc": "^14.1.1",

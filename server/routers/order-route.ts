@@ -157,12 +157,19 @@ export class OrderController extends Model {
 
   async placeOrders(req: Request, res: Response) {
     const orders: any = req.body;
-    const savedOrders: any[] = await this.model.placeOrders(orders);
-    res.setHeader('Content-Type', 'application/json');
-    res.send({
-      code: Code.SUCCESS,
-      data: savedOrders 
-    });
+    try {
+      const savedOrders: any[] = await this.model.placeOrders(orders);
+      res.setHeader('Content-Type', 'application/json');
+      res.send({
+        code: Code.SUCCESS,
+        data: savedOrders 
+      });
+    } catch (e) {
+      res.json({
+        code: Code.FAIL,
+        data: e
+      });
+    }
   }
 
   async removeOrder(req: Request, res: Response) {
