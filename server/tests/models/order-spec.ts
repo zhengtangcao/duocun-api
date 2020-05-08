@@ -1,7 +1,184 @@
-import { Order, OrderType } from "../../models/order";
+import { Order, OrderType, PaymentMethod } from "../../models/order";
 import { DB } from "../../db";
 import { expect } from 'chai';
-import moment from "moment";
+import { ProductStatus, Product } from "../../models/product";
+import { MongoClient, ObjectId } from "mongodb";
+import { Config } from "../../config";
+import { OrderExceptionMessage } from "../../models/order";
+
+let db: DB;
+let mongoClient: MongoClient;
+let orderModel: Order;
+let productModel: Product;
+let testProducts: Array<any> = [];
+let testOrders: Array<any> = [];
+
+async function addTestProduct(product: any) {
+  testProducts.push(product);
+  product = await productModel.insertOne(product);
+  return product;
+}
+
+async function removeTestProducts() {
+  for (let product of testProducts) {
+    await productModel.deleteById(product._id);
+  }
+  testProducts = [];
+}
+
+function addTestOrder(order: any) {
+  testOrders.push(order);
+}
+
+async function removeTestOrders() {
+  for (let order of testOrders) {
+    await orderModel.deleteById(order._id);
+  }
+  testOrders = [];
+}
+
+describe("changeProductQuantity", () => {
+  beforeEach(async function() {
+    db = new DB();
+    mongoClient = await db.init((new Config()).DATABASE);
+    orderModel = new Order(db);
+    productModel = new Product(db);
+  });
+  afterEach(async function () {
+    await removeTestProducts();
+    await removeTestOrders();
+    await mongoClient.close();
+  });
+  it("should descrease product quantity", async function () {
+    let product = await addTestProduct({
+      name: "foo",
+      status: ProductStatus.ACTIVE,
+      price: 10,
+      cost: 9.5,
+      stock: {
+        enabled: true,
+        quantity: 10
+      }
+    });
+    const order = {
+      items: [
+        {
+          productId: product._id,
+          quantity: 5
+        }
+      ]
+    };
+    // @ts-ignore
+    await orderModel.changeProductQuantity(order);
+    product  = await productModel.findOne({ _id: new ObjectId(product._id) });
+    expect(product.stock.quantity).to.be.equals(5);
+  });
+  it("should ignore product whose stock option is disabled", async function () {
+    let product = await addTestProduct({
+      name: "foo",
+      status: ProductStatus.ACTIVE,
+      price: 10,
+      cost: 9.5,
+      stock: {
+        enabled: false,
+        quantity: 10
+      }
+    });
+    const order = {
+      items: [
+        {
+          productId: product._id,
+          quantity: 5
+        }
+      ]
+    };
+    // @ts-ignore
+    await orderModel.changeProductQuantity(order);
+    product  = await productModel.findOne({ _id: new ObjectId(product._id) });
+    expect(product.stock.quantity).to.be.equals(10);
+  });
+  it("should allow negative value if stock option is set so", async function() {
+    let product = await addTestProduct({
+      name: "foo",
+      status: ProductStatus.ACTIVE,
+      price: 10,
+      cost: 9.5,
+      stock: {
+        enabled: true,
+        allowNegative: true,
+        quantity: -1
+      }
+    });
+    const order = {
+      items: [
+        {
+          productId: product._id,
+          quantity: 5
+        }
+      ]
+    };
+    // @ts-ignore
+    await orderModel.changeProductQuantity(order);
+    product  = await productModel.findOne({ _id: new ObjectId(product._id) });
+    expect(product.stock.quantity).to.be.equals(-6);
+  });
+  it("should throw error if product is not found", async function() {
+    const order = {
+      items: [
+        {
+          productId: "thisproductidshouldnotexist",
+          quantity: 100
+        }
+      ]
+    };
+    try {
+      //@ts-ignore
+      await orderModel.changeProductQuantity(order)
+    } catch (e) {
+      expect(e).to.eqls({
+        message: OrderExceptionMessage.PRODUCT_NOT_FOUND,
+        productId: order.items[0].productId
+      });
+    }
+  });
+  it("should throw error if product stock option is enabled, does not allow negative value and quantity is below zero", async function() {
+    let product = await addTestProduct({
+      name: "foo",
+      nameEN: "bar",
+      status: ProductStatus.ACTIVE,
+      price: 10,
+      cost: 9.5,
+      stock: {
+        enabled: true,
+        allowNegative: false,
+        quantity: 2
+      }
+    });
+    const order = {
+      items: [
+        {
+          productId: product._id,
+          quantity: 5
+        }
+      ]
+    };
+    try {
+      // @ts-ignore
+      await orderModel.changeProductQuantity(order);
+      throw new Error("changeProductQuantity should throw error");
+    } catch (e) {
+      expect(e).to.eqls({
+        message: OrderExceptionMessage.OUT_OF_STOCK,
+        product: {
+          _id: product._id,
+          name: "foo",
+          nameEN: "bar"
+        }
+      });
+    }
+  });
+});
+
 // import { Config } from "../../config";
 // import { IPhase } from "../../models/merchant";
 

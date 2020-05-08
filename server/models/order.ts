@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { DB } from "../db";
-import { Model } from "./model";
+import { Model, Code } from "./model";
 import { ILocation, Location } from "./location";
 import { OrderSequence } from "./order-sequence";
 import moment from 'moment';
@@ -8,7 +8,7 @@ import { Merchant, IPhase, IMerchant, IDbMerchant } from "./merchant";
 import { Account, IAccount } from "./account";
 
 import { Transaction, ITransaction, TransactionAction } from "./transaction";
-import { Product, IProduct } from "./product";
+import { Product, IProduct, ProductStatus } from "./product";
 import { CellApplication, CellApplicationStatus, ICellApplication } from "./cell-application";
 import { Log, Action, AccountType } from "./log";
 import { createObjectCsvWriter } from 'csv-writer';
@@ -18,6 +18,8 @@ import fs from "fs";
 import { EventLog } from "./event-log";
 import { PaymentAction } from "./client-payment";
 import { memoryStorage } from "../../node_modules/@types/multer";
+import { resolve } from "dns";
+import { rejects } from "assert";
 
 const CASH_ID = '5c9511bb0851a5096e044d10';
 const CASH_NAME = 'Cash';
@@ -128,6 +130,12 @@ export interface IOrder {
   merchantAccount?: IAccount;
   merchant?: IMerchant;
 }
+
+export enum OrderExceptionMessage {
+  PRODUCT_NOT_FOUND = "product not found",
+  ORDER_ITEMS_EMPTY = "order items empty",
+  OUT_OF_STOCK = "out of stock"
+};
 
 export class Order extends Model {
   private productModel: Product;
@@ -474,7 +482,7 @@ export class Order extends Model {
     const date = order.deliverDate + 'T' + order.deliverTime + ':00.000Z';
     const time: any = order.deliverTime;
     const delivered = order.deliverDate + 'T15:00:00.000Z'; // this.getUtcTime(date, time).toISOString(); //tmp fix!!!
-
+    await this.changeProductQuantity(order);
     if (order.code) {
       order.created = moment.utc().toISOString();
       order.delivered = delivered;
@@ -497,6 +505,11 @@ export class Order extends Model {
     this.placeOrders(orders).then((savedOrders: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(savedOrders, null, 3));
+    }).catch(e => {
+      res.json({
+        code: Code.FAIL,
+        data: e
+      })
     });
   }
 
@@ -509,9 +522,17 @@ export class Order extends Model {
       for (let i = 0; i < orders.length; i++) {
         orders[i].paymentId = paymentId;
         const order: IOrder = orders[i];
-        const savedOrder: IOrder = await this.doInsertOneV2(order); // just save order
-        // console.log(`saved order Id: ${savedOrder._id}`);
-        savedOrders.push(savedOrder);
+        let savedOrder: IOrder|null = null;
+        try {
+          savedOrder = await this.doInsertOneV2(order);
+        } catch(e) {
+          throw {
+            orderIdx: i, ...e
+          };
+        }
+        if (savedOrder) {
+          savedOrders.push(savedOrder);
+        }
       }
 
       const paymentMethod = orders[0].paymentMethod;
@@ -1852,6 +1873,44 @@ export class Order extends Model {
         // ]
 
       });
+  }
+  async changeProductQuantity(order: IOrder) {
+    const items = order.items;
+    if (!items || !items.length) {
+      throw {
+         message: OrderExceptionMessage.ORDER_ITEMS_EMPTY,
+         order 
+      };
+    }
+    for (let item of items) {
+      const productId = item.productId;
+      const product = await this.productModel.findOne({ _id: productId, status: ProductStatus.ACTIVE });
+      if (!product) {
+        throw {
+          message: OrderExceptionMessage.PRODUCT_NOT_FOUND,
+          productId
+        }
+      }
+      if (!product.stock || !product.stock.enabled) {
+        return;
+      }
+      let productQuantity = product.stock.quantity || 0;
+      let itemQuantity = item.quantity || 1;
+      productQuantity = parseInt(productQuantity);
+      productQuantity = productQuantity - Math.abs(itemQuantity);
+      if (productQuantity < 0 && !product.stock.allowNegative) {
+        throw {
+          message: OrderExceptionMessage.OUT_OF_STOCK,
+          product: {
+            _id: productId,
+            name: product.name,
+            nameEN: product.nameEN
+          }
+        }
+      }
+      product.stock.quantity = productQuantity;
+      await this.productModel.updateOne({ _id: product._id }, product);
+    }
   }
 }
 
