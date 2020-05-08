@@ -25,7 +25,10 @@ export function MerchantRouter(db: DB){
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
   router.get('/:id', (req, res) => { model.get(req, res); });
+
+  // food delivery
   router.get('/', (req, res) => { model.list(req, res); });
+  router.get('/available', (req, res) => { controller.fv1_getAvailableMerchants(req, res); });
 
   // v1
   // router.post('/', (req, res) => { model.create(req, res); });
@@ -206,8 +209,8 @@ export class MerchantController extends Model {
     const lat = +req.query.lat;
     const lng = +req.query.lng;
     const status = `${req.query.status}`;
-
-    this.model.getAvailableMerchants(lat, lng, status).then((ms: any[]) => {
+    const query = status ? {status}: {};
+    this.model.getAvailableMerchants(lat, lng, query).then((ms: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
         code: ms ? Code.SUCCESS : Code.FAIL,
@@ -215,4 +218,21 @@ export class MerchantController extends Model {
       }));
     });
   }
+
+  // ?query={where:{}, options}
+  fv1_getAvailableMerchants(req: Request, res: Response) {
+    const lat = +req.query.lat;
+    const lng = +req.query.lng;
+    const deliverDate = `${req.query.deliverDate}`;
+    const status = `${req.query.status}`;
+    const query = status ? {status}: {};
+    this.model.getAvailableMerchants(lat, lng, query).then((ms: any[]) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: ms ? Code.SUCCESS : Code.FAIL,
+        data: ms 
+      }));
+    });
+  }
+
 };

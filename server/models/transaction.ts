@@ -164,7 +164,7 @@ export class Transaction extends Model {
   async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.toId;     // must be account id
-    const amount: number = tr.amount;
+    const amount: number = Math.round(tr.amount * 100)/100;
 
     const fromAccount: any = await this.accountModel.findOne({ _id: fromId });
     const toAccount: any = await this.accountModel.findOne({ _id: toId });
@@ -180,8 +180,8 @@ export class Transaction extends Model {
         { query: { _id: fromId }, data: { balance: tr.fromBalance } },
         { query: { _id: toId }, data: { balance: tr.toBalance } }
       ];
-      console.log(`update transactions from:${fromAccount.username}, balance:${fromAccount.balance}, amount:${amount}, newBalance:${tr.fromBalance}, action:${tr.actionCode}`);
-      console.log(`update transactions to:${toAccount.username}, balance:${toAccount.balance}, amount:${amount}, newBalance:${tr.toBalance}, action:${tr.actionCode}`);
+      // console.log(`update transactions from:${fromAccount.username}, balance:${fromAccount.balance}, amount:${amount}, newBalance:${tr.fromBalance}, action:${tr.actionCode}`);
+      // console.log(`update transactions to:${toAccount.username}, balance:${toAccount.balance}, amount:${amount}, newBalance:${tr.toBalance}, action:${tr.actionCode}`);
       await this.accountModel.bulkUpdate(updates);
       return x;
     } else {
