@@ -49,7 +49,7 @@ describe("changeProductQuantity", () => {
     await removeTestOrders();
     await mongoClient.close();
   });
-  it("should descrease product quantity", async function () {
+  it("should decrease product quantity", async function () {
     let product = await addTestProduct({
       name: "foo",
       status: ProductStatus.ACTIVE,
