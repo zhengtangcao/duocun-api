@@ -516,6 +516,7 @@ export class Order extends Model {
   // v2
   // create order batch Id
   async placeOrders(orders: IOrder[]) {
+    await this.validateOrders(orders);
     const savedOrders: IOrder[] = [];
     const paymentId = (new ObjectID()).toString();
     if (orders && orders.length > 0) {
@@ -1874,12 +1875,20 @@ export class Order extends Model {
 
       });
   }
-  async changeProductQuantity(order: IOrder) {
+
+
+  async validateOrders(orders: IOrder[]) {
+    for (let order of orders) {
+      await this.getProductQuantity(order);
+    }
+  }
+
+  async getProductQuantity(order: IOrder) {
     const items = order.items;
     if (!items || !items.length) {
       throw {
-         message: OrderExceptionMessage.ORDER_ITEMS_EMPTY,
-         order 
+        message: OrderExceptionMessage.ORDER_ITEMS_EMPTY,
+        order 
       };
     }
     for (let item of items) {
@@ -1892,7 +1901,7 @@ export class Order extends Model {
         }
       }
       if (!product.stock || !product.stock.enabled) {
-        return;
+        return product;
       }
       let productQuantity = product.stock.quantity || 0;
       let itemQuantity = item.quantity || 1;
@@ -1909,8 +1918,13 @@ export class Order extends Model {
         }
       }
       product.stock.quantity = productQuantity;
-      await this.productModel.updateOne({ _id: product._id }, product);
+      return product;
     }
+  }
+
+  async changeProductQuantity(order: IOrder) {
+    const product: IProduct = await this.getProductQuantity(order);
+    await this.productModel.updateOne({ _id: product._id }, product);
   }
 }
 
