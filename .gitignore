@@ -26,3 +26,4 @@ client/dist
 /package-lock.json
 client/package-lock.json
 client/src/environments
+/*-audit.json
