@@ -1913,7 +1913,8 @@ export class Order extends Model {
           product: {
             _id: productId,
             name: product.name,
-            nameEN: product.nameEN
+            nameEN: product.nameEN,
+            quantity: product.stock.quantity
           }
         }
       }

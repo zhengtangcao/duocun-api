@@ -172,7 +172,8 @@ describe("changeProductQuantity", () => {
         product: {
           _id: product._id,
           name: "foo",
-          nameEN: "bar"
+          nameEN: "bar",
+          quantity: 2
         }
       });
     }
