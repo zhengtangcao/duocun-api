@@ -656,41 +656,6 @@ export class Order extends Model {
   }
 
   async saveTransactionsForPlaceOrder(orders: any[], merchant: any) {
-    // let promises = [];
-    // for (let i = 0; i < orders.length; i++) {
-    //   const order = orders[i];
-    //   promises.push(
-    //     this.transactionModel.saveTransactionsForPlaceOrder(
-    //       order._id.toString(),
-    //       order.type,
-    //       merchant.accountId.toString(),
-    //       merchant.name,
-    //       order.clientId.toString(),
-    //       order.clientName,
-    //       order.cost,
-    //       order.total,
-    //       order.delivered
-    //     )
-    //   );
-    // }
-    // return Promise.all(promises);
-    // await orders.reduce(async (memo: Promise<any>, order) => {
-    //   const retPromise = await memo;
-    //   await this.transactionModel.saveTransactionsForPlaceOrder(
-    //     order._id.toString(),
-    //     order.type,
-    //     merchant.accountId.toString(),
-    //     merchant.name,
-    //     order.clientId.toString(),
-    //     order.clientName,
-    //     order.cost,
-    //     order.total,
-    //     order.delivered
-    //   );
-    //   // console.log(`Add transactions for order Id:${order._id}`);
-    //   return retPromise;
-    // }, new Promise((resolve) => { resolve(0);}));
-
     for (let i = 0; i < orders.length; i++) {
       const order = orders[i];
       await this.transactionModel.saveTransactionsForPlaceOrder(
@@ -727,7 +692,7 @@ export class Order extends Model {
       fromName: clientName,
       toId: BANK_ID,
       toName: BANK_NAME,
-      amount,
+      amount: Math.round(amount * 100)/100,
       actionCode,
       paymentId,
       delivered

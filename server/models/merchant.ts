@@ -114,16 +114,20 @@ export class Merchant extends Model {
   // });
 
   // v2
-  async getAvailableMerchants(lat: number, lng: number, status: string, appType=AppType.GROCERY) {
+  async getAvailableMerchants(lat: number, lng: number, query: any, appType=AppType.GROCERY) {
     if(lat && lng){
-      const area = await this.areaModel.getMyArea({lat, lng}, appType);
+      const area = await this.areaModel.getMyArea({lat, lng}, AppType.GROCERY);
       if (area) {
         const areaId = area._id.toString();
-        const schedules = await this.scheduleModel.find({ areaId });
-        const merchantIds = schedules.map((ms: any) => ms.merchantId.toString());
-        const query = status ? {status}: {};
-        const q = { ...query, _id: { $in: merchantIds } };
-        return await this.find(q);
+
+        if(appType === AppType.GROCERY){
+          const schedules = await this.scheduleModel.find({ areaId });
+          const merchantIds = schedules.map((ms: any) => ms.merchantId.toString());
+          const q = { ...query, _id: { $in: merchantIds } };
+          return await this.find(q);
+        }else{
+          return await this.find(query);
+        }
       } else {
         return [];
       }

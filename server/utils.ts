@@ -15,7 +15,6 @@ export class Utils {
     let token = this.cfg.WECHAT.TOKEN;
     const timestamp = req.query.timestamp;
     const nonce = req.query.nonce;
-
     const signature = req.query.signature; // involves token, timestamp and nonce
     const echostr = req.query.echostr;
 
