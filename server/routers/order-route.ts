@@ -12,7 +12,7 @@ export function OrderRouter(db: DB) {
   // yaml
   router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
   router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });
-
+  router.post('/validateCart', (req, res) => { controller.validateCart(req, res); });
   // v2
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
   router.get('/v2/', (req, res) => { controller.listV2(req, res); });
@@ -48,7 +48,7 @@ export function OrderRouter(db: DB) {
   router.put('/', (req, res) => { model.replace(req, res); });
   router.post('/checkStripePay', (req, res) => { model.checkStripePay(req, res); });
   router.post('/checkWechatpay', (req, res) => { model.checkWechatpay(req, res); });
-
+  
   //
   router.post('/payOrder', (req, res) => { model.payOrder(req, res); });
   router.post('/', (req, res) => { model.create(req, res); });
@@ -180,6 +180,18 @@ export class OrderController extends Model {
       res.send(x);
     }else{
       res.send();
+    }
+  }
+  
+  async validateCart(req: Request, res: Response) {
+    const items = req.body.items;
+    if (!items) {
+      return res.json({
+        code: Code.SUCCESS
+      });
+    }
+    for (let item of items) {
+      
     }
   }
 }

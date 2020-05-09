@@ -134,7 +134,8 @@ export interface IOrder {
 export enum OrderExceptionMessage {
   PRODUCT_NOT_FOUND = "product not found",
   ORDER_ITEMS_EMPTY = "order items empty",
-  OUT_OF_STOCK = "out of stock"
+  OUT_OF_STOCK = "out of stock",
+  INVALID_CART = "invalid cart"
 };
 
 export class Order extends Model {
@@ -1927,5 +1928,6 @@ export class Order extends Model {
     const product: IProduct = await this.getProductQuantity(order);
     await this.productModel.updateOne({ _id: product._id }, product);
   }
+
 }
 
