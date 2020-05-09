@@ -15,7 +15,7 @@ export function MerchantScheduleRouter(db: DB){
   // v2
   router.patch('/cu', (req, res) => { controller.createOrUpdate(req, res); });
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
-  
+  router.get('/availables-v2', (req, res) => { controller.getAvailableSchedulesV2(req, res); });
 
   // v1
   router.get('/availableMerchants', (req, res) => { controller.getAvailableMerchants(req, res); });
@@ -81,6 +81,28 @@ export class MerchantScheduleController extends Model {
     });
   }
 
+  getAvailableSchedulesV2(req: Request, res: Response) {
+    let data: any = req.query;
+    console.log(data);
+    if (!data) {
+      return res.json({
+        success: Code.FAIL
+      });
+    }
+    const merchantId = data.merchantId;
+    const location = JSON.parse(data.location);
+    // const query = appType ? {appType} : {};
+    this.areaModel.getMyArea(location, AppType.GROCERY).then((area: any) => {
+      if(area){
+        const areaId = area._id.toString();
+        this.find({merchantId, areaId}).then(mss =>{
+          res.send(JSON.stringify(mss, null, 3));
+        });
+      }else{
+        res.send(JSON.stringify(null, null, 3));
+      }
+    });
+  }
 
   getAvailableMerchants(req: Request, res: Response) {
     let data: any;
