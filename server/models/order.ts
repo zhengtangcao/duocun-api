@@ -135,7 +135,8 @@ export enum OrderExceptionMessage {
   PRODUCT_NOT_FOUND = "product not found",
   ORDER_ITEMS_EMPTY = "order items empty",
   OUT_OF_STOCK = "out of stock",
-  INVALID_CART = "invalid cart"
+  INVALID_CART = "invalid cart",
+  DELIVERY_EXPIRED = "delivery expired"
 };
 
 export class Order extends Model {
@@ -1844,7 +1845,14 @@ export class Order extends Model {
 
 
   async validateOrders(orders: IOrder[]) {
+    const nowDate = moment().format("YYYY-MM-DD HH:mm");
     for (let order of orders) {
+      if (!(`${order.deliverDate} ${order.deliverTime}` > nowDate)) {
+        throw {
+          message: OrderExceptionMessage.DELIVERY_EXPIRED,
+          order
+        }
+      }
       await this.getProductQuantity(order);
     }
   }
