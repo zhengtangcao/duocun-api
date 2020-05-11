@@ -83,7 +83,6 @@ export class MerchantScheduleController extends Model {
 
   getAvailableSchedulesV2(req: Request, res: Response) {
     let data: any = req.query;
-    console.log(data);
     if (!data) {
       return res.json({
         success: Code.FAIL
