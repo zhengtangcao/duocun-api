@@ -62,6 +62,7 @@ export interface IProduct {
   merchant?: IMerchant;
   category?: ICategory;
   merchantAccount?: IAccount; // join account table from find()
+  rank?: number;
 }
 
 export class Product extends Model {
