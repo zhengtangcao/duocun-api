@@ -96,7 +96,34 @@ class ProductController extends Model{
     }
     
     const collection = await this.model.getCollection();
-    const data = await collection.find(query, { skip, limit }).toArray();
+    // const data = await collection.find(query, { skip, limit }).toArray();
+    const data = await collection.aggregate([
+      { $lookup: { from: "merchants", localField: "merchantId", foreignField: "_id", as: "merchant" } },
+      { $unwind: { path: "$merchant", preserveNullAndEmptyArrays: true } },
+      { $match : query },
+      { $skip: skip },
+      { $limit: limit },
+      { $addFields: {
+        rank: {
+          $ifNull: ["$merchant.rank", 999]
+        }
+      } },
+      { $sort: { rank: 1 } },
+      { $project: {
+        merchant: 1,
+        name: 1,
+        nameEN: 1,
+        description: 1,
+        descriptionEN: 1,
+        price: 1,
+        merchantId: 1,
+        categoryId: 1,
+        dow: 1,
+        pictures: 1,
+        status: 1,
+        rank: 1
+      } }
+    ]).toArray();
     const count = await collection.find(query).count();
     res.setHeader('Content-Type', 'application/json');
     res.send({
