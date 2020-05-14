@@ -1845,14 +1845,14 @@ export class Order extends Model {
 
 
   async validateOrders(orders: IOrder[]) {
-    const nowDate = moment().format("YYYY-MM-DD HH:mm");
+    // const nowDate = moment().format("YYYY-MM-DD HH:mm");
     for (let order of orders) {
-      if (!(`${order.deliverDate} ${order.deliverTime}` > nowDate)) {
-        throw {
-          message: OrderExceptionMessage.DELIVERY_EXPIRED,
-          order
-        }
-      }
+      // if (!(`${order.deliverDate} ${order.deliverTime}` > nowDate)) {
+      //   throw {
+      //     message: OrderExceptionMessage.DELIVERY_EXPIRED,
+      //     order
+      //   }
+      // }
       await this.getProductQuantity(order);
     }
   }
