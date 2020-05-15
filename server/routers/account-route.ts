@@ -2,7 +2,7 @@ import express from "express";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { DB } from "../db";
-import { Account, AccountAttribute, IAccount } from "../models/account";
+import { Account, AccountAttribute, IAccount, AccountType } from "../models/account";
 import { MerchantStuff } from "../merchant-stuff";
 import { Utils } from "../utils";
 import { Config } from "../config";
@@ -49,8 +49,11 @@ export function AccountRouter(db: DB) {
   router.post('/login', (req, res) => { controller.login(req, res); });
   router.post('/loginByPhone', (req, res) => { controller.loginByPhone(req, res); });
   router.route('/signup').post((req, res) => { controller.signup(req, res); });
-
+  router.post('/registerTempAccount', (req, res) => {controller.registerTempAccount(req, res)});
+  router.post('/register', (req, res) => { controller.register(req, res) });
+  // when an authenticated user tries to change phone number
   router.post('/sendVerificationCode', (req, res) => { controller.gv1_sendVerificationCode(req, res) });
+  // when a user tries to log in with phone number
   router.post('/sendOTPCode', (req, res) => { controller.sendOTPCode(req, res) });
   router.post('/verifyCode', (req, res) => { controller.gv1_verifyCode(req, res) });
   router.post('/saveProfile', (req, res) => { controller.gv1_update(req, res) });
@@ -498,6 +501,88 @@ export class AccountController extends Model {
         message: "save failed"
       }));
     }
+  }
+
+  async registerTempAccount(req: Request, res: Response) {
+    let phone = req.body.phone;
+    if (!phone) {
+      return res.json({
+        code: Code.FAIL,
+        message: "phone number is empty"
+      });
+    }
+    phone = phone.substring(0, 2) === "+1" ? phone.substring(2): phone;
+    const existing = await this.accountModel.findOne({phone, type: { $ne: AccountType.TEMP }});
+    if (existing) {
+      return res.json({
+        code: Code.FAIL,
+        message: "phone number already exists"
+      });
+    }
+    const user = {
+      phone,
+      verificationCode: this.accountModel.getRandomCode(),
+      type: AccountType.TEMP,
+      verified: false
+    };
+    try {
+      let twilio = await this.accountModel.sendMessage(user.phone, user.verificationCode);
+      console.log(twilio);
+      await this.accountModel.updateOne({ phone }, user, { upsert: true });
+    } catch(e) {
+      return res.json({
+        code: Code.FAIL,
+        message: e
+      });
+    }
+    return res.json({
+      code: Code.SUCCESS
+    });
+  }
+
+  async register(req: Request, res: Response) {
+    let phone = req.body.phone;
+    phone = phone.substring(0, 2) === "+1" ? phone.substring(2): phone;
+    const username = req.body.username;
+    const verificationCode = req.body.verificationCode;
+    if (!username) {
+      return res.json({
+        code: Code.FAIL,
+        message: "username is empty"
+      });
+    }
+    
+    const user = await this.accountModel.findOne({ phone, verificationCode, type: AccountType.TEMP });
+    if (!user) {
+      return res.json({
+        code: Code.FAIL
+      });
+    }
+    const existing = await this.accountModel.findOne({ phone, type: { $ne: AccountType.TEMP } });
+    if (existing) {
+      return res.json({
+        code: Code.FAIL,
+        message: "phone number already exists"
+      });
+    }
+    user.username = username;
+    user.verified = true;
+    user.type = AccountType.CLIENT;
+    if (!user.balance) {
+      user.balance = 0;
+    }
+    try {
+      await this.accountModel.updateOne({ _id: user._id }, user);
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        message: e
+      });
+    }
+    return res.json({
+      code: Code.SUCCESS,
+      token: jwt.sign(user._id.toString(), this.cfg.JWT.SECRET)
+    });
   }
 
 }

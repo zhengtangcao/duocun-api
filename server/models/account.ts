@@ -22,7 +22,8 @@ export const VerificationError = {
 }
 
 export const AccountType = {
-  TEMP: 'tmp'
+  TEMP: 'tmp',
+  CLIENT: 'client'
 }
 
 export enum Role {
@@ -115,11 +116,11 @@ export class Account extends Model {
   //   });
 
   getRandomCode() {
-    const d1 = Math.floor(Math.random() * 10).toString();
-    const d2 = Math.floor(Math.random() * 10).toString();
-    const d3 = Math.floor(Math.random() * 10).toString();
-    const d4 = Math.floor(Math.random() * 10).toString();
-    return (d1 + d2 + d3 + d4).toString();
+    let code = "";
+    for (let i=0; i<6; i++) {
+      code += `${Math.floor(Math.random() * 10).toString()}`;
+    }
+    return code;
   }
 
   async trySignupV2(accountId: string, rawPhone: any) {
