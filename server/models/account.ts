@@ -522,10 +522,14 @@ export class Account extends Model {
             if (r.verificationCode === verificationCode) {
               const cfg = new Config();
               const tokenId = jwt.sign(r._id.toString(), cfg.JWT.SECRET); // SHA256
-              if (r.password) {
-                delete r.password;
-              }
-              resolve(tokenId);
+              // set new verification code
+              r.verificationCode = this.getRandomCode();
+              this.updateOne({ _id: r._id }, r).then(() => {
+                if (r.password) {
+                  delete r.password;
+                }
+                resolve(tokenId);
+              });
               // resolve({tokenId: tokenId, account: r});
             } else {
               resolve();

@@ -15,6 +15,7 @@ export class ApiMiddleWare {
         || req.path === '/api/Accounts/loginByPhone'
         || req.path === '/api/Accounts/verifyCode'
         || req.path === '/api/Accounts/sendVerifyMsg'
+        || req.path === '/api/Accounts/sendOTPCode'
         || req.path === '/api/Accounts/verifyAndLogin'
         || (req.method === 'GET' && req.path.indexOf('/api/Accounts') !== -1)
         || req.path.indexOf('/api/Locations') !== -1

@@ -51,6 +51,7 @@ export function AccountRouter(db: DB) {
   router.route('/signup').post((req, res) => { controller.signup(req, res); });
 
   router.post('/sendVerificationCode', (req, res) => { controller.gv1_sendVerificationCode(req, res) });
+  router.post('/sendOTPCode', (req, res) => { controller.sendOTPCode(req, res) });
   router.post('/verifyCode', (req, res) => { controller.gv1_verifyCode(req, res) });
   router.post('/saveProfile', (req, res) => { controller.gv1_update(req, res) });
   return router;
@@ -77,8 +78,16 @@ export class AccountController extends Model {
     const verificationCode = req.body.verificationCode;
 
     this.accountModel.doLoginByPhone(phone, verificationCode).then((tokenId: string) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(tokenId, null, 3));
+      if (!tokenId) {
+        return res.json({
+          code: Code.FAIL
+        });
+      } else {
+        return res.json({
+          code: Code.SUCCESS,
+          token: tokenId
+        });
+      }
     });
   }
 
@@ -306,14 +315,41 @@ export class AccountController extends Model {
   gv1_getByTokenId(req: Request, res: Response) {
     const tokenId: any = req.params.id;
     this.accountModel.getAccountByToken(tokenId).then(account => {
-      delete account.password;
-      delete account.newPhone;
-      delete account.verificationCode;
+      if (account) {
+        delete account.password;
+        delete account.newPhone;
+        delete account.verificationCode;
+      }
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
         code: account ? Code.SUCCESS : Code.FAIL,
         data: account
       }));
+    });
+  }
+
+  async sendOTPCode(req: Request, res: Response) {
+    let phone = req.body.phone;
+    const account = await this.accountModel.findOne({phone});
+    if (!account) {
+      return res.json({
+        code: Code.FAIL,
+        message: "no such account"
+      });
+    }
+    const code = this.accountModel.getRandomCode();
+    account.verificationCode = code;
+    try {
+      await this.accountModel.updateOne({_id: account._id}, account);
+      await this.accountModel.sendMessage(account.phone, account.verificationCode);
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        message: e
+      });
+    }
+    return res.json({
+      code: Code.SUCCESS
     });
   }
 
