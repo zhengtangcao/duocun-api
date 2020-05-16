@@ -4,12 +4,13 @@ import { ObjectID, ObjectId } from "mongodb";
 import { Request, Response } from "express";
 import { Account, IAccount } from "./account";
 import moment from 'moment';
-import { IOrderItem, PaymentMethod } from "./order";
+import { IOrderItem, PaymentMethod, Order } from "./order";
 import { EventLog } from "./event-log";
 import { ResponseStatus } from "./client-payment";
 
 import fs from 'fs';
 import { AccountType } from "./log";
+import { Product } from "./product";
 
 const CASH_BANK_ID = '5c9511bb0851a5096e044d10';
 const CASH_BANK_NAME = 'Cash Bank';
@@ -95,8 +96,10 @@ export interface IDbTransaction {
 export class Transaction extends Model {
   private accountModel: Account;
   eventLogModel: EventLog;
+  private dbo: DB;
   constructor(dbo: DB) {
     super(dbo, 'transactions');
+    this.dbo = dbo;
     this.accountModel = new Account(dbo);
     this.eventLogModel = new EventLog(dbo);
   }
@@ -427,7 +430,9 @@ export class Transaction extends Model {
 
   }
 
-  loadPage(req: Request, res: Response) {
+  async loadPage(req: Request, res: Response) {
+    const orderModel = new Order(this.dbo);
+    const productModel = new Product(this.dbo);
     const itemsPerPage = +req.params.itemsPerPage;
     const currentPageNumber = +req.params.currentPageNumber;
 
@@ -436,29 +441,55 @@ export class Transaction extends Model {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
     }
 
-    this.find(query).then((rs: any) => {
-      const arrSorted = rs.sort((a: any, b: any) => {
-        const aMoment = moment(a.created);
-        const bMoment = moment(b.created); // .set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-        if (aMoment.isAfter(bMoment)) {
-          return -1;
-        } else {
-          return 1;
-        }
-      });
-
-      const start = (currentPageNumber - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      const len = arrSorted.length;
-      const arr = arrSorted.slice(start, end);
-
-      res.setHeader('Content-Type', 'application/json');
-      if (arr && arr.length > 0) {
-        res.send(JSON.stringify({ total: len, transactions: arr }, null, 3));
+    const rs: any = await this.find(query);
+    const arrSorted = rs.sort((a: any, b: any) => {
+      const aMoment = moment(a.created);
+      const bMoment = moment(b.created); // .set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+      if (aMoment.isAfter(bMoment)) {
+        return -1;
       } else {
-        res.send(JSON.stringify({ total: len, transactions: [] }, null, 3));
+        return 1;
       }
     });
+
+    const start = (currentPageNumber - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const len = arrSorted.length;
+    let arr = arrSorted.slice(start, end);
+    for (let transaction of arr) {
+      if (transaction.paymentId) {
+        transaction.orders = await orderModel.find({ paymentId: transaction.paymentId });
+      } else if (transaction.orderId) {
+        const order = await orderModel.findOne({ _id: transaction.orderId });
+        if (order) {
+          transaction.orders = [order];
+        } else {
+          transaction.orders = [];
+        }
+      }else {
+        transaction.orders = [];
+      }
+      for (let order of transaction.orders) {
+        if (order.items) {
+          for (let item of order.items) {
+            const product = await productModel.findOne({ _id: item.productId });
+            if (product) {
+              item.name = product.name;
+              item.nameEN = product.nameEN;
+            } else {
+              item.name = "删除的产品";
+              item.nameEN = "Deleted product";
+            }
+          }
+        }
+      }
+    }
+    res.setHeader('Content-Type', 'application/json');
+    if (arr && arr.length > 0) {
+      res.send(JSON.stringify({ total: len, transactions: arr }, null, 3));
+    } else {
+      res.send(JSON.stringify({ total: len, transactions: [] }, null, 3));
+    }
   }
 
   groupByDelivered(items: ITransaction[]) {
