@@ -1,12 +1,15 @@
 import express from "express";
 import { DB } from "../db";
-import { Order } from "../models/order";
+import { Order, IOrder } from "../models/order";
 import { Request, Response } from "express";
 import { Model, Code } from "../models/model";
+import { Account } from "../models/account";
+import { Product } from "../models/product";
 
 export function OrderRouter(db: DB) {
   const router = express.Router();
   const model = new Order(db);
+
   const controller = new OrderController(db);
 
   // yaml
@@ -33,6 +36,8 @@ export function OrderRouter(db: DB) {
 
   router.get('/history/:currentPageNumber/:itemsPerPage', (req, res) => { controller.loadHistory(req, res); });
   router.get('/loadPage/:currentPageNumber/:itemsPerPage', (req, res) => { controller.loadPage(req, res); });
+  router.get('/getByCode/:code', (req, res) => {controller.getByCode(req, res)});
+  router.get('/getByPaymentId/:paymentId', (req, res) => { controller.getByPaymentId(req, res) });
   // v1
   router.get('/csv', (req, res) => { model.reqCSV(req, res); });
   router.get('/clients', (req, res) => { model.reqClients(req, res); });
@@ -42,6 +47,7 @@ export function OrderRouter(db: DB) {
   router.get('/trends', (req, res) => { model.getOrderTrends(req, res); });
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
   router.get('/', (req, res) => { model.list(req, res); });
+  
   router.get('/:id', (req, res) => { model.get(req, res); });
 
   router.put('/updatePurchaseTag', (req, res) => { model.updatePurchaseTag(req, res) });
@@ -72,10 +78,13 @@ export function OrderRouter(db: DB) {
 
 export class OrderController extends Model {
   model: Order;
-
+  accountModel: Account;
+  productModel: Product;
   constructor(db: DB) {
     super(db, 'orders');
     this.model = new Order(db);
+    this.accountModel = new Account(db);
+    this.productModel = new Product(db);
   }
 
   listV2(req: Request, res: Response) {
@@ -153,7 +162,86 @@ export class OrderController extends Model {
     });
   }
 
+  async getByCode(req: Request, res: Response) {
+    const code = req.params.code;
+    let query = null;
+    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
+      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    }
+    if (!query || !query.clientId) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'authentication failed'
+      });
+    }
+    const client = await this.accountModel.findOne({ _id: query.clientId });
+    if (!client) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'authentication failed'
+      });
+    }
+    const order = await this.model.findOne({
+      code,
+      clientId: query.clientId
+    });
+    if (!order) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'no such order'
+      });
+    }
+    return res.json({
+      code: Code.SUCCESS,
+      data: await this.getOrderDetail(order)
+    });
+  }
 
+  async getByPaymentId(req: Request, res: Response) {
+    const paymentId = req.params.paymentId;
+    let query = null;
+    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
+      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    }
+    if (!query || !query.clientId) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'authentication failed'
+      });
+    }
+    const client = await this.accountModel.findOne({ _id: query.clientId });
+    if (!client) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'authentication failed'
+      });
+    }
+    const orders = await this.model.find({ paymentId, clientId: query.clientId });
+    const data = [];
+    for (let order of orders) {
+      data.push(await this.getOrderDetail(order));
+    }
+    return res.json({
+      code: Code.SUCCESS,
+      data
+    });
+  }
+
+  async getOrderDetail(order: IOrder) {
+    const client = await this.accountModel.findOne({ _id: order.clientId });
+    const items = [];
+    if (order.items) {
+      for (let item of order.items) {
+        const product = await this.productModel.findOne({ _id: item.productId });
+        if (product) {
+          items.push({ product, quantity: item.quantity, price: item.price });
+        }
+      }
+    }
+    const description = this.model.getDescription(order, 'zh');
+    const address = this.model.locationModel.getAddrString(order.location);
+    return { ...order, address, description, items, clientPhoneNumber: client.phone };
+  }
 
   async placeOrders(req: Request, res: Response) {
     const orders: any = req.body;
