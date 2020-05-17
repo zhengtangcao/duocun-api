@@ -1,17 +1,20 @@
 import express from "express";
-import { Pickup } from "../models/pickup";
+import { PickupController } from "../controllers/pickup-controller";
 import { DB } from "../db";
+import { Pickup } from "../models/pickup";
 
 export function PickupRouter(db: DB){
   const router = express.Router();
-  const controller = new Pickup(db);
+  const model = new Pickup(db);
+  const controller = new PickupController(model, db);
 
   router.get('/', (req, res) => { controller.list(req, res); });
-  router.get('/:id', (req, res) => { controller.get(req, res); });
+  router.put('/', (req, res) => { controller.updateOne(req, res); });
   router.post('/', (req, res) => { controller.create(req, res); });
-  router.put('/', (req, res) => { controller.replace(req, res); });
-  router.patch('/', (req, res) => { controller.update(req, res); });
-  router.delete('/', (req, res) => { controller.remove(req, res); });
+
+  router.get('/:id', (req, res) => { model.get(req, res); });
+  router.patch('/', (req, res) => { model.update(req, res); });
+  router.delete('/', (req, res) => { model.remove(req, res); });
 
   return router;
 };

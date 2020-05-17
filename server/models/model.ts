@@ -37,6 +37,13 @@ export class Model extends Entity {
     }
   }
 
+  async find_v2(where: any, options?: object, fields?: Array<object>) {
+    const query = this.convertIdFields(where);
+    const collection = await this.getCollection();
+    const data: any[] = await collection.find(query, options).toArray();
+    const count: number = await collection.countDocuments(query, {});
+    return { data, count };
+  }
 
   async findOne(query: any, options?: any, fields?: any[]): Promise<any> {
     const self = this;
