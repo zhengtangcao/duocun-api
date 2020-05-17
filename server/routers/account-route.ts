@@ -186,6 +186,9 @@ export class AccountController extends Model {
           } else {
             res.send(JSON.stringify('', null, 3)); // sign up fail, please contact admin
           }
+        }).catch((e) => {
+          console.error(e);
+          res.send(JSON.stringify('', null, 3));
         });
       } else {
         res.send(JSON.stringify('', null, 3)); // sign up fail, please contact admin
@@ -224,6 +227,9 @@ export class AccountController extends Model {
 
     self.accountModel.sendMessage(phone, txt).then(() => {
       res.send(JSON.stringify('', null, 3)); // sign up fail, please contact admin
+    }).catch((e) => {
+      console.error(e);
+      res.send(JSON.stringify('', null, 3));
     });
   }
 
@@ -527,9 +533,9 @@ export class AccountController extends Model {
     };
     try {
       let twilio = await this.accountModel.sendMessage(user.phone, user.verificationCode);
-      console.log(twilio);
       await this.accountModel.updateOne({ phone }, user, { upsert: true });
     } catch(e) {
+      console.error(e);
       return res.json({
         code: Code.FAIL,
         message: e
