@@ -272,63 +272,75 @@ export class ClientPayment extends Model {
       const message = "paymentId:" + paymentId + ", params:" + JSON.stringify(params)
       this.addLogToDB(accountId, "snappay req", '', message).then(() => { });
 
-      const post_req = https.request(options, (res: IncomingMessage) => {
-        let ss = "";
-        res.on("data", (d) => {
-          ss += d;
-        });
-        res.on("end", (r: any) => {
-          if (ss) { // { code, data, msg, total, psn, sign }
-            const ret = JSON.parse(ss); // s.data = {out_order_no:x, merchant_no:x, trans_status:x, h5pay_url}
-            const code = ret ? ret.code : "";
-            const message = "sign:" + (ret ? ret.sign : "N/A") + ", msg:" + (ret ? ret.msg : "N/A");
-            const rsp: IPaymentResponse = {
-              status: ret && ret.msg === "success" ? ResponseStatus.SUCCESS : ResponseStatus.FAIL,
-              code, // stripe/snappay code
-              decline_code: "", // stripe decline_code
-              msg: message, // stripe/snappay retrun message
-              chargeId: "", // stripe { chargeId:x }
-              url: ret.data && ret.data[0] ? ret.data[0].h5pay_url : "", // snappay data[0].h5pay_url
-            };
-            if (ret && ret.msg === "success") {
-              resolve(rsp);
-            } else {
-              this.addLogToDB(accountId, "snappay rsp", '', message).then(() => {
+      try {
+        const post_req = https.request(options, (res: IncomingMessage) => {
+          let ss = "";
+          res.on("data", (d) => {
+            ss += d;
+          });
+          res.on("end", (r: any) => {
+            if (ss) { // { code, data, msg, total, psn, sign }
+              const ret = JSON.parse(ss); // s.data = {out_order_no:x, merchant_no:x, trans_status:x, h5pay_url}
+              const code = ret ? ret.code : "";
+              const message = "sign:" + (ret ? ret.sign : "N/A") + ", msg:" + (ret ? ret.msg : "N/A");
+              const rsp: IPaymentResponse = {
+                status: ret && ret.msg === "success" ? ResponseStatus.SUCCESS : ResponseStatus.FAIL,
+                code, // stripe/snappay code
+                decline_code: "", // stripe decline_code
+                msg: message, // stripe/snappay retrun message
+                chargeId: "", // stripe { chargeId:x }
+                url: ret.data && ret.data[0] ? ret.data[0].h5pay_url : "", // snappay data[0].h5pay_url
+              };
+              if (ret && ret.msg === "success") {
                 resolve(rsp);
-              });
+              } else {
+                this.addLogToDB(accountId, "snappay rsp", '', message).then(() => {
+                  resolve(rsp);
+                });
+              }
+            } else {
+              const rsp: IPaymentResponse = {
+                status: ResponseStatus.FAIL,
+                code: "UNKNOWN_ISSUE", // snappay return code
+                decline_code: "", // stripe decline_code
+                msg: "UNKNOWN_ISSUE", // snappay retrun message
+                chargeId: "", // stripe { chargeId:x }
+                url: "", // for snappay data[0].h5pay_url
+              };
+              resolve(rsp);
             }
-          } else {
+          });
+        });
+  
+        post_req.on("error", (error: any) => {
+          const message = JSON.stringify(error);
+          self.addLogToDB(accountId, 'snappay error', '', message).then(() => {
+            // Reject on request error.
             const rsp: IPaymentResponse = {
               status: ResponseStatus.FAIL,
               code: "UNKNOWN_ISSUE", // snappay return code
               decline_code: "", // stripe decline_code
-              msg: "UNKNOWN_ISSUE", // snappay retrun message
+              msg: message, // snappay retrun message
               chargeId: "", // stripe { chargeId:x }
               url: "", // for snappay data[0].h5pay_url
             };
             resolve(rsp);
-          }
+          });
+  
         });
-      });
-
-      post_req.on("error", (error: any) => {
-        const message = JSON.stringify(error);
-        self.addLogToDB(accountId, 'snappay error', '', message).then(() => {
-          // Reject on request error.
-          const rsp: IPaymentResponse = {
-            status: ResponseStatus.FAIL,
-            code: "UNKNOWN_ISSUE", // snappay return code
-            decline_code: "", // stripe decline_code
-            msg: message, // snappay retrun message
-            chargeId: "", // stripe { chargeId:x }
-            url: "", // for snappay data[0].h5pay_url
-          };
-          resolve(rsp);
+        post_req.write(JSON.stringify(params));
+        post_req.end();
+      } catch (e) {
+        console.error(e);
+        resolve({
+          status: ResponseStatus.FAIL,
+          code: "UNKNOWN_ISSUE",
+          decline_code: "",
+          msg: e,
+          chargeId: "",
+          url: ""
         });
-
-      });
-      post_req.write(JSON.stringify(params));
-      post_req.end();
+      }
     });
   }
 
