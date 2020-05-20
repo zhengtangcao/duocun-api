@@ -31,7 +31,8 @@ export class PageController {
   }
 
   async getBySlug(req: Request, res: Response) {
-    const page = await this.model.findOne({ status: PageStatus.PUBLISH });
+    const slug = req.params.slug;
+    const page = await this.model.findOne({ status: PageStatus.PUBLISH, slug });
     if (page) {
       res.json({
         code: Code.SUCCESS,
