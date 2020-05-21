@@ -5,6 +5,7 @@ import https from 'https';
 import { Request, Response } from "express";
 import { Config } from "../config";
 import { resolve } from "url";
+import { Collection } from "../../node_modules/@types/mongodb";
 
 // export interface GeoPoint  {
 //   lat?: number;
@@ -88,6 +89,19 @@ export class Location extends Model {
   constructor(dbo: DB) {
     super(dbo, 'locations');
     this.cfg = new Config();
+  }
+
+  
+  async updateOne(query: any, doc: any, options?: any): Promise<any> {
+    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+      return;
+    } else {
+      query = this.convertIdFields(query);
+      doc = this.convertIdFields(doc);
+      const c = await this.getCollection();
+      const r = await c.updateOne(query, { $set: doc }, options); // {n: 1, nModified: 0, ok: 1} UpdateWriteOpResult
+      return r;
+    }
   }
 
   reqPlaces(req: Request, res: Response) {
@@ -288,7 +302,6 @@ export class Location extends Model {
   }
 
   async getLocation(accountId: string, placeId: string, address: string) {
-
     if (placeId) {
       const ds = await this.find({ placeId });
       if (ds && ds.length > 0) {
