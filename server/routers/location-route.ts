@@ -8,13 +8,13 @@ export function LocationRouter(db: DB){
   const model = new Location(db);
   const controller = new LocationController(db);
 
-  // yaml api
+  // grocery api
   router.get('/geocode/:address', (req, res) => { controller.getGeocodeList(req, res); });
   router.get('/place/:input', (req, res) => { controller.getPlaceList(req, res); });
   router.get('/history/:accountId', (req, res) => { controller.gv1_list(req, res); });
+  router.put('/', (req, res) => { controller.upsertOne(req, res); });
 
-
-  // old api
+  // old api, deprecated
   router.get('/suggest/:keyword', (req, res) => { model.reqSuggestAddressList(req, res)});
   router.get('/history', (req, res) => { model.reqHistoryAddressList(req, res)});
   router.get('/query', (req, res) => { model.reqLocation(req, res)});
@@ -24,12 +24,9 @@ export function LocationRouter(db: DB){
   router.get('/Places/:input', (req, res) => { model.reqPlaces(req, res); });
   router.get('/Geocodes/:address', (req, res) => { model.reqGeocodes(req, res); });
 
-  router.post('/upsertOne', (req, res) => { model.upsertOne(req, res); });
   router.post('/', (req, res) => { model.create(req, res); });
 
-
-  router.put('/updateLocations', (req, res) => { model.updateLocations(req, res)});
-  router.put('/', (req, res) => { model.replace(req, res); });
+  // router.put('/updateLocations', (req, res) => { model.updateLocations(req, res)});
   router.patch('/', (req, res) => { model.update(req, res); });
   router.delete('/', (req, res) => { model.remove(req, res); });
 
@@ -84,5 +81,17 @@ export class LocationController extends Model {
         data: []
       }));
     }
+  }
+
+  async upsertOne(req: Request, res: Response) {
+    const query = req.body.query;
+    const data = req.body.data;
+
+    if(data.location){
+      data.address = this.model.getAddrString(data.location);
+    }
+    const result = await this.model.updateOne(query, data, { upsert: true }); // {n: 1, nModified: 0, ok: 1}
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(result, null, 3));
   }
 }

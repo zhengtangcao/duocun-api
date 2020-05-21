@@ -5,6 +5,7 @@ import https from 'https';
 import { Request, Response } from "express";
 import { Config } from "../config";
 import { resolve } from "url";
+import { Collection } from "../../node_modules/@types/mongodb";
 
 // export interface GeoPoint  {
 //   lat?: number;
@@ -42,7 +43,7 @@ export interface IGooglePlace {
 }
 
 // use for front-end address list
-export interface IAddress{
+export interface IAddress {
   placeId: string;
   mainText: string;
   secondaryText: string;
@@ -90,6 +91,19 @@ export class Location extends Model {
     this.cfg = new Config();
   }
 
+  
+  async updateOne(query: any, doc: any, options?: any): Promise<any> {
+    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+      return;
+    } else {
+      query = this.convertIdFields(query);
+      doc = this.convertIdFields(doc);
+      const c = await this.getCollection();
+      const r = await c.updateOne(query, { $set: doc }, options); // {n: 1, nModified: 0, ok: 1} UpdateWriteOpResult
+      return r;
+    }
+  }
+
   reqPlaces(req: Request, res: Response) {
     const keyword = req.params.input;
     this.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {
@@ -108,7 +122,7 @@ export class Location extends Model {
         res.on('data', (d) => {
           data += d;
         });
-  
+
         res.on('end', (rr: any) => {
           if (data) {
             const s = JSON.parse(data);
@@ -151,7 +165,7 @@ export class Location extends Model {
     });
   }
 
-  getHistoryLocations(query: any, fields: string[]): Promise<ILocation[]>{
+  getHistoryLocations(query: any, fields: string[]): Promise<ILocation[]> {
     return new Promise((resolve, reject) => {
       this.find(query).then((xs: ILocation[]) => {
         const rs = this.filterArray(xs, fields);
@@ -173,7 +187,7 @@ export class Location extends Model {
         fields = JSON.parse(req.headers.fields);
       }
     }
-  
+
     this.getHistoryLocations(query, fields).then((rs: ILocation[]) => {
       const addrs: IAddress[] = this.locationsToAddressList(rs);
       res.send(addrs);
@@ -274,7 +288,7 @@ export class Location extends Model {
       }
     }
 
-    if(query){
+    if (query) {
       const accountId: string = query.accountId;
       const address: string = query.address;
       const placeId: string = query.placeId;
@@ -282,66 +296,61 @@ export class Location extends Model {
       this.getLocation(accountId, placeId, address).then(r => {
         res.send(r);
       });
-    }else{
+    } else {
       res.send();
     }
   }
 
-  getLocation(accountId: string, placeId: string, address: string) {
-    return new Promise((resolve, reject) => {
-      if(placeId){
-        this.find({placeId}).then(ds => {
-          if(ds && ds.length > 0){
-            const history = ds.find((d: any) => d.accountId.toString() === accountId);
-            if(history){
-              resolve(history.location);
-            } else {
-              const h = ds[0];
-              if(accountId){
-                this.insertOne({accountId, placeId: h.placeId, location: h.location}).then(r => {
-                  resolve(h.location);
-                });
-              }else{
-                resolve(h.location);
-              }
-            }
-          }else{
-            this.getGeocodes(address).then((rs: any[]) => {
-              if(rs && rs.length > 0){
-                const loc = this.geocodeToLocation(rs[0]);
-                if(accountId){
-                  this.insertOne({accountId, placeId: loc.placeId, location: loc}).then(r => {
-                    resolve(loc);
-                  });
-                }else{
-                  resolve(loc);
-                }
-              }else{
-                resolve();
-              }
-            });
+  async getLocation(accountId: string, placeId: string, address: string) {
+    if (placeId) {
+      const ds = await this.find({ placeId });
+      if (ds && ds.length > 0) {
+        const history = ds.find((d: any) => d.accountId.toString() === accountId.toString());
+        if (history) {
+          return history.location;
+        } else {
+          const h = ds[0];
+          if (accountId) {
+            const address = this.getAddrString(h.location);
+            const r = await this.insertOne({ accountId, placeId: h.placeId, location: h.location, address });
+            return h.location;
+          } else {
+            return h.location;
           }
-        });
-      } else { // should never go here
-        this.getGeocodes(address).then((rs: any[]) => {
-          if(rs && rs.length > 0){
-            const loc = this.geocodeToLocation(rs[0]);
-            if(accountId){
-              this.insertOne({accountId, placeId: loc.placeId, location: loc}).then(r => {
-                resolve(loc);
-              });
-            }else{
-              resolve(loc);
-            }
-          }else{
-            resolve();
+        }
+      } else {
+        const rs: any[] = await this.getGeocodes(address);
+        if (rs && rs.length > 0) {
+          const location = this.geocodeToLocation(rs[0]);
+          if (accountId) {
+            const address = this.getAddrString(location);
+            const r = await this.insertOne({ accountId, placeId: location.placeId, location, address });
+            return location;
+          } else {
+            return location;
           }
-        });
+        } else {
+          return;
+        }
       }
-    });
+    } else { // should never go here
+      const rs: any[] = await this.getGeocodes(address);
+      if (rs && rs.length > 0) {
+        const location = this.geocodeToLocation(rs[0]);
+        if (accountId) {
+          const address = this.getAddrString(location);
+          const r = await this.insertOne({ accountId, placeId: location.placeId, location, address });
+          return location;
+        } else {
+          return location;
+        }
+      } else {
+        return;
+      }
+    }
   }
 
-  getGeocodes(addr: string): Promise<any[]>{
+  getGeocodes(addr: string): Promise<any[]> {
     const key = this.cfg.GEOCODE_KEY;
     const url = 'https://maps.googleapis.com/maps/api/geocode/json?sensor=false&key=' + key + '&address=' + addr;
 
@@ -351,7 +360,7 @@ export class Location extends Model {
         res.on('data', (d) => {
           data += d;
         });
-  
+
         res.on('end', () => {
           if (data) {
             const s = JSON.parse(data);
