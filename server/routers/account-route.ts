@@ -8,7 +8,7 @@ import { Utils } from "../utils";
 import { Config } from "../config";
 import { Model, Code } from "../models/model";
 import { ObjectId } from "mongodb";
-
+import moment from "moment";
 export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
@@ -574,6 +574,7 @@ export class AccountController extends Model {
     user.username = username;
     user.verified = true;
     user.type = AccountType.CLIENT;
+    user.created = moment().toISOString();
     if (!user.balance) {
       user.balance = 0;
     }
