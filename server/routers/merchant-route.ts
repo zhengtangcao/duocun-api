@@ -188,7 +188,7 @@ export class MerchantController extends Model {
     });
   }
 
-  // myLocalTime --- eg. '2020-04-23T10-09-00'
+  // myLocalTime --- eg. '2020-04-23T10:09:00'
   gv1_getDeliverySchedule(req: Request, res: Response) {
     const myLocalTime = `${req.query.dt}`;
     const merchantId = `${req.query.merchantId}`;
