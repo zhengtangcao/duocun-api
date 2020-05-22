@@ -10,6 +10,11 @@ export class DateTime {
     return moment.tz(localTime, zone);
   }
 
+  // utcTime --- 'YYYY-MM-DDTHH:mm:ss.000Z'
+  getMomentFromUtc(utcTime: string, zone='America/Toronto'){
+    return moment.utc(utcTime).tz(zone);
+  }
+
   // myLocalTime -- '2020-03-23T23:58:00'
   // ms --- list of moment objects
   // return the latest moment object after my LocalTime

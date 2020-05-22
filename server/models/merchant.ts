@@ -9,6 +9,7 @@ import { ObjectID, Collection, ObjectId } from "mongodb";
 import moment from "moment";
 import { IAccount, Account } from "./account";
 import { MerchantSchedule } from "./merchant-schedule";
+import { DateTime } from "./date-time";
 
 export const MerchantType = {
   RESTAURANT: 'R',
@@ -383,10 +384,11 @@ export class Merchant extends Model {
   // return local time list [{ date: 'YYYY-MM-DD', time:'HH:mm' }]
   async getDeliverSchedule(myLocalTime: string, merchantId: string, lat: number, lng: number, appType=AppType.GROCERY){
     const merchant = await this.findOne({ _id: merchantId });
-
+    const dt = new DateTime();
     if (merchant.delivers) {
-      const myDateTime = moment.utc().format('YYYY-MM-DD HH:mm:ss');
-      return this.scheduleModel.getSpecialSchedule(myDateTime, merchant.delivers);
+      const myUtc = moment.utc().toISOString();
+      const myLocalDateTime = dt.getMomentFromUtc(myUtc).format('YYYY-MM-DD HH:mm:ss');
+      return this.scheduleModel.getSpecialSchedule(myLocalDateTime, merchant.delivers);
     } else {
       const schedule = await this.scheduleModel.getAvailableSchedule(merchantId, lat, lng, appType);
       if (schedule && merchant) {
