@@ -384,6 +384,7 @@ export class Merchant extends Model {
   // return local time list [{ date: 'YYYY-MM-DD', time:'HH:mm' }]
   async getDeliverSchedule(myLocalTime: string, merchantId: string, lat: number, lng: number, appType=AppType.GROCERY){
     const merchant = await this.findOne({ _id: merchantId });
+    const orderEndList = merchant.rules.map((r: any) => r.orderEnd);
     const dt = new DateTime();
     if (merchant.delivers) {
       const myUtc = moment.utc().toISOString();
@@ -392,7 +393,6 @@ export class Merchant extends Model {
     } else {
       const schedule = await this.scheduleModel.getAvailableSchedule(merchantId, lat, lng, appType);
       if (schedule && merchant) {
-        const orderEndList = merchant.rules.map((r: any) => r.orderEnd);
         const dows = schedule.rules.map((r: any) => +r.deliver.dow);
         const bs = this.scheduleModel.getLatestMatchDateList(myLocalTime, orderEndList, dows);
   

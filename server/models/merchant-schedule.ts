@@ -79,7 +79,7 @@ export class MerchantSchedule extends Model{
     const myLocalDate = myLocalTime.split('T')[0];
     const dt = new DateTime();
 
-    const orderEnds: any[] = [];
+    const orderEnds: any[] = []; // moment
     orderEndList.map(oe => {
       const n = +oe.dow;
       const t = this.patchTime(oe.time); // eg. 09:00 for meat shop
@@ -119,14 +119,28 @@ export class MerchantSchedule extends Model{
   }
 
   // private
+  // myLocalTime -- local time string eg.'2020-03-23T23:58:00'
   // delivers --- special deliver date time, '2020-03-31T11:20'
+  // orderEndList --- [{dow:'1', 'time':'23:59' }]
   // return local time list [{ date: 'YYYY-MM-DD', time:'HH:mm' }]
-  getSpecialSchedule(myLocalTime: string, delivers: string[]) {
+  getSpecialSchedule(myLocalTime: string, orderEndList: any[], delivers: string[]) {
     const ds: any[] = [];
     const dt = new DateTime();
+    const myLocalDate = myLocalTime.split('T')[0];
+
+    const orderEnds: any[] = []; // moment
+    orderEndList.map(oe => {
+      const n = +oe.dow;
+      const t = this.patchTime(oe.time); // eg. 09:00 for meat shop
+      const localOrderEndTime = myLocalDate + 'T' + t;
+      orderEnds.push(dt.getMomentFromLocal(localOrderEndTime).day(n));    // current
+      orderEnds.push(dt.getMomentFromLocal(localOrderEndTime).day(n + 7)); // next
+    });
+
     delivers.map((d: string) => {
       const s = d + ':00';
-      const orderEnd = dt.getMomentFromLocal(s).add(-1, 'days');
+      const orderEnd = dt.getLatestMoment(myLocalTime, orderEnds);
+      // const orderEnd = dt.getMomentFromLocal(s).add(-1, 'days');
       const deliver = dt.getMomentFromLocal(s);
       ds.push({ orderEnd, deliver });
     });
