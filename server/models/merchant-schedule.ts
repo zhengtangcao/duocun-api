@@ -145,7 +145,7 @@ export class MerchantSchedule extends Model{
       ds.push({ orderEnd, deliver });
     });
 
-    const rs = ds.filter(m => m.orderEnd.isAfter(dt.getMomentFromLocal(myLocalTime)));
+    const rs = ds.filter(m => m && m.orderEnd.isAfter(dt.getMomentFromLocal(myLocalTime)));
     return rs.map(r => {
       return { date: r.deliver.format('YYYY-MM-DD'), time: r.deliver.format('HH:mm') };
     });
