@@ -128,13 +128,15 @@ describe('merchant schedules', () => {
 
   it('getSpecialSchedule should be this Tuesday', () => {
     const myDateTime = '2020-03-30T11:20:00';
-    const ss = scheduleModel.getSpecialSchedule(myDateTime, ['2020-04-05T11:20']);
+    const orderEndList = [{dow:'1', time:'11:30'}];
+    const ss = scheduleModel.getSpecialSchedule(myDateTime, orderEndList, ['2020-04-05T11:20']);
     expect(ss[0].date).to.equal('2020-04-05');
   });
 
   it('getSpecialSchedule should be this Tuesday', () => {
     const myDateTime = '2020-04-04T11:21:00';
-    const ss = scheduleModel.getSpecialSchedule(myDateTime, ['2020-04-05T11:20']);
+    const orderEndList = [{dow:'5', time:'11:25'}];
+    const ss = scheduleModel.getSpecialSchedule(myDateTime, orderEndList,['2020-04-05T11:20']);
     expect(ss.length).to.equal(0);
   });
 });
