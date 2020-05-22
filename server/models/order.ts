@@ -20,6 +20,7 @@ import { PaymentAction } from "./client-payment";
 import { memoryStorage } from "../../node_modules/@types/multer";
 import { resolve } from "dns";
 import { rejects } from "assert";
+import logger from "../lib/logger";
 
 const CASH_ID = '5c9511bb0851a5096e044d10';
 const CASH_NAME = 'Cash';
@@ -484,7 +485,7 @@ export class Order extends Model {
     const date = order.deliverDate + 'T' + order.deliverTime + ':00.000Z';
     const time: any = order.deliverTime;
     const delivered = order.deliverDate + 'T15:00:00.000Z'; // this.getUtcTime(date, time).toISOString(); //tmp fix!!!
-    await this.changeProductQuantity(order);
+    // await this.changeProductQuantity(order);
     if (order.code) {
       order.created = moment.utc().toISOString();
       order.delivered = delivered;
@@ -740,6 +741,13 @@ export class Order extends Model {
         }
       } else {
         return;
+      }
+    }
+    for (let order of orders) {
+      if (order.paymentMethod === PaymentMethod.CREDIT_CARD || order.paymentMethod === PaymentMethod.WECHAT) {
+        console.log(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
+        logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
+        await this.changeProductQuantity(order);
       }
     }
   }
