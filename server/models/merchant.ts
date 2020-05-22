@@ -389,7 +389,7 @@ export class Merchant extends Model {
     if (merchant.delivers) {
       const myUtc = moment.utc().toISOString();
       const myLocalDateTime = dt.getMomentFromUtc(myUtc).format('YYYY-MM-DD HH:mm:ss');
-      return this.scheduleModel.getSpecialSchedule(myLocalDateTime, merchant.delivers);
+      return this.scheduleModel.getSpecialSchedule(myLocalDateTime, orderEndList, merchant.delivers);
     } else {
       const schedule = await this.scheduleModel.getAvailableSchedule(merchantId, lat, lng, appType);
       if (schedule && merchant) {

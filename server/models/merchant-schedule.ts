@@ -139,7 +139,7 @@ export class MerchantSchedule extends Model{
 
     delivers.map((d: string) => {
       const s = d + ':00';
-      const orderEnd = dt.getLatestMoment(myLocalTime, orderEnds);
+      const orderEnd = dt.getLatestMoment(myLocalTime, orderEnds); // get end date after my local time
       // const orderEnd = dt.getMomentFromLocal(s).add(-1, 'days');
       const deliver = dt.getMomentFromLocal(s);
       ds.push({ orderEnd, deliver });
