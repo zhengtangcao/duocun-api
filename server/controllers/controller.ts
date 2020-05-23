@@ -1,6 +1,9 @@
 import {Request, Response} from "express";
 import { Model } from "../models/model";
 import { DB } from "../db";
+import jwt from "jsonwebtoken";
+import { Config } from "../config";
+import { Account, IAccount } from "../models/account";
 
 // import path from 'path';
 // import { getLogger } from '../lib/logger'
@@ -15,9 +18,11 @@ export const Code = {
 export class Controller {
   public model: Model;
   public db: DB;
+  public accountModel: Account;
   constructor(model: any, db: DB) {
     this.model = model;
     this.db = db;
+    this.accountModel = new Account(db);
   }
 
   async list(req: Request, res: Response):Promise<void> { 
@@ -102,4 +107,20 @@ export class Controller {
     }
   }
 
+  async getCurrentUser(req: Request, res: Response): Promise<IAccount|null> {
+    try {
+      let token = req.get("Authorization");
+      let cfg = new Config();
+      if (!token) {
+        return null;
+      }
+      token = token.replace("Bearer ", "");
+      const clientId = jwt.verify(token, cfg.JWT.SECRET);
+      let account = await this.accountModel.findOne({ _id: clientId });
+      return account;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
 }

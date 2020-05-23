@@ -1,11 +1,11 @@
 import express from "express";
 import { DB } from "../db";
-import { Order, IOrder } from "../models/order";
+import { Order, IOrder, PaymentMethod, OrderStatus } from "../models/order";
 import { Request, Response } from "express";
 import { Model, Code } from "../models/model";
 import { Account } from "../models/account";
 import { Product } from "../models/product";
-
+import logger from "../lib/logger";
 export function OrderRouter(db: DB) {
   const router = express.Router();
   const model = new Order(db);
@@ -246,7 +246,14 @@ export class OrderController extends Model {
   async placeOrders(req: Request, res: Response) {
     const orders: any = req.body;
     try {
-      const savedOrders: any[] = await this.model.placeOrders(orders);
+      const savedOrders: IOrder[] = await this.model.placeOrders(orders);
+      for (let order of savedOrders) {
+        if (order.status === OrderStatus.NEW) {
+          console.log(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
+          logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
+          await this.model.changeProductQuantity(order);
+        }
+      }
       res.setHeader('Content-Type', 'application/json');
       res.send({
         code: Code.SUCCESS,

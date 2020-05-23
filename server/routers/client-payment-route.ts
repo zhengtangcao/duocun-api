@@ -1,18 +1,30 @@
 import express, { Request, Response } from "express";
 
 import { DB } from "../db";
-import { ClientPayment } from "../models/client-payment";
+import { ClientPayment, PaymentAction } from "../models/client-payment";
 import { Model, Code } from "../models/model";
-
+import { Order, IOrder, OrderStatus, PaymentMethod, PaymentStatus } from "../models/order";
+import MonerisCheckout from "moneris-checkout";
+import { EnvironmentType, BooleanType } from "moneris-checkout/dist/types/global";
+import { Config } from "../config";
+import { Controller } from "../controllers/controller";
+import { ClientCredit } from "../models/client-credit";
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
+
+const cfg = new Config();
+
+export const moneris = new MonerisCheckout(
+  cfg.MONERIS.STORE_ID,
+  cfg.MONERIS.API_TOKEN,
+  cfg.MONERIS.CHECKOUT_ID,
+  <EnvironmentType> cfg.MONERIS.ENVIRONMENT
+);
 
 export function ClientPaymentRouter(db: DB) {
   const router = express.Router();
   const model = new ClientPayment(db);
   const controller = new ClientPaymentController(db);
-
-
 
   //yaml api
   router.post('/snappay', (req, res) => { controller.gv1_payBySnappay(req, res) });
@@ -72,6 +84,10 @@ export function ClientPaymentRouter(db: DB) {
   // router.post('/removeGroupDiscount', (req, res) => { model.reqRemoveGroupDiscount(req, res); });
 
 
+  router.post('/moneris/preload', (req, res) => { controller.preload(req, res) });
+  router.post('/moneris/receipt', (req, res) => { controller.receipt(req, res) });
+
+
   router.get('/', (req, res) => { model.list(req, res); });
   router.get('/:id', (req, res) => { model.get(req, res); });
   // router.post('/', (req, res) => { model.createAndUpdateBalance(req, res); });
@@ -85,12 +101,15 @@ export function ClientPaymentRouter(db: DB) {
 
 
 
-export class ClientPaymentController extends Model {
-  model: ClientPayment;
-
+export class ClientPaymentController extends Controller {
+  public model: ClientPayment;
+  orderModel: Order;
+  clientCreditModel: ClientCredit;
   constructor(db: DB) {
-    super(db, 'client_payments');
+    super(new ClientPayment(db), db);
+    this.orderModel = new Order(db);
     this.model = new ClientPayment(db);
+    this.clientCreditModel = new ClientCredit(db);
   }
 
   // input --- appCode, accountId, amount
@@ -191,6 +210,110 @@ export class ClientPaymentController extends Model {
       })); // IPaymentResponse
     });
   }
+
+  async preload(req: Request, res: Response) {
+    const account = await this.getCurrentUser(req, res);
+    if (!account) {
+      return res.json({
+        code: Code.FAIL,
+        message: "authentication failed"
+      });
+    }
+    const paymentId = req.body.paymentId;
+    const orders: Array<IOrder> = await this.orderModel.find({
+      paymentId,
+      status: OrderStatus.TEMP
+    });
+    let total = 0;
+    orders.forEach((order: IOrder) => {
+      total += order.total;
+    });
+    try {
+      const preload = await moneris.preload(total, {
+        cust_id: account._id.toString(),
+        // contact_details: {
+        //   first_name: account.username,
+        //   phone: account.phone
+        // },
+        // shipping_details: {
+        //   address_1: `${orders[0].location.streetNumber || ""} ${orders[0].location.streetName || ""}`,
+        //   city: orders[0].location.city || "",
+        //   province: orders[0].location.province || "",
+        //   country: orders[0].location.country || "",
+        //   postal_code: orders[0].location.postalCode || ""
+        // }
+      });
+      const success: BooleanType = preload.response.success;
+      if (success === BooleanType.TRUE) {
+        const cc = {
+          accountId: account._id,
+          accountName: account.username,
+          total,
+          paymentMethod: PaymentMethod.CREDIT_CARD,
+          note: "",
+          paymentId,
+          status: PaymentStatus.UNPAID
+        };
+        await this.clientCreditModel.insertOne(cc);
+        return res.json({
+          code: Code.SUCCESS,
+          data: preload.response.ticket
+        });
+      } else {
+        return res.json({
+          code: Code.FAIL,
+          data: preload
+        });
+      }
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        data: e
+      });
+    }
+  }
+
+  async receipt(req: Request, res: Response) {
+    const account = await this.getCurrentUser(req, res);
+    if (!account) {
+      return res.json({
+        code: Code.FAIL,
+        message: "authentication failed"
+      });
+    }
+
+    const paymentId = req.body.paymentId;
+    const ticket = req.body.ticket;
+    const receipt = await moneris.receipt(ticket);
+    const cc = await this.clientCreditModel.findOne({
+      paymentId
+    });
+    if (!cc) {
+      return res.json({
+        code: Code.FAIL,
+        message: "client credits empty"
+      });
+    }
+    if (receipt.response.success != BooleanType.FALSE) {
+      return res.json({
+        code: Code.FAIL,
+        data: receipt
+      });
+    }
+    if (!receipt.response.receipt || !receipt.response.receipt.cc || !receipt.response.receipt.cc.amount) {
+      return res.json({
+        code: Code.FAIL,
+        data: receipt
+      });
+    }
+    await this.orderModel.processAfterPay(paymentId, PaymentAction.PAY.code, parseFloat(receipt.response.receipt?.cc?.amount || "0"), ticket);
+    cc.status = PaymentStatus.PAID;
+    await this.clientCreditModel.updateOne({ _id: cc._id }, cc);
+    return res.json({
+      code: Code.SUCCESS
+    });
+  }
+
 }
 
 

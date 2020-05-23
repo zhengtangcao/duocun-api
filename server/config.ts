@@ -53,6 +53,13 @@ export interface IStripe{
   API_KEY: string;
 }
 
+export interface IMoneris {
+  STORE_ID: string;
+  API_TOKEN: string;
+  CHECKOUT_ID: string;
+  ENVIRONMENT: "qa"|"prod";
+}
+
 export class Config {
   private cfg: any;
   public JWT: IJWT;
@@ -66,7 +73,8 @@ export class Config {
   public WECHAT: ISNS;
   public STRIPE: IStripe;
   public SNAPPAY: ISnappay;
-  
+  public MONERIS: IMoneris;
+
   constructor() {
     this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
     this.JWT = this.cfg.JWT;
@@ -80,6 +88,7 @@ export class Config {
     this.WECHAT = this.cfg.WECHAT;
     this.STRIPE = this.cfg.STRIPE;
     this.SNAPPAY = this.cfg.SNAPPAY;
+    this.MONERIS = this.cfg.MONERIS;
   }
 
 }
