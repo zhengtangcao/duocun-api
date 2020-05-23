@@ -363,10 +363,10 @@ export class ClientPayment extends Model {
     metadata: any
   ) {
     const stripe = require("stripe")(this.cfg.STRIPE.API_KEY);
-    const rt = await this.stripeCreateCustomer(paymentMethodId);
-    const customerId = rt.customerId;
-    if (rt.err === PaymentError.NONE && customerId) {
-      try {
+    try {
+      const rt = await this.stripeCreateCustomer(paymentMethodId);
+      const customerId = rt.customerId;
+      if (rt.err === PaymentError.NONE && customerId) {
         await stripe.paymentIntents.create({
           amount: Math.round(amount * 100),
           currency,
@@ -378,33 +378,33 @@ export class ClientPayment extends Model {
           metadata,
         });
         return { status: ResponseStatus.SUCCESS, err: rt.err };
-      } catch (err) {
-        // if (err.raw && err.raw.payment_intent) {
-        //   const paymentIntentRetrieved = await stripe.paymentIntents.retrieve(
-        //     err.raw.payment_intent.id
-        //   );
-        //   if(paymentIntentRetrieved){
-        //     console.log('PI retrieved: ', paymentIntentRetrieved.id);
-        //   }
-        // }
-
-        // add log into DB
-        const type = err ? err.type : "";
-        const code = err ? err.code : "N/A";
-        const decline_code = err ? err.decline_code : "N/A";
-        const message = 'type:' + type + ', code:' + code + ', decline_code' + decline_code + ', msg: ' + err ? err.message : "N/A";
-        await this.addLogToDB(accountId, "stripe error", '', message);
-
-        let error = PaymentError.BANK_CARD_DECLIEND;
-        if (err && err.code) {
-          if (err.code === "authentication_required") {
-            error = PaymentError.BANK_AUTHENTICATION_REQUIRED;
-          }
-        }
-        return { status: ResponseStatus.FAIL, err: error };
+      }else{
+        return { status: ResponseStatus.FAIL, err: rt.err };
       }
-    } else {
-      return { status: ResponseStatus.FAIL, err: rt.err };
+    } catch (err) {
+      // if (err.raw && err.raw.payment_intent) {
+      //   const paymentIntentRetrieved = await stripe.paymentIntents.retrieve(
+      //     err.raw.payment_intent.id
+      //   );
+      //   if(paymentIntentRetrieved){
+      //     console.log('PI retrieved: ', paymentIntentRetrieved.id);
+      //   }
+      // }
+
+      // add log into DB
+      const type = err ? err.type : "";
+      const code = err ? err.code : "N/A";
+      const decline_code = err ? err.decline_code : "N/A";
+      const message = 'type:' + type + ', code:' + code + ', decline_code' + decline_code + ', msg: ' + err ? err.message : "N/A";
+      await this.addLogToDB(accountId, "stripe error", '', message);
+
+      let error = PaymentError.BANK_CARD_DECLIEND;
+      if (err && err.code) {
+        if (err.code === "authentication_required") {
+          error = PaymentError.BANK_AUTHENTICATION_REQUIRED;
+        }
+      }
+      return { status: ResponseStatus.FAIL, err: error };
     }
   }
 
@@ -420,10 +420,8 @@ export class ClientPayment extends Model {
 
 
   async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string,
- amount: number, note: string, paymentId: string, merchantNames: string[]) {
+    amount: number, note: string, paymentId: string, merchantNames: string[]) {
     // const appType = req.body.appType;
-
-
     let metadata = {};
     let description = "";
     
