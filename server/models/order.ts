@@ -740,7 +740,6 @@ export class Order extends Model {
         const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
         const updates = orders.map(order => ({ query: { _id: order._id }, data }));
         await this.bulkUpdate(updates);
-        return;
       }
     } else { // add credit for Wechat
       const credit = await this.clientCreditModel.findOne({ paymentId }); // .then((credit) => {
@@ -752,15 +751,13 @@ export class Order extends Model {
           const note = credit.note;
           const paymentMethod = credit.paymentMethod;
           await this.transactionModel.doAddCredit(accountId, accountName, amount, paymentMethod, note); // .then(() => {
-          return;
         } else {
-          return;
         }
       } else {
-        return;
       }
     }
     for (let order of orders) {
+      console.log(order.paymentMethod);
       if (order.paymentMethod === PaymentMethod.CREDIT_CARD || order.paymentMethod === PaymentMethod.WECHAT) {
         console.log(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
         logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
