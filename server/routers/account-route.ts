@@ -510,8 +510,11 @@ export class AccountController extends Model {
           existingAccount.sex = existingAccount.sex === undefined ? account.sex : existingAccount.sex;
           existingAccount.attributes = existingAccount.attributes || account.attributes;
           existingAccount.type = existingAccount.type || account.type;
-          logger.info("Deleting old account: " + accountId);
-          await this.accountModel.deleteById(accountId);
+          logger.info("Disabling old account: " + accountId);
+          account.openId = account.openId + "_disabled";
+          account.unionId = account.unionId + "_disabled";
+          account.phone = account.phone + "_disabled";
+          await this.accountModel.updateOne({ _id: account._id }, account);
           account = existingAccount;
         }
         account.phone = newPhone;
