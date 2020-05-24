@@ -346,11 +346,16 @@ export class ClientPayment extends Model {
 
   async stripeCreateCustomer(paymentMethodId: string) {
     const stripe = require("stripe")(this.cfg.STRIPE.API_KEY);
-    const customer = await stripe.customers.create({
-      payment_method: paymentMethodId,
-    });
-    const customerId = customer.id;
-    return { customerId, err: PaymentError.NONE };
+    try {
+      const customer = await stripe.customers.create({
+        payment_method: paymentMethodId,
+      });
+      const customerId = customer.id;
+      return { customerId, err: PaymentError.NONE };
+    } catch(e) {
+      console.error(e);
+      return { err: e };
+    }
   }
 
   // metadata eg. { orderId: orderId, customerId: clientId, customerName: order.clientName, merchantName: order.merchantName };
