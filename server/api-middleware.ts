@@ -8,7 +8,8 @@ export class ApiMiddleWare {
     }
 
     auth(req: Request, res: Response, next: any) {
-      const token = req.get('Authorization');
+      let token = req.get('Authorization') || "";
+      token = token.replace("Bearer ", "");
 
       if(req.path === '/api/Accounts/wxLogin' || req.path === '/api/Accounts/wechatLogin' || req.path === '/api/Accounts/login'
         || req.path === '/api/Accounts/signup' || req.path === '/api/Accounts/logout'
@@ -17,6 +18,8 @@ export class ApiMiddleWare {
         || req.path === '/api/Accounts/sendVerifyMsg'
         || req.path === '/api/Accounts/sendOTPCode'
         || req.path === '/api/Accounts/verifyAndLogin'
+        || req.path === '/api/Accounts/registerTempAccount'
+        || req.path === '/api/Accounts/register'
         || (req.method === 'GET' && req.path.indexOf('/api/Accounts') !== -1)
         || req.path.indexOf('/api/Locations') !== -1
         || req.path.indexOf('/api/Restaurants') !== -1
