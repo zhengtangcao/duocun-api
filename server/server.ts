@@ -101,6 +101,14 @@ const SERVER = cfg.API_SERVER;
 const ROUTE_PREFIX = SERVER.ROUTE_PREFIX;
 
 const app = express();
+
+// logger middleware
+app.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.path}`);
+  log.info(`[${req.method}] ${req.path}`);
+  next();
+});
+
 const dbo = new DB();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {

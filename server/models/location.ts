@@ -108,6 +108,9 @@ export class Location extends Model {
     const keyword = req.params.input;
     this.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {
       res.send(rs);
+    }).catch(e => {
+      console.error(e);
+      res.send([]);
     });
   }
 
@@ -117,25 +120,28 @@ export class Location extends Model {
       + '&location=43.761539,-79.411079&radius=100'); // only for GTA
 
     return new Promise((resolve, reject) => {
-      https.get(url, (res: IncomingMessage) => {
-        let data = '';
-        res.on('data', (d) => {
-          data += d;
-        });
-
-        res.on('end', (rr: any) => {
-          if (data) {
-            const s = JSON.parse(data);
-            if (s.predictions && s.predictions.length > 0) {
-              resolve(s.predictions)
+      try {
+        https.get(url, (res: IncomingMessage) => {
+          let data = '';
+          res.on('data', (d) => {
+            data += d;
+          });
+          res.on('end', (rr: any) => {
+            if (data) {
+              const s = JSON.parse(data);
+              if (s.predictions && s.predictions.length > 0) {
+                resolve(s.predictions)
+              } else {
+                resolve([]);
+              }
             } else {
               resolve([]);
             }
-          } else {
-            resolve([]);
-          }
+          });
         });
-      });
+      } catch(e) {
+        resolve([]);
+      }
     });
   }
 
@@ -355,25 +361,30 @@ export class Location extends Model {
     const url = 'https://maps.googleapis.com/maps/api/geocode/json?sensor=false&key=' + key + '&address=' + addr;
 
     return new Promise((resolve, reject) => {
-      https.get(encodeURI(url), (res: IncomingMessage) => {
-        let data = '';
-        res.on('data', (d) => {
-          data += d;
-        });
-
-        res.on('end', () => {
-          if (data) {
-            const s = JSON.parse(data);
-            if (s.results && s.results.length > 0) {
-              resolve(s.results);
+      try {
+        https.get(encodeURI(url), (res: IncomingMessage) => {
+          let data = '';
+          res.on('data', (d) => {
+            data += d;
+          });
+  
+          res.on('end', () => {
+            if (data) {
+              const s = JSON.parse(data);
+              if (s.results && s.results.length > 0) {
+                resolve(s.results);
+              } else {
+                resolve([]);
+              }
             } else {
               resolve([]);
             }
-          } else {
-            resolve([]);
-          }
+          });
         });
-      });
+      } catch (e) {
+        console.error(e);
+        resolve([]);
+      }
     });
   }
 
