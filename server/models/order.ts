@@ -12,7 +12,7 @@ import { Product, IProduct, ProductStatus } from "./product";
 import { CellApplication, CellApplicationStatus, ICellApplication } from "./cell-application";
 import { Log, Action, AccountType } from "./log";
 import { createObjectCsvWriter } from 'csv-writer';
-import { ObjectID } from "mongodb";
+import { ObjectID, Collection } from "mongodb";
 import { ClientCredit } from "./client-credit";
 import fs from "fs";
 import { EventLog } from "./event-log";
@@ -514,6 +514,23 @@ export class Order extends Model {
         data: e
       })
     });
+  }
+
+
+  async insertOne(doc: any): Promise<any> {
+    const c: Collection = await this.getCollection();
+    doc = this.convertIdFields(doc);
+    if(!doc.created){
+      doc.created = moment().toISOString();
+    }
+    doc.modified = moment().toISOString();
+    const client = await this.accountModel.findOne({_id: doc.clientId});
+    if(client){
+      doc.clientPhone = client.phone? client.phone : '';
+    }
+    const result = await c.insertOne(doc); // InsertOneWriteOpResult
+    const ret = (result.ops && result.ops.length > 0) ? result.ops[0] : null;
+    return ret;
   }
 
   // v2
