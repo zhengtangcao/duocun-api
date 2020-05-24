@@ -9,6 +9,7 @@ import { Config } from "../config";
 import { Model, Code } from "../models/model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
+import logger from "../lib/logger";
 export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
@@ -480,14 +481,54 @@ export class AccountController extends Model {
         message: "authentication failed"
       }));
     }
-    const account = await this.accountModel.findOne({ _id: new ObjectId(accountId) });
+    let account = await this.accountModel.findOne({ _id: new ObjectId(accountId) });
     if (!account) {
       return res.send(JSON.stringify({
         code: Code.FAIL,
         message: "no such account"
       }));
     }
-    let { location, secondPhone } = req.body;
+    logger.info("--- BEGIN ACCOUNT PROFILE CHANGE ---");
+    logger.info(`Account ID: ${account._id}, username: ${account.username}`);
+    let { location, secondPhone, newPhone, code, username } = req.body;
+    logger.info(`newPhone: ${newPhone}, oldPhone: ${account.phone}`)
+    if (newPhone !== account.phone) {
+      logger.info("trying to change phone number");
+      if (account.newPhone === newPhone && account.verificationCode === code) {
+        // find existing account with new phone
+        logger.info("verification code matches");
+        const existingAccount = await this.accountModel.findOne({ phone: newPhone });
+        if (existingAccount && existingAccount._id.toString() !== account._id.toString()) {
+          logger.info(`Account with same phone number exists. Account ID: ${existingAccount._id}, username: ${existingAccount.username}`);
+          logger.info("merge two accounts");
+          existingAccount.imageurl = existingAccount.imageurl || account.imageurl;
+          existingAccount.realm = existingAccount.realm || account.realm;
+          existingAccount.openId = existingAccount.openId || account.openId;
+          existingAccount.unionId = existingAccount.unionId || account.unionId;
+          existingAccount.visited = existingAccount.visited || account.visited;
+          existingAccount.balance = (existingAccount.balance || 0) + (account.balance || 0);
+          existingAccount.sex = existingAccount.sex === undefined ? account.sex : existingAccount.sex;
+          existingAccount.attributes = existingAccount.attributes || account.attributes;
+          existingAccount.type = existingAccount.type || account.type;
+          logger.info("Deleting old account: " + accountId);
+          await this.accountModel.deleteById(accountId);
+          account = existingAccount;
+        }
+        account.phone = newPhone;
+        account.newPhone = "";
+        account.verficationCode = this.accountModel.getRandomCode();
+
+      } else {
+        logger.info("verification code mismatch");
+        logger.info(`Verification code is ${account.verficationCode}, but received ${code}`);
+        logger.info("--- END ACCOUNT PROFILE CHANGE ---");
+        return res.json({
+          code: Code.FAIL,
+          message: "verification code mismatch"
+        });
+      }
+    }
+    account.username = username;
     account.location = location;
     if (!location) {
       account.location = null;
@@ -497,11 +538,16 @@ export class AccountController extends Model {
       account.secondPhone = secondPhone;
     }
     try {
-      await this.accountModel.updateOne({ _id: new ObjectId(accountId) }, account);
+      logger.info("Saving account");
+      await this.accountModel.updateOne({ _id: account._id }, account);
+      logger.info("--- END ACCOUNT PROFILE CHANGE ---");
       return res.send(JSON.stringify({
-        code: Code.SUCCESS
+        code: Code.SUCCESS,
+        data: jwt.sign(account._id.toString(), this.cfg.JWT.SECRET)
       }));
     } catch(e) {
+      logger.error("Save failed, " + e);
+      logger.info("--- END ACCOUNT PROFILE CHANGE ---");
       return res.send(JSON.stringify({
         code: Code.FAIL,
         message: "save failed"

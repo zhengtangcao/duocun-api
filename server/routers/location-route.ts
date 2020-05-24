@@ -2,6 +2,7 @@ import express, {Request, Response} from "express";
 import { DB } from "../db";
 import { Location, IGooglePlace } from "../models/location";
 import { Model, Code } from "../models/model";
+import logger from "../lib/logger";
 
 export function LocationRouter(db: DB){
   const router = express.Router();
@@ -51,6 +52,11 @@ export class LocationController extends Model {
         code: Code.SUCCESS,
         data: rs 
       }));
+    }).catch(e => {
+      logger.error(e);
+      res.json({
+        code: Code.FAIL
+      })
     });
   }
 
@@ -62,6 +68,11 @@ export class LocationController extends Model {
         code: Code.SUCCESS,
         data: rs 
       }));
+    }).catch(e => {
+      logger.error(e);
+      res.json({
+        code: Code.FAIL
+      })
     });
   }
 
