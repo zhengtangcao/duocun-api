@@ -104,8 +104,8 @@ const app = express();
 
 // logger middleware
 app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.path}`);
-  log.info(`[${req.method}] ${req.path}`);
+  const ip = req.headers['x-forward-for'] || req.connection.remoteAddress;
+  log.info(`${ip} [${req.method}] ${req.path}`);
   next();
 });
 

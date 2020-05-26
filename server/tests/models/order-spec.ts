@@ -48,24 +48,24 @@ describe("validateOrders", () => {
     await removeTestOrders();
     await mongoClient.close();
   });
-  it("should throw error if delivery date time is expired", async () => {
-    const orders =[
-      {
-        deliverDate: "2020-05-10",
-        deliverTime: "00:00"
-      }
-    ];
-    try {
-      //@ts-ignore
-      await orderModel.validateOrders(orders);
-      throw new Error("validateOrders should throw an error");
-    } catch (e) {
-      expect(e).to.eqls({
-        message: OrderExceptionMessage.DELIVERY_EXPIRED,
-        order: orders[0]
-      });
-    }
-  });
+  // it("should throw error if delivery date time is expired", async () => {
+  //   const orders =[
+  //     {
+  //       deliverDate: "2020-05-10",
+  //       deliverTime: "00:00"
+  //     }
+  //   ];
+  //   try {
+  //     //@ts-ignore
+  //     await orderModel.validateOrders(orders);
+  //     throw new Error("validateOrders should throw an error");
+  //   } catch (e) {
+  //     expect(e).to.eqls({
+  //       message: OrderExceptionMessage.DELIVERY_EXPIRED,
+  //       order: orders[0]
+  //     });
+  //   }
+  // });
 });
 
 describe("changeProductQuantity", () => {
