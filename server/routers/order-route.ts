@@ -156,7 +156,7 @@ export class OrderController extends Model {
     // let q = query ? query : {};
     let clientId = query.clientId;
 
-    this.model.loadHistory(clientId, itemsPerPage, currentPageNumber).then(r => {
+    this.model.loadHistoryV2(clientId, itemsPerPage, currentPageNumber).then(r => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(r, null, 3));
     });

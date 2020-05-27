@@ -724,7 +724,7 @@ export class Order extends Model {
 
   // paymentId --- order paymentId
   async processAfterPay(paymentId: string, actionCode: string, amount: number, chargeId: string) {
-    const orders = await this.find({ paymentId });
+    const orders = await this.find({ paymentId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED] }});
     if (orders && orders.length > 0) {
       const order = orders[0];
       if (order.paymentStatus === PaymentStatus.UNPAID) {
@@ -991,16 +991,33 @@ export class Order extends Model {
     if (!client) {
       return { total: 0, orders: [] };
     }
-    const orders = await this.find({ clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } }, {
+    let orders = await this.find({ clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } }, {
       sort: [['created', 'desc']]
     });
-    let group: any[] = [];
-    while(orders && orders.length) {
-      let current = orders.shift();
-      group.forEach(groupedOrder => {
-        
-      })
+    let group: any = {};
+    for (let order of orders) {
+      if (order.items && order.items.length) {
+        for (let item of order.items) {
+          const product = await this.productModel.findOne({ _id: item.productId });
+          if (product) {
+            item.product = product;
+          }
+        }
+      }
+      order.description = this.getDescription(order, 'zh');
+      order.clientPhoneNumber = client.phone;
+      order.address = this.locationModel.getAddrString(order.location);
+      if (group[order.paymentId]) {
+        group[order.paymentId].push(order);
+      } else {
+        group[order.paymentId] = [order];
+      }
     }
+    const arrSorted = Object.values(group);
+    const start = (currentPageNumber - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const arr = arrSorted.slice(start, end);
+    return { total: arrSorted.length, data: arr };
   }
 
   async loadPage(query: any, itemsPerPage: number, currentPageNumber: number) {
