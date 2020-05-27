@@ -9,6 +9,7 @@ import { EnvironmentType, BooleanType } from "moneris-checkout/dist/types/global
 import { Config } from "../config";
 import { Controller } from "../controllers/controller";
 import { ClientCredit } from "../models/client-credit";
+import logger from "../lib/logger";
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
 
@@ -212,36 +213,49 @@ export class ClientPaymentController extends Controller {
   }
 
   async preload(req: Request, res: Response) {
+    logger.info("--- BEGIN MONERIS PRELOAD ---");
     const account = await this.getCurrentUser(req, res);
     if (!account) {
+      logger.info("authentication failed");
+      logger.info("--- END MONERIS PRELOAD ---");
       return res.json({
         code: Code.FAIL,
         message: "authentication failed"
       });
     }
     const paymentId = req.body.paymentId;
+    logger.info("paymentId: " + paymentId);
     const orders: Array<IOrder> = await this.orderModel.find({
       paymentId,
       status: OrderStatus.TEMP
     });
+    if (!orders || !orders.length) {
+      logger.info("orders empty");
+      logger.info("--- END MONERIS PRELOAD ---");
+      return res.json({
+        code: Code.FAIL,
+        message: "cannot find orders"
+      });
+    }
     let total = 0;
     orders.forEach((order: IOrder) => {
       total += order.total;
     });
+    logger.info(`total price: ${total}`);
     try {
       const preload = await moneris.preload(total, {
         cust_id: account._id.toString(),
-        // contact_details: {
-        //   first_name: account.username,
-        //   phone: account.phone
-        // },
-        // shipping_details: {
-        //   address_1: `${orders[0].location.streetNumber || ""} ${orders[0].location.streetName || ""}`,
-        //   city: orders[0].location.city || "",
-        //   province: orders[0].location.province || "",
-        //   country: orders[0].location.country || "",
-        //   postal_code: orders[0].location.postalCode || ""
-        // }
+        contact_details: {
+          first_name: account.username,
+          phone: account.phone
+        },
+        shipping_details: {
+          address_1: `${orders[0].location.streetNumber || ""} ${orders[0].location.streetName || ""}`,
+          city: orders[0].location.city || "",
+          province: orders[0].location.province || "",
+          country: orders[0].location.country || "",
+          postal_code: orders[0].location.postalCode || ""
+        }
       });
       const success: BooleanType = preload.response.success;
       if (success === BooleanType.TRUE) {
@@ -254,18 +268,26 @@ export class ClientPaymentController extends Controller {
           paymentId,
           status: PaymentStatus.UNPAID
         };
+        logger.info(`ticket: ${preload.response?.ticket}`);
+        logger.info("inserting client credit");
         await this.clientCreditModel.insertOne(cc);
+        logger.info("--- END MONERIS PRELOAD ---");
         return res.json({
           code: Code.SUCCESS,
           data: preload.response.ticket
         });
       } else {
+        logger.info("preload response returns fail");
+        logger.info("--- END MONERIS PRELOAD ---");
         return res.json({
           code: Code.FAIL,
           data: preload
         });
       }
     } catch (e) {
+      console.error(e);
+      logger.error(e);
+      logger.info("--- END MONERIS PRELOAD ---");
       return res.json({
         code: Code.FAIL,
         data: e
@@ -274,8 +296,11 @@ export class ClientPaymentController extends Controller {
   }
 
   async receipt(req: Request, res: Response) {
+    logger.info("--- BEGIN MONERIS RECEIPT ---");
     const account = await this.getCurrentUser(req, res);
     if (!account) {
+      logger.info("authentication failed");
+      logger.info("--- END MONERIS PRELOAD ---");
       return res.json({
         code: Code.FAIL,
         message: "authentication failed"
@@ -284,31 +309,42 @@ export class ClientPaymentController extends Controller {
 
     const paymentId = req.body.paymentId;
     const ticket = req.body.ticket;
+    logger.info(`paymentId: ${paymentId}, ticket: ${ticket}`);
+    logger.info("send receipt request to moneris");
     const receipt = await moneris.receipt(ticket);
     const cc = await this.clientCreditModel.findOne({
       paymentId
     });
     if (!cc) {
+      logger.info("client credit not found");
+      logger.info("--- END MONERIS PRELOAD ---");
       return res.json({
         code: Code.FAIL,
         message: "client credits empty"
       });
     }
     if (receipt.response.success != BooleanType.FALSE) {
+      logger.info("moneris response does not return true");
+      logger.info("--- END MONERIS PRELOAD ---");
       return res.json({
         code: Code.FAIL,
         data: receipt
       });
     }
     if (!receipt.response.receipt || !receipt.response.receipt.cc || !receipt.response.receipt.cc.amount) {
+      logger.info("moneris receipt response is invalid");
+      logger.info("--- END MONERIS PRELOAD ---");
       return res.json({
         code: Code.FAIL,
         data: receipt
       });
     }
+    logger.info("processAfterPay");
     await this.orderModel.processAfterPay(paymentId, PaymentAction.PAY.code, parseFloat(receipt.response.receipt?.cc?.amount || "0"), ticket);
     cc.status = PaymentStatus.PAID;
+    logger.info("set client credit status paid");
     await this.clientCreditModel.updateOne({ _id: cc._id }, cc);
+    logger.info("--- END MONERIS PRELOAD ---");
     return res.json({
       code: Code.SUCCESS
     });
