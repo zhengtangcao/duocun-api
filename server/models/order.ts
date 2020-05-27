@@ -724,36 +724,53 @@ export class Order extends Model {
 
   // paymentId --- order paymentId
   async processAfterPay(paymentId: string, actionCode: string, amount: number, chargeId: string) {
+    logger.info("--- BEGIN PROCESS AFTER PAY");
+    logger.info(`paymentId: ${paymentId}, amount: ${amount}`);
     const orders = await this.find({ paymentId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED] }});
     if (orders && orders.length > 0) {
+      logger.info("orders found");
       const order = orders[0];
+      logger.info(`first order id: ${order._id}`);
       if (order.paymentStatus === PaymentStatus.UNPAID) {
+        logger.info("order is not paid");
         // add two transactions for placing order for duocun and merchant
+        logger.info("Add debit transactions");
         await this.addDebitTransactions(orders);
 
         // add transaction to Bank and update the balance
         const delivered: any = order.delivered;
         const clientId = order.clientId.toString();
+        logger.info(`Client ID: ${clientId}`);
+        logger.info("Add credit transaction");
         await this.addCreditTransaction(paymentId, clientId, order.clientName, amount, actionCode, delivered); // .then(t => {
 
         // update payment status to 'paid' for the orders in batch
+        logger.info("update order status to be paid");
         const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
         const updates = orders.map(order => ({ query: { _id: order._id }, data }));
         await this.bulkUpdate(updates);
       }
     } else { // add credit for Wechat
+      logger.info("orders not found. Add credit for wechat");
       const credit = await this.clientCreditModel.findOne({ paymentId }); // .then((credit) => {
+      
       if (credit) {
+        logger.info("Credit found");
         if (credit.status === PaymentStatus.UNPAID) {
+          logger.info("Credit unpaid");
+          logger.info("Updating payment status to be paid")
           await this.clientCreditModel.updateOne({ _id: credit._id }, { status: PaymentStatus.PAID }); // .then(() => {
           const accountId = credit.accountId.toString();
           const accountName = credit.accountName;
           const note = credit.note;
           const paymentMethod = credit.paymentMethod;
+          logger.info(`Add credit ${amount} to ${accountName}`);
           await this.transactionModel.doAddCredit(accountId, accountName, amount, paymentMethod, note); // .then(() => {
         } else {
+          logger.info("Credit already paid");
         }
       } else {
+        logger.info("Credit not found");
       }
     }
     for (let order of orders) {
@@ -762,6 +779,7 @@ export class Order extends Model {
         await this.changeProductQuantity(order);
       }
     }
+    logger.info("--- BEGIN PROCESS AFTER PAY");
   }
 
   //-----------------------------------------------------------------------------------------
@@ -1952,8 +1970,62 @@ export class Order extends Model {
   }
 
   async changeProductQuantity(order: IOrder) {
-    const product: IProduct = await this.getProductQuantity(order);
-    await this.productModel.updateOne({ _id: product._id }, product);
+    logger.info("--- BEGIN CHANGE PRODUCT QUANTITY ---");
+    logger.info(`order id: ${order._id}`);
+    const items = order.items;
+    if (!items || !items.length) {
+      logger.info("order items empty");
+      logger.info("--- END CHANGE PRODUCT QUANTITY ---");
+      throw {
+        message: OrderExceptionMessage.ORDER_ITEMS_EMPTY,
+        order 
+      };
+    }
+    for (let item of items) {
+      const productId = item.productId;
+      logger.info("product id: " + productId);
+      const product = await this.productModel.findOne({ _id: productId, status: ProductStatus.ACTIVE });
+      if (!product) {
+        logger.info("product not found");
+        logger.info("--- END CHANGE PRODUCT QUANTITY ---");
+        throw {
+          message: OrderExceptionMessage.PRODUCT_NOT_FOUND,
+          productId
+        }
+      }
+      logger.info(`=== BEGIN Product: ${product.name} ===`);
+      if (!product.stock || !product.stock.enabled) {
+        logger.info("product stock option is not enabled");
+        logger.info(`=== END Product: ${product.name} ===`);
+        return product;
+      }
+      let productQuantity = product.stock.quantity || 0;
+      logger.info(`product qunantity: ${productQuantity}`);
+      let itemQuantity = item.quantity || 1;
+      logger.info(`purchased item quantity: ${itemQuantity}`);
+      productQuantity = parseInt(productQuantity);
+      productQuantity = productQuantity - Math.abs(itemQuantity);
+      logger.info(`new quantity: ${productQuantity}`);
+      if (productQuantity < 0 && !product.stock.allowNegative) {
+        logger.error("product quantity is below zero.");
+        logger.info(`=== END Product: ${product.name} ===`);
+        logger.info("--- END CHANGE PRODUCT QUANTITY ---");
+        throw {
+          message: OrderExceptionMessage.OUT_OF_STOCK,
+          product: {
+            _id: productId,
+            name: product.name,
+            nameEN: product.nameEN,
+            quantity: product.stock.quantity
+          }
+        }
+      }
+      logger.info("saving product");
+      product.stock.quantity = productQuantity;
+      await this.productModel.updateOne({ _id: product._id }, product);
+      logger.info(`=== END Product: ${product.name} ===`);
+    }
+    logger.info("--- END CHANGE PRODUCT QUANTITY ---");
   }
 
 }
