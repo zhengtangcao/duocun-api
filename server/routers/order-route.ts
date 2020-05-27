@@ -249,8 +249,7 @@ export class OrderController extends Model {
       const savedOrders: IOrder[] = await this.model.placeOrders(orders);
       for (let order of savedOrders) {
         if (order.status === OrderStatus.NEW) {
-          console.log(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
-          logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
+          logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Client Name: ${order.clientName} Payment ID: ${order.paymentId} Order ID: ${order._id}`);
           await this.model.changeProductQuantity(order);
         }
       }

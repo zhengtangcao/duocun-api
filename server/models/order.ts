@@ -757,10 +757,8 @@ export class Order extends Model {
       }
     }
     for (let order of orders) {
-      console.log(order.paymentMethod);
       if (order.paymentMethod === PaymentMethod.CREDIT_CARD || order.paymentMethod === PaymentMethod.WECHAT) {
-        console.log(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
-        logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Order ID: ${order._id}`);
+        logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Client Name: ${order.clientName} Payment ID: ${order.paymentId} Order ID: ${order._id}`);
         await this.changeProductQuantity(order);
       }
     }
@@ -986,6 +984,23 @@ export class Order extends Model {
     });
 
     return { total: arrSorted.length, orders};
+  }
+
+  async loadHistoryV2(clientId: string, itemsPerPage: number, currentPageNumber: number) {
+    const client = await this.accountModel.findOne({ _id: clientId });
+    if (!client) {
+      return { total: 0, orders: [] };
+    }
+    const orders = await this.find({ clientId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP] } }, {
+      sort: [['created', 'desc']]
+    });
+    let group: any[] = [];
+    while(orders && orders.length) {
+      let current = orders.shift();
+      group.forEach(groupedOrder => {
+        
+      })
+    }
   }
 
   async loadPage(query: any, itemsPerPage: number, currentPageNumber: number) {
