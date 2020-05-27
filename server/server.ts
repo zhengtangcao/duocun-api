@@ -104,12 +104,12 @@ const app = express();
 
 // logger middleware
 app.use((req, res, next) => {
-  const ip = req.headers['x-forward-for'] || req.connection.remoteAddress;
+  // const ip = req.headers['x-forward-for'] || req.connection.remoteAddress;
   if (req.path && req.path.match(/\.(png|jpg|jpeg|tiff|jfif)/)) {
 
   } else {
     if (req.method !== "OPTIONS") {
-      log.info(`${ip} [${req.method}] ${req.path}`);
+      log.info(`[${req.method}] ${req.path}`);
     }
   }
   next();
