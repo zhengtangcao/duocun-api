@@ -3,7 +3,7 @@ import { Model } from "./model";
 import { Area, AppType } from "./area";
 import {DateTime} from "./date-time";
 
-const N_WEEKS = 2;
+const N_WEEKS = 1;
 
 export class MerchantSchedule extends Model{
   areaModel: Area;
