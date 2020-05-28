@@ -20,11 +20,12 @@ import { Merchant } from "./merchant";
 import { ClientCredit } from "./client-credit";
 import { CellApplication, CellApplicationStatus } from "./cell-application";
 import { EventLog } from "./event-log";
-import { ObjectID } from "mongodb";
+import { ObjectID, Logger } from "mongodb";
 import { Account } from "./account";
 import { SystemConfig } from "./system-config";
 
 import log from "../lib/logger";
+import logger from "../lib/logger";
 
 const CASH_BANK_ID = "5c9511bb0851a5096e044d10";
 const CASH_BANK_NAME = "Cash Bank";
@@ -231,8 +232,11 @@ export class ClientPayment extends Model {
 
   // This request could response multiple times !!!
   async processSnappayNotify(paymentId: string, amount: number) {
+    logger.info("********** BEGIN SNAPPAY NOTIFY PROCESS ************");
     const paymentActionCode = TransactionAction.PAY_BY_WECHAT.code;
+    logger.info("Call process after pay");
     await this.orderEntity.processAfterPay(paymentId, paymentActionCode, amount, '');
+    logger.info("********** END SNAPPAY NOTIFY PROCESS ************");
     return;
   }
 
@@ -426,6 +430,7 @@ export class ClientPayment extends Model {
 
   async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string,
     amount: number, note: string, paymentId: string, merchantNames: string[]) {
+    logger.info("*********** BEGIN PAY BY STRIPE ***********");
     // const appType = req.body.appType;
     let metadata = {};
     let description = "";
@@ -458,17 +463,23 @@ export class ClientPayment extends Model {
     };
 
     if (rsp.err === PaymentError.NONE) {
+      logger.info("Insert credit");
       const c = await this.clientCreditModel.insertOne(cc);
+      logger.info("Call process after pay");
       await this.orderEntity.processAfterPay(
           paymentId,
           TransactionAction.PAY_BY_CARD.code,
           amount,
           '' // rsp.chargeId
         );
+      logger.info("*********** END PAY BY STRIPE ***********");
       return rsp;
     } else {
+      logger.warn("Response error: " + rsp.err);
+      logger.info("*********** END PAY BY STRIPE ***********");
       return rsp;
     }
+    
   }
 
 

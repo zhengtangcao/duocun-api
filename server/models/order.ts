@@ -12,7 +12,7 @@ import { Product, IProduct, ProductStatus } from "./product";
 import { CellApplication, CellApplicationStatus, ICellApplication } from "./cell-application";
 import { Log, Action, AccountType } from "./log";
 import { createObjectCsvWriter } from 'csv-writer';
-import { ObjectID, Collection } from "mongodb";
+import { ObjectID, Collection, ObjectId } from "mongodb";
 import { ClientCredit } from "./client-credit";
 import fs from "fs";
 import { EventLog } from "./event-log";
@@ -540,7 +540,8 @@ export class Order extends Model {
     await this.validateOrders(orders);
     logger.info("=== END ORDER VAILDATION ===");
     const savedOrders: IOrder[] = [];
-    const paymentId = (new ObjectID()).toString();
+    const paymentId = await this.getNewPaymentId();
+    logger.info(`New payment ID: ${paymentId}`);
     if (orders && orders.length > 0) {
       for (let i = 0; i < orders.length; i++) {
         orders[i].paymentId = paymentId;
@@ -568,6 +569,15 @@ export class Order extends Model {
     return savedOrders;
   }
 
+  async getNewPaymentId(): Promise<string> {
+    let paymentId: ObjectId;
+    do {
+      paymentId = new ObjectID();
+    } while(
+      await this.findOne({ paymentId })
+    )
+    return `${paymentId}`;
+  }
 
   // 
   async doRemoveOne(orderId: string) {
@@ -726,9 +736,9 @@ export class Order extends Model {
 
   // paymentId --- order paymentId
   async processAfterPay(paymentId: string, actionCode: string, amount: number, chargeId: string) {
-    logger.info("--- BEGIN PROCESS AFTER PAY");
+    logger.info("--- BEGIN PROCESS AFTER PAY ---");
     logger.info(`paymentId: ${paymentId}, amount: ${amount}`);
-    const orders = await this.find({ paymentId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED] }});
+    const orders = await this.find({ paymentId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED] }, paymentStatus: { $ne: PaymentStatus.PAID }});
     if (orders && orders.length > 0) {
       logger.info("orders found");
       const order = orders[0];
@@ -751,6 +761,24 @@ export class Order extends Model {
         const data = { status: OrderStatus.NEW, paymentStatus: PaymentStatus.PAID };
         const updates = orders.map(order => ({ query: { _id: order._id }, data }));
         await this.bulkUpdate(updates);
+        // orders.forEach(order => {
+        //   amount -= order.total;
+        // });
+        // if (amount) {
+        //   logger.info("Amount after orders payment", amount);
+        //   const client = await this.accountModel.findOne({ _id: clientId });
+        //   if (client) {
+        //     logger.info("Client balance: " + client.balance);
+        //     client.balance = parseFloat(client.balance || 0) + amount;
+        //     client.balance = Number(Number(client.balance).toFixed(2));
+        //     logger.info("Client new balance: " + client.balance);
+        //     await this.accountModel.updateOne({ _id: client._id }, client);
+        //   } else {
+        //     logger.warn("Client not found");
+        //   }
+          
+        // }
+        
       }
     } else { // add credit for Wechat
       logger.info("orders not found. Add credit for wechat");
@@ -781,7 +809,7 @@ export class Order extends Model {
         await this.changeProductQuantity(order);
       }
     }
-    logger.info("--- BEGIN PROCESS AFTER PAY");
+    logger.info("--- END PROCESS AFTER PAY ---");
   }
 
   //-----------------------------------------------------------------------------------------
@@ -1938,8 +1966,6 @@ export class Order extends Model {
         }
       }
       const delivered = order.deliverDate + 'T15:00:00.000Z';
-      console.log("deliverd", delivered);
-      console.log("now", moment().toISOString());
       if (!(delivered >= moment().toISOString())) {
         logger.warn(`Order deliver date [${delivered}] is behind now`);
         throw {

@@ -13,7 +13,7 @@ export function OrderRouter(db: DB) {
   const controller = new OrderController(db);
 
   // yaml
-  router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
+  router.post('/bulk', async (req, res) => { await controller.placeOrders(req, res); });
   router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });
   router.post('/validateCart', (req, res) => { controller.validateCart(req, res); });
   // v2
