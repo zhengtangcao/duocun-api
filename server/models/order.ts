@@ -536,7 +536,9 @@ export class Order extends Model {
   // v2
   // create order batch Id
   async placeOrders(orders: IOrder[]) {
+    logger.info("=== BEGIN ORDER VALIDATION ===");
     await this.validateOrders(orders);
+    logger.info("=== END ORDER VAILDATION ===");
     const savedOrders: IOrder[] = [];
     const paymentId = (new ObjectID()).toString();
     if (orders && orders.length > 0) {
@@ -1918,6 +1920,7 @@ export class Order extends Model {
 
   async validateOrders(orders: IOrder[]) {
     // const nowDate = moment().format("YYYY-MM-DD HH:mm");
+    let i = 0;
     for (let order of orders) {
       // if (!(`${order.deliverDate} ${order.deliverTime}` > nowDate)) {
       //   throw {
@@ -1925,7 +1928,30 @@ export class Order extends Model {
       //     order
       //   }
       // }
+      logger.info(`Validating ${i}th order`);
+      logger.info("\t*** Begin Deliver Date Validation *** ");
+      if (!order.deliverDate) {
+        logger.warn(`Order has no delivered date`);
+        throw {
+          message: OrderExceptionMessage.DELIVERY_EXPIRED,
+          order
+        }
+      }
+      const delivered = order.deliverDate + 'T15:00:00.000Z';
+      console.log("deliverd", delivered);
+      console.log("now", moment().toISOString());
+      if (!(delivered >= moment().toISOString())) {
+        logger.warn(`Order deliver date [${delivered}] is behind now`);
+        throw {
+          message: OrderExceptionMessage.DELIVERY_EXPIRED,
+          order
+        }
+      }
+      logger.info("\t***End Deliver Date Validation***");
+      logger.info("\t***Begin Product Quantity Validation***");
       await this.getProductQuantity(order);
+      logger.info("\t***End Product Quantity Validation***");
+      i++;
     }
   }
 

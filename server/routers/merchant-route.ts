@@ -4,6 +4,7 @@ import moment from "moment";
 import { DB } from "../db";
 import { Merchant } from "../models/merchant";
 import { Code, Model } from "../models/model";
+import logger from "../lib/logger";
 
 
 export function MerchantRouter(db: DB){
@@ -190,7 +191,33 @@ export class MerchantController extends Model {
 
   // myLocalTime --- eg. '2020-04-23T10:09:00'
   gv1_getDeliverySchedule(req: Request, res: Response) {
-    const myLocalTime = `${req.query.dt}`;
+    let myLocalTime = `${req.query.dt}`;
+    if (!myLocalTime || myLocalTime.length < 13) {
+      logger.warn("invalid request param");
+      return res.json({
+        code: Code.FAIL,
+        data: []
+      });
+    }
+    try {
+      const duration = moment.duration(moment().diff(moment(myLocalTime)));
+      const durationHours = duration.asHours();
+      if (durationHours > 24) {
+        logger.warn(`Client local time ${myLocalTime} is ${durationHours} hours behind server time. Trying to correct it.`);
+        const localDate = myLocalTime.substring(0, 10);
+        const localTime = myLocalTime.substring(11);
+        myLocalTime = moment().format("YYYY-MM-DD") + "T" + localTime;
+        logger.info(`New local time: ${myLocalTime}`);
+      }
+    } catch (e) {
+      logger.warn("invalid date format");
+      return res.json({
+        code: Code.FAIL,
+        data: []
+      })
+    }
+    
+
     const merchantId = `${req.query.merchantId}`;
 
     const lat = +req.query.lat;

@@ -244,8 +244,19 @@ export class OrderController extends Model {
   }
 
   async placeOrders(req: Request, res: Response) {
+    logger.info("--- BEGIN PLACE ORDERS ---");
     const orders: any = req.body;
+    if (!orders || !orders.length) {
+      logger.warn("Orders empty");
+      logger.info("--- END PLACE ORDERS ---");
+      return res.json({
+        code: Code.FAIL,
+        data: "order empty"
+      });
+    }
+    logger.info(`Client ID: ${orders[0].clientId}`);
     try {
+      logger.info("Saving orders");
       const savedOrders: IOrder[] = await this.model.placeOrders(orders);
       for (let order of savedOrders) {
         if (order.status === OrderStatus.NEW) {
@@ -254,11 +265,13 @@ export class OrderController extends Model {
         }
       }
       res.setHeader('Content-Type', 'application/json');
+      logger.info("--- END PLACE ORDERS ---");
       res.send({
         code: Code.SUCCESS,
         data: savedOrders 
       });
     } catch (e) {
+      logger.info("--- END PLACE ORDERS ---");
       res.json({
         code: Code.FAIL,
         data: e
