@@ -323,7 +323,7 @@ export class ClientPaymentController extends Controller {
         message: "client credits empty"
       });
     }
-    if (receipt.response.success != BooleanType.FALSE) {
+    if (receipt.response.success != BooleanType.TRUE) {
       logger.info("moneris response does not return true");
       logger.info("--- END MONERIS PRELOAD ---");
       return res.json({
