@@ -23,6 +23,7 @@ export class ApiMiddleWare {
         || req.path === '/api/Categories/G'
         || req.path === '/api/Pages/loadTabs'
         || req.path === '/api/Areas/G/my'
+        || (req.path && req.path.startsWith('/api/Pages/page'))
         || req.path === '/api/MerchantSchedules/availableMerchants'
         || (req.method === 'GET' && req.path.indexOf('/api/Accounts') !== -1)
         || req.path.indexOf('/api/Locations') !== -1
