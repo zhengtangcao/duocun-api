@@ -307,7 +307,7 @@ export class OrderController extends Model {
     const insertedOrders: IOrder[] = [];
     orders.forEach((order: IOrder) => {
       const desc = this.generateOrderDescription(order);
-      // logger.info("Order requested: " + desc);
+      logger.info("Order requested: " + desc);
       if (!insertedKeys.includes(desc)) {
         insertedKeys.push(desc);
         insertedOrders.push(order);
