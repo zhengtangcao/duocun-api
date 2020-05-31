@@ -1,6 +1,6 @@
 import express from "express";
 import { DB } from "../db";
-import { Order, IOrder, PaymentMethod, OrderStatus } from "../models/order";
+import { Order, IOrder, PaymentMethod, OrderStatus, IOrderItem } from "../models/order";
 import { Request, Response } from "express";
 import { Model, Code } from "../models/model";
 import { Account } from "../models/account";
@@ -245,7 +245,7 @@ export class OrderController extends Model {
 
   async placeOrders(req: Request, res: Response) {
     logger.info("--- BEGIN PLACE ORDERS ---");
-    const orders: any = req.body;
+    let orders: any = req.body;
     if (!orders || !orders.length) {
       logger.warn("Orders empty");
       logger.info("--- END PLACE ORDERS ---");
@@ -254,7 +254,10 @@ export class OrderController extends Model {
         data: "order empty"
       });
     }
-    logger.info(`Client ID: ${orders[0].clientId}`);
+    // filter duplicated orders
+    logger.info("Check for duplicated orders");
+    orders = this.filterOrders(orders);
+    logger.info(`Duplication check ended. Client ID: ${orders[0].clientId}`);
     try {
       logger.info("Saving orders");
       const savedOrders: IOrder[] = await this.model.placeOrders(orders);
@@ -277,6 +280,42 @@ export class OrderController extends Model {
         data: e
       });
     }
+  }
+
+  generateOrderDescription(order: IOrder) {
+    let desc = `Client ID: ${order.clientId} `
+      + `Client Name: ${order.clientName} `
+      + `Delivery: ${order.deliverDate} ${order.deliverTime} `;
+    if (order.items && order.items.length) {
+      [...order.items].sort((a: IOrderItem, b:IOrderItem) => {
+        if (a.productId > b.productId) {
+          return 1;
+        }
+        if (a.productId < b.productId) {
+          return -1;
+        }
+        return 0;
+      }).forEach((item: IOrderItem) => {
+        desc += ` Product ID: ${item.productId} Price: ${item.price} Quantity: ${item.quantity}`
+      });
+    }
+    return desc;
+  }
+
+  filterOrders(orders: IOrder[]) {
+    const insertedKeys: string[] = [];
+    const insertedOrders: IOrder[] = [];
+    orders.forEach((order: IOrder) => {
+      const desc = this.generateOrderDescription(order);
+      // logger.info("Order requested: " + desc);
+      if (!insertedKeys.includes(desc)) {
+        insertedKeys.push(desc);
+        insertedOrders.push(order);
+      } else {
+        logger.error("Order duplicated: " + desc);
+      }
+    });
+    return insertedOrders;
   }
 
   async removeOrder(req: Request, res: Response) {
