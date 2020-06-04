@@ -94,7 +94,9 @@ export class Account extends Model {
   }
 
   jwtSign(accountId: string) {
-    return jwt.sign(accountId, this.cfg.JWT.SECRET); // SHA256
+    return jwt.sign({accountId}, this.cfg.JWT.SECRET, {
+      expiresIn: '7d'
+    }); // SHA256
   }
 
   // return message
@@ -257,7 +259,9 @@ export class Account extends Model {
       const accountId = account._id.toString();
       await this.updateOne({ _id: accountId }, { verified });
       const cfg = new Config();
-      const tokenId = jwt.sign(accountId, cfg.JWT.SECRET); // SHA256
+      const tokenId = jwt.sign({accountId}, cfg.JWT.SECRET, {
+        expiresIn: '7d'
+      }); // SHA256
       return { ...result, tokenId: tokenId };
     } else {
       return { ...result, tokenId: null };
@@ -278,14 +282,18 @@ export class Account extends Model {
               resolve({ verified: false, err: VerificationError.PHONE_NUMBER_OCCUPIED, account });
             } else {
               if (account.verificationCode && (code === account.verificationCode)) {
-                const tokenId = jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
+                const tokenId = jwt.sign({accountId: account._id.toString()}, cfg.JWT.SECRET, {
+                  expiresIn: '7d'
+                }); // SHA256
                 resolve({ verified: true, err: VerificationError.NONE, account, tokenId });
               } else {
                 resolve({ verified: false, err: VerificationError.WRONG_CODE, account });
               }
             }
           } else {
-            const tokenId = jwt.sign(loggedInAccountId, cfg.JWT.SECRET); // SHA256
+            const tokenId = jwt.sign({accountId: loggedInAccountId}, cfg.JWT.SECRET, {
+              expiresIn: '7d'
+            }); // SHA256
             resolve({ verified: true, err: VerificationError.NONE, account, tokenId }); // please resend code
           }
         } else { // enter from web page 
@@ -294,7 +302,9 @@ export class Account extends Model {
               resolve({ verified: false, err: VerificationError.PHONE_NUMBER_OCCUPIED, account });
             } else {
               if (account.verificationCode && code === account.verificationCode) {
-                const tokenId = jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
+                const tokenId = jwt.sign({accountId: account._id.toString()}, cfg.JWT.SECRET, {
+                  expiresIn: '7d'
+                }); // SHA256
                 resolve({ verified: true, err: VerificationError.NONE, account, tokenId }); // tokenId: tokenId, 
               } else {
                 resolve({ verified: false, err: VerificationError.WRONG_CODE, account });
@@ -359,7 +369,9 @@ export class Account extends Model {
               } else {
                 if (account.verificationCode && code === account.verificationCode) {
                   const cfg = new Config();
-                  const tokenId = jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
+                  const tokenId = jwt.sign({accountId: account._id.toString()}, cfg.JWT.SECRET, {
+                    expiresIn: '7d'
+                  }); // SHA256
                   if (account.password) {
                     delete account.password;
                   }
@@ -402,7 +414,8 @@ export class Account extends Model {
     if (tokenId && tokenId !== 'undefined' && tokenId !== 'null') {
       try {
         const cfg = new Config();
-        const _id = jwt.verify(tokenId, cfg.JWT.SECRET);
+        // @ts-ignore
+        const _id = (jwt.verify(tokenId, cfg.JWT.SECRET)).accountId;
         if (_id) {
           const account = await this.findOne({ _id });
           if (account && account.password) {
@@ -522,7 +535,9 @@ export class Account extends Model {
           if (r.verificationCode) {
             if (r.verificationCode === verificationCode) {
               const cfg = new Config();
-              const tokenId = jwt.sign(r._id.toString(), cfg.JWT.SECRET); // SHA256
+              const tokenId = jwt.sign({accountId: r._id.toString()}, cfg.JWT.SECRET, {
+                expiresIn: '7d'
+              }); // SHA256
               // set new verification code
               r.verificationCode = this.getRandomCode();
               this.updateOne({ _id: r._id }, r).then(() => {
@@ -566,7 +581,9 @@ export class Account extends Model {
               if (matched) {
                 r.password = '';
                 const cfg = new Config();
-                const tokenId = jwt.sign(r._id.toString(), cfg.JWT.SECRET); // SHA256
+                const tokenId = jwt.sign({accountId: r._id.toString()}, cfg.JWT.SECRET, {
+                  expiresIn: '7d'
+                }); // SHA256
                 resolve(tokenId);
               } else {
                 resolve();
@@ -590,7 +607,9 @@ export class Account extends Model {
         const account = await this.doWechatSignup(x.openid, x.nickname, x.headimgurl, x.sex);
         if (account && account._id) {
           const accountId = `${account._id}`;
-          const tokenId = jwt.sign(accountId, this.cfg.JWT.SECRET); // SHA256
+          const tokenId = jwt.sign({accountId}, this.cfg.JWT.SECRET, {
+            expiresIn: '7d'
+          }); // SHA256
           return tokenId;
         } else {
           await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'signup by wechat', '', 'signup by wechat fail');

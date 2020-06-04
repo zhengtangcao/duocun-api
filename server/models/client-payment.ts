@@ -373,9 +373,13 @@ export class ClientPayment extends Model {
   ) {
     const stripe = require("stripe")(this.cfg.STRIPE.API_KEY);
     try {
+      logger.info('Creating stripe customer');
       const rt = await this.stripeCreateCustomer(paymentMethodId);
       const customerId = rt.customerId;
+      
       if (rt.err === PaymentError.NONE && customerId) {
+        logger.info('Stripe customer created. ID: ' + customerId);
+        logger.info('Creating payment intent');
         await stripe.paymentIntents.create({
           amount: Math.round(amount * 100),
           currency,
@@ -388,6 +392,7 @@ export class ClientPayment extends Model {
         });
         return { status: ResponseStatus.SUCCESS, err: rt.err };
       }else{
+        logger.info('Cannot create stripe customer, err: ' + rt.err);
         return { status: ResponseStatus.FAIL, err: rt.err };
       }
     } catch (err) {
@@ -401,10 +406,12 @@ export class ClientPayment extends Model {
       // }
 
       // add log into DB
+      logger.error('Exception in stripePay');
       const type = err ? err.type : "";
       const code = err ? err.code : "N/A";
       const decline_code = err ? err.decline_code : "N/A";
       const message = 'type:' + type + ', code:' + code + ', decline_code' + decline_code + ', msg: ' + err ? err.message : "N/A";
+      logger.error('Message: ' + message);
       await this.addLogToDB(accountId, "stripe error", '', message);
 
       let error = PaymentError.BANK_CARD_DECLIEND;
@@ -430,7 +437,6 @@ export class ClientPayment extends Model {
 
   async payByStripe(paymentActionCode: string, paymentMethodId: string, accountId: string, accountName: string,
     amount: number, note: string, paymentId: string, merchantNames: string[]) {
-    logger.info("*********** BEGIN PAY BY STRIPE ***********");
     // const appType = req.body.appType;
     let metadata = {};
     let description = "";
@@ -442,7 +448,6 @@ export class ClientPayment extends Model {
       metadata = { customerId: accountId, customerName: accountName };
       description = accountName + "add credit";
     }
-
     const rsp = await this.stripePay(
       paymentMethodId,
       accountId,
@@ -472,11 +477,9 @@ export class ClientPayment extends Model {
           amount,
           '' // rsp.chargeId
         );
-      logger.info("*********** END PAY BY STRIPE ***********");
       return rsp;
     } else {
       logger.warn("Response error: " + rsp.err);
-      logger.info("*********** END PAY BY STRIPE ***********");
       return rsp;
     }
     

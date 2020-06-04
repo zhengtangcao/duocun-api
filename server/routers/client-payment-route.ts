@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 
 import { DB } from "../db";
-import { ClientPayment, PaymentAction } from "../models/client-payment";
+import { ClientPayment, PaymentAction, PaymentError } from "../models/client-payment";
 import { Model, Code } from "../models/model";
 import { Order, IOrder, OrderStatus, PaymentMethod, PaymentStatus } from "../models/order";
 import MonerisCheckout from "moneris-checkout";
@@ -177,6 +177,7 @@ export class ClientPaymentController extends Controller {
 
   payByStripe(req: Request, res: Response) {
     // const appType = req.body.appType;
+    logger.info("*********** BEGIN PAY BY STRIPE ***********");
     const paymentActionCode = req.body.paymentActionCode;
     const paymentMethodId = req.body.paymentMethodId;
     const paymentId = req.body.paymentId;
@@ -185,10 +186,18 @@ export class ClientPaymentController extends Controller {
     const accountName = req.body.accountName;
     const note = req.body.note;
     let amount = +req.body.amount;
-
+    logger.info(`Payment ID: ${paymentId}, AccountId: ${accountId}, Account Name: ${accountName}, Amount: ${amount}`);
     res.setHeader("Content-Type", "application/json");
     this.model.payByStripe(paymentActionCode, paymentMethodId, accountId, accountName, amount, note, paymentId, merchantNames).then((rsp: any) => {
+      logger.info("*********** END PAY BY STRIPE ***********");
       res.send(JSON.stringify(rsp, null, 3)); // IPaymentResponse
+    }).catch(e => {
+      logger.error(e);
+      logger.info("*********** END PAY BY STRIPE ***********");
+      res.json({
+        status: "F",
+        err: 'unknown'
+      })
     });
   }
 

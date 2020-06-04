@@ -40,7 +40,8 @@ export class ApiMiddleWare {
         const cfg = new Config();
         if (token) {
           try {
-            const accountId = jwt.verify(token, cfg.JWT.SECRET);
+            let accountId: any = jwt.verify(token, cfg.JWT.SECRET);
+            accountId = accountId.accountId;
             // TODO: compare redis token
             if(accountId){
               next();

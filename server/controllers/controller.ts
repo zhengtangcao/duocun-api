@@ -115,7 +115,8 @@ export class Controller {
         return null;
       }
       token = token.replace("Bearer ", "");
-      const clientId = jwt.verify(token, cfg.JWT.SECRET);
+      // @ts-ignore
+      const clientId = (jwt.verify(token, cfg.JWT.SECRET)).accountId;
       let account = await this.accountModel.findOne({ _id: clientId });
       return account;
     } catch (e) {

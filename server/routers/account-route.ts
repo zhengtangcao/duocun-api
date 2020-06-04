@@ -370,7 +370,8 @@ export class AccountController extends Model {
     const cfg = new Config();
     let accountId = "";
     try {
-      accountId = jwt.verify(token, cfg.JWT.SECRET).toString();
+      const jwtPayload: any = jwt.verify(token, cfg.JWT.SECRET);
+      accountId = jwtPayload.accountId;
     } catch (e) {
       console.error(e);
       return res.send(JSON.stringify({
@@ -422,7 +423,8 @@ export class AccountController extends Model {
     const cfg = new Config();
     let accountId = "";
     try {
-      accountId = jwt.verify(token, cfg.JWT.SECRET).toString();
+      // @ts-ignore
+      accountId = (jwt.verify(token, cfg.JWT.SECRET)).accountId;
     } catch (e) {
       console.error(e);
       return res.send(JSON.stringify({
@@ -473,7 +475,8 @@ export class AccountController extends Model {
     const cfg = new Config();
     let accountId = "";
     try {
-      accountId = jwt.verify(token, cfg.JWT.SECRET).toString();
+      //@ts-ignore
+      accountId = (jwt.verify(token, cfg.JWT.SECRET)).accountId;
     } catch (e) {
       console.error(e);
       return res.send(JSON.stringify({
@@ -546,7 +549,9 @@ export class AccountController extends Model {
       logger.info("--- END ACCOUNT PROFILE CHANGE ---");
       return res.send(JSON.stringify({
         code: Code.SUCCESS,
-        data: jwt.sign(account._id.toString(), this.cfg.JWT.SECRET)
+        data: jwt.sign({accountId: account._id.toString()}, this.cfg.JWT.SECRET, {
+          expiresIn: '7d'
+        })
       }));
     } catch(e) {
       logger.error("Save failed, " + e);
@@ -637,7 +642,9 @@ export class AccountController extends Model {
     }
     return res.json({
       code: Code.SUCCESS,
-      token: jwt.sign(user._id.toString(), this.cfg.JWT.SECRET)
+      token: jwt.sign({accountId: user._id.toString()}, this.cfg.JWT.SECRET, {
+        expiresIn: '7d'
+      })
     });
   }
 
