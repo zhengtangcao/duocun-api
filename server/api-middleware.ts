@@ -20,9 +20,11 @@ export class ApiMiddleWare {
         || req.path === '/api/Accounts/verifyAndLogin'
         || req.path === '/api/Accounts/registerTempAccount'
         || req.path === '/api/Accounts/register'
+        || req.path === '/api/Accounts/wechatLoginByOpenId'
         || req.path === '/api/Categories/G'
         || req.path === '/api/Pages/loadTabs'
         || req.path === '/api/Areas/G/my'
+        || req.path === '/api/EventLogs'
         || (req.path && req.path.startsWith('/api/Pages/page'))
         || req.path === '/api/MerchantSchedules/availableMerchants'
         || (req.method === 'GET' && req.path.indexOf('/api/Accounts') !== -1)

@@ -95,7 +95,7 @@ export class Account extends Model {
 
   jwtSign(accountId: string) {
     return jwt.sign({accountId}, this.cfg.JWT.SECRET, {
-      expiresIn: '7d'
+      expiresIn: '30d'
     }); // SHA256
   }
 
@@ -260,7 +260,7 @@ export class Account extends Model {
       await this.updateOne({ _id: accountId }, { verified });
       const cfg = new Config();
       const tokenId = jwt.sign({accountId}, cfg.JWT.SECRET, {
-        expiresIn: '7d'
+        expiresIn: '30d'
       }); // SHA256
       return { ...result, tokenId: tokenId };
     } else {
@@ -283,7 +283,7 @@ export class Account extends Model {
             } else {
               if (account.verificationCode && (code === account.verificationCode)) {
                 const tokenId = jwt.sign({accountId: account._id.toString()}, cfg.JWT.SECRET, {
-                  expiresIn: '7d'
+                  expiresIn: '30d'
                 }); // SHA256
                 resolve({ verified: true, err: VerificationError.NONE, account, tokenId });
               } else {
@@ -292,7 +292,7 @@ export class Account extends Model {
             }
           } else {
             const tokenId = jwt.sign({accountId: loggedInAccountId}, cfg.JWT.SECRET, {
-              expiresIn: '7d'
+              expiresIn: '30d'
             }); // SHA256
             resolve({ verified: true, err: VerificationError.NONE, account, tokenId }); // please resend code
           }
@@ -303,7 +303,7 @@ export class Account extends Model {
             } else {
               if (account.verificationCode && code === account.verificationCode) {
                 const tokenId = jwt.sign({accountId: account._id.toString()}, cfg.JWT.SECRET, {
-                  expiresIn: '7d'
+                  expiresIn: '30d'
                 }); // SHA256
                 resolve({ verified: true, err: VerificationError.NONE, account, tokenId }); // tokenId: tokenId, 
               } else {
@@ -370,7 +370,7 @@ export class Account extends Model {
                 if (account.verificationCode && code === account.verificationCode) {
                   const cfg = new Config();
                   const tokenId = jwt.sign({accountId: account._id.toString()}, cfg.JWT.SECRET, {
-                    expiresIn: '7d'
+                    expiresIn: '30d'
                   }); // SHA256
                   if (account.password) {
                     delete account.password;
@@ -536,7 +536,7 @@ export class Account extends Model {
             if (r.verificationCode === verificationCode) {
               const cfg = new Config();
               const tokenId = jwt.sign({accountId: r._id.toString()}, cfg.JWT.SECRET, {
-                expiresIn: '7d'
+                expiresIn: '30d'
               }); // SHA256
               // set new verification code
               r.verificationCode = this.getRandomCode();
@@ -582,7 +582,7 @@ export class Account extends Model {
                 r.password = '';
                 const cfg = new Config();
                 const tokenId = jwt.sign({accountId: r._id.toString()}, cfg.JWT.SECRET, {
-                  expiresIn: '7d'
+                  expiresIn: '30d'
                 }); // SHA256
                 resolve(tokenId);
               } else {
@@ -608,7 +608,7 @@ export class Account extends Model {
         if (account && account._id) {
           const accountId = `${account._id}`;
           const tokenId = jwt.sign({accountId}, this.cfg.JWT.SECRET, {
-            expiresIn: '7d'
+            expiresIn: '30d'
           }); // SHA256
           return tokenId;
         } else {

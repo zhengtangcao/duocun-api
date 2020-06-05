@@ -550,7 +550,7 @@ export class AccountController extends Model {
       return res.send(JSON.stringify({
         code: Code.SUCCESS,
         data: jwt.sign({accountId: account._id.toString()}, this.cfg.JWT.SECRET, {
-          expiresIn: '7d'
+          expiresIn: '30d'
         })
       }));
     } catch(e) {
@@ -643,7 +643,7 @@ export class AccountController extends Model {
     return res.json({
       code: Code.SUCCESS,
       token: jwt.sign({accountId: user._id.toString()}, this.cfg.JWT.SECRET, {
-        expiresIn: '7d'
+        expiresIn: '30d'
       })
     });
   }
