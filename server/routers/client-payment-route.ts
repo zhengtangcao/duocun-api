@@ -181,7 +181,7 @@ export class ClientPaymentController extends Controller {
     const paymentActionCode = req.body.paymentActionCode;
     const paymentMethodId = req.body.paymentMethodId;
     const paymentId = req.body.paymentId;
-    const merchantNames = req.body.merchantNames
+    const merchantNames = ['Duocun Inc.']; //req.body.merchantNames
     const accountId = req.body.accountId;
     const accountName = req.body.accountName;
     const note = req.body.note;
@@ -206,7 +206,7 @@ export class ClientPaymentController extends Controller {
     const paymentActionCode = req.body.paymentActionCode;
     const paymentMethodId = req.body.paymentMethodId;
     const paymentId = req.body.paymentId;
-    const merchantNames = req.body.merchantNames
+    const merchantNames = ['Duocun Inc.']; // req.body.merchantNames
     const accountId = req.body.accountId;
     const accountName = req.body.accountName;
     const note = req.body.note;

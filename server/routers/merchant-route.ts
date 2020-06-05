@@ -189,9 +189,10 @@ export class MerchantController extends Model {
     });
   }
 
+  // req.query.dt --- utc time of Toronto
   // myLocalTime --- eg. '2020-04-23T10:09:00'
   gv1_getDeliverySchedule(req: Request, res: Response) {
-    let myLocalTime = `${req.query.dt}`;
+    const myLocalTime = `${req.query.dt}`;
     if (!myLocalTime || myLocalTime.length < 13) {
       logger.warn("invalid request param");
       return res.json({
@@ -199,31 +200,18 @@ export class MerchantController extends Model {
         data: []
       });
     }
-    try {
-      const duration = moment.duration(moment().diff(moment(myLocalTime)));
-      const durationHours = duration.asHours();
-      if (durationHours > 24) {
-        logger.warn(`Client local time ${myLocalTime} is ${durationHours} hours behind server time. Trying to correct it.`);
-        const localDate = myLocalTime.substring(0, 10);
-        const localTime = myLocalTime.substring(11);
-        myLocalTime = moment().format("YYYY-MM-DD") + "T" + localTime;
-        logger.info(`New local time: ${myLocalTime}`);
-      }
-    } catch (e) {
-      logger.warn("invalid date format");
-      return res.json({
-        code: Code.FAIL,
-        data: []
-      })
-    }
     
+    const myUtcTime = `${req.query.dt}`;
+    const localTime = moment.utc(myUtcTime).tz('America/Toronto').format('YYYY-MM-DDTHH:mm:ss');
+
+    logger.info(`My local time: ${localTime}`);
 
     const merchantId = `${req.query.merchantId}`;
 
     const lat = +req.query.lat;
     const lng = +req.query.lng;
 
-    this.model.getDeliverSchedule(myLocalTime, merchantId, lat, lng).then(schedules => {
+    this.model.getDeliverSchedule(localTime, merchantId, lat, lng).then(schedules => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({
         code: schedules ? Code.SUCCESS : Code.FAIL,
