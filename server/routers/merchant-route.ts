@@ -5,6 +5,7 @@ import { DB } from "../db";
 import { Merchant } from "../models/merchant";
 import { Code, Model } from "../models/model";
 import logger from "../lib/logger";
+import { DateTime } from "../models/date-time";
 
 
 export function MerchantRouter(db: DB){
@@ -202,7 +203,8 @@ export class MerchantController extends Model {
     }
     
     const myUtcTime = `${req.query.dt}`;
-    const localTime = moment.utc(myUtcTime).tz('America/Toronto').format('YYYY-MM-DDTHH:mm:ss');
+    const dt = new DateTime();
+    const localTime = dt.getMomentFromUtc(myUtcTime).format('YYYY-MM-DDTHH:mm:ss');
 
     logger.info(`My local time: ${localTime}`);
 
