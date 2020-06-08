@@ -175,6 +175,7 @@ export class Transaction extends Model {
     if (fromAccount && toAccount) {
       const fromBalance = isNaN(fromAccount.balance) ? 0 : fromAccount.balance;
       const toBalance = isNaN(toAccount.balance) ? 0 : toAccount.balance;
+      tr.amount = amount;
       tr.fromBalance = Math.round((fromBalance + amount) * 100) / 100;
       tr.toBalance = Math.round((toBalance - amount) * 100) / 100;
 
