@@ -641,10 +641,12 @@ export class Account extends Model {
           return { tokenId, accessToken, openId, expiresIn };
         } else {
           const message = `code: ${code}, errCode: ${r && r.code}, errMsg: ${ (r & r.msg) ||  'LoginByCode Exception'}`;
+          console.error(message);
           await this.eventLogModel.addLogToDB(DEBUG_ACCOUNT_ID, 'login by code', '', message);
           return null;
         }
       } catch (e) {
+        console.error(e);
         return null;
       }
     }else{

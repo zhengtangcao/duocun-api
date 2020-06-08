@@ -193,7 +193,7 @@ export class MerchantController extends Model {
   gv1_getDeliverySchedule(req: Request, res: Response) {
     let myLocalTime = `${req.query.dt}`;
     if (!myLocalTime || myLocalTime.length < 13) {
-      logger.warn("invalid request param");
+      logger.warn("invalid local time: " + myLocalTime);
       return res.json({
         code: Code.FAIL,
         data: []
