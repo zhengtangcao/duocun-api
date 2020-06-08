@@ -59,6 +59,7 @@ export const PaymentError = {
   INVALID_ACCOUNT: "IA",
   BANK_AUTHENTICATION_REQUIRED: "BAR",
   PAYMENT_METHOD_ID_MISSING: "IDM",
+  INVALID_ORDER: "IO" // when product stock is out or product is deleted just after order has placed
 };
 
 export const PaymentAction = {
@@ -448,6 +449,19 @@ export class ClientPayment extends Model {
       metadata = { customerId: accountId, customerName: accountName };
       description = accountName + "add credit";
     }
+
+
+    const orders = await this.orderEntity.find({ paymentId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED] }, paymentStatus: { $ne: PaymentStatus.PAID }});
+
+    try {
+      await this.orderEntity.validateOrders(orders);
+    } catch (e) {
+      return {
+        err: PaymentError.INVALID_ORDER,
+        data: e
+      }
+    }
+
     const rsp = await this.stripePay(
       paymentMethodId,
       accountId,
