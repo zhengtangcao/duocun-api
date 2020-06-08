@@ -120,6 +120,17 @@ export class ClientPayment extends Model {
       const description: any = 'Duocun Inc.'; // (merchantNames && merchantNames.length>0) ? merchantNames.join(',') : 'N/A';
       // returnUrl = 'https://duocun.com.cn/cell?clientId=' + clientId + '&paymentMethod=' + paymentMethod + '&page=application_form';
 
+      const orders = await this.orderEntity.find({ paymentId, status: { $nin: [OrderStatus.BAD, OrderStatus.DELETED] }, paymentStatus: { $ne: PaymentStatus.PAID }});
+
+      try {
+        await this.orderEntity.validateOrders(orders);
+      } catch (e) {
+        return {
+          err: PaymentError.INVALID_ORDER,
+          data: e
+        }
+      }
+
       const rsp: any = await this.snappayPay(
         accountId,
         appCode,
@@ -254,6 +265,7 @@ export class ClientPayment extends Model {
     const self = this;
 
     return new Promise((resolve, reject) => {
+      
       const data = this.getSnappayData(
         appCode,
         paymentActionCode,
