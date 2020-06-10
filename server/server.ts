@@ -299,3 +299,35 @@ app.use(express.static(staticPath));
 // server.listen(app.get('port'), function () {
 //   console.log('API server listening on port ' + SERVER.PORT)
 // })
+// import MonerisHt from 'moneris-node';
+
+// const monerisHt = new MonerisHt({
+//   app_name: 'Alejandros Food Delivery',
+//   store_id: 'store5',
+//   api_token: 'yesguy',
+//   test: true
+// });
+
+// monerisHt.send({
+//   type: 'purchase',
+//   crypt_type: 7,
+//   order_id: Math.random(),
+//   amount: '1.0',
+//   pan: '5454545454545454',
+//   expdate: '2102',
+//   description: `Test purchase`,
+//   cust_id: '1234',
+//   cvd_info_1: {
+//     cvd_indicator: "1",
+//     cvd_value: '123',
+//   }
+// }).then((result:any)=>{ //APPROVED
+//   console.log(result);
+// })
+// .catch((err:any)=>{ //DECLINED
+// //err.raw = undefined;//comment out if you want the raw response.
+// console.log('--');
+// console.log('Clean Response (failed):');
+// console.log(err);
+// //console.log(err.raw);
+// })

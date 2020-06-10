@@ -10,6 +10,8 @@ import { Config } from "../config";
 import { Controller } from "../controllers/controller";
 import { ClientCredit } from "../models/client-credit";
 import logger from "../lib/logger";
+import MonerisHt from 'moneris-node';
+import moment from 'moment-timezone';
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
 
@@ -21,6 +23,24 @@ export const moneris = new MonerisCheckout(
   cfg.MONERIS.CHECKOUT_ID,
   <EnvironmentType> cfg.MONERIS.ENVIRONMENT
 );
+
+export const monerisHt = new MonerisHt({
+  app_name: 'Duocun Inc',
+  store_id: cfg.MONERIS.STORE_ID,
+  api_token: cfg.MONERIS.API_TOKEN,
+  test: false
+});
+
+// export const monerisHt = new MonerisHt({
+//   app_name: 'Duocun Inc',
+//   store_id: 'store5',
+//   api_token: 'yesguy',
+//   test: true
+// });
+
+const fe = function(arr: any,assertion: any = false){
+  return Array.isArray(arr) && arr.length>0 && arr[0] ? (assertion ? arr[0]===assertion: arr[0]) : null;
+}
 
 export function ClientPaymentRouter(db: DB) {
   const router = express.Router();
@@ -84,7 +104,7 @@ export function ClientPaymentRouter(db: DB) {
   // router.post('/addGroupDiscount', (req, res) => { model.reqAddGroupDiscount(req, res); });
   // router.post('/removeGroupDiscount', (req, res) => { model.reqRemoveGroupDiscount(req, res); });
 
-
+  router.post('/moneris/htpay', (req, res) => { controller.monerisPay(req, res) });
   router.post('/moneris/preload', (req, res) => { controller.preload(req, res) });
   router.post('/moneris/receipt', (req, res) => { controller.receipt(req, res) });
 
@@ -356,6 +376,120 @@ export class ClientPaymentController extends Controller {
     logger.info("--- END MONERIS PRELOAD ---");
     return res.json({
       code: Code.SUCCESS
+    });
+  }
+
+  async monerisPay(req: Request, res: Response) {
+    logger.info('--- BEGIN MONERIS HT PAY ---');
+    const account = await this.getCurrentUser(req, res);
+    if (!account) {
+      logger.info("authentication failed");
+      logger.info("--- END MONERIS HT PAY ---");
+      return res.json({
+        code: Code.FAIL,
+        message: "authentication failed"
+      });
+    }
+    const paymentId = req.body.paymentId;
+    logger.info("paymentId: " + paymentId);
+    const orders: Array<IOrder> = await this.orderModel.find({
+      paymentId,
+      status: OrderStatus.TEMP
+    });
+    if (!orders || !orders.length) {
+      logger.info("orders empty");
+      logger.info("--- END MONERIS HT PAY ---");
+      return res.json({
+        code: Code.FAIL,
+        message: "cannot find orders"
+      });
+    }
+    try {
+      await this.orderModel.validateOrders(orders);
+    } catch (e) {
+      logger.info("--- END MONERIS HT PAY ---");
+      return res.json({
+        code: Code.FAIL,
+        data: e
+      });
+    }
+    let total = 0;
+    orders.forEach((order: IOrder) => {
+      total += order.total;
+    });
+    logger.info(`total price: ${total}`);
+    let cc = {
+      accountId: account._id,
+      accountName: account.username,
+      total,
+      paymentMethod: PaymentMethod.CREDIT_CARD,
+      note: "",
+      paymentId,
+      status: PaymentStatus.UNPAID
+    };
+    logger.info("inserting client credit");
+    await this.clientCreditModel.insertOne(cc);
+    let resp;
+    try {
+      resp = await monerisHt.send({
+        type: 'purchase',
+        crypt_type: 7,
+        order_id: `${orders[0]._id}` + '_' + moment().tz('America/Toronto').format('MM/DD HH:mm:ss'),
+        amount: Number(total).toFixed(2),
+        pan: req.body.cc,
+        expdate: req.body.exp,
+        description: `User: ${account.username}, PaymentID: ${paymentId}, Total: ${total}, Deliver Date: ${orders[0].deliverDate}`,
+        cust_id: `${account._id.toString()}`,
+        cvd_info: {
+          cvd_indicator: "1",
+          cvd_value: req.body.cvd,
+        }
+      });
+      
+    } catch (e) {
+      console.error(e);
+      logger.error('Moneris pay error: ' + e);
+      logger.info("--- END MONERIS HT PAY ---");
+      return res.json({
+        code: Code.FAIL,
+        msg: 'payment failed'
+      });
+    }
+    const code = fe(resp.ResponseCode);
+    const status = {
+        msg: fe(resp.Message),
+        code,
+        reference: fe(resp.ReferenceNum),
+        iso: fe(resp.ISO),
+        receipt: fe(resp.ReceiptId),
+        raw: resp,
+        isVisa: fe(resp.CardType,"V"),
+        isMasterCard: fe(resp.CardType,"M"),
+        isVisaDebit: fe(resp.IsVisaDebit,"true"),
+        authCode: fe(resp.AuthCode),
+        timeout: fe(resp.TimedOut,"true"),
+        date: fe(resp.TransDate),
+        time: fe(resp.TransTime)
+    };
+    const approved =  !status.timeout && ((code)=="00" || code ? parseInt(code)<50 : false );
+    logger.info(`Moneris response: Message: ${status.msg}, Code: ${status.code}, Reference: ${status.reference}, ISO: ${status.iso}, timeout: ${status.timeout}, Approved: ${approved}`)
+    if (!approved) {
+      logger.info('Not approved');
+      logger.info("--- END MONERIS HT PAY ---");
+      return res.json({
+        code: Code.FAIL,
+        msg: 'payment failed'
+      });
+    }
+    logger.info("processAfterPay");
+    await this.orderModel.processAfterPay(paymentId, PaymentAction.PAY.code, total, resp.reference);
+    cc.status = PaymentStatus.PAID;
+    logger.info("set client credit status paid");
+    await this.clientCreditModel.updateOne({ paymentId: cc.paymentId, status: PaymentStatus.UNPAID }, cc);
+    logger.info("--- END MONERIS PRELOAD ---");
+    return res.json({
+      code: Code.SUCCESS,
+      err: PaymentError.NONE
     });
   }
 
