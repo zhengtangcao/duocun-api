@@ -390,6 +390,45 @@ export class ClientPaymentController extends Controller {
         message: "authentication failed"
       });
     }
+    if (!req.body.cc) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'credit_cart_empty'
+      });
+    }
+    if (!req.body.cvd) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'cvd_empty'
+      });
+    }
+    if (!req.body.exp) {
+      return res.json({
+        code: Code.FAIL,
+        message: 'exp_empty'
+      });
+    }
+    req.body.cc = req.body.cc.replace(/\s/g, '');
+    req.body.exp = req.body.exp.replace(/(\s|\/)/g, '');
+    req.body.cvd = req.body.cvd.replace(/\s/g, '');
+    if (!/^\d{12,20}$/.test(req.body.cc)) {
+      return res.json({
+        code: Code.FAIL,
+        msg: 'invalid_card_number'
+      })
+    }
+    if (!/^\d{4}$/.test(req.body.exp)) {
+      return res.json({
+        code: Code.FAIL,
+        msg: 'invalid_exp'
+      })
+    }
+    if (!/^\d{3}$/.test(req.body.cvd)) {
+      return res.json({
+        code: Code.FAIL,
+        msg: 'invalid_cvd'
+      });
+    }
     const paymentId = req.body.paymentId;
     logger.info("paymentId: " + paymentId);
     const orders: Array<IOrder> = await this.orderModel.find({
@@ -401,7 +440,7 @@ export class ClientPaymentController extends Controller {
       logger.info("--- END MONERIS HT PAY ---");
       return res.json({
         code: Code.FAIL,
-        message: "cannot find orders"
+        msg: "cannot find orders"
       });
     }
     try {
@@ -452,7 +491,7 @@ export class ClientPaymentController extends Controller {
       logger.info("--- END MONERIS HT PAY ---");
       return res.json({
         code: Code.FAIL,
-        msg: 'payment failed'
+        msg: 'payment_failed'
       });
     }
     const code = fe(resp.ResponseCode);
@@ -478,7 +517,11 @@ export class ClientPaymentController extends Controller {
       logger.info("--- END MONERIS HT PAY ---");
       return res.json({
         code: Code.FAIL,
-        msg: 'payment failed'
+        msg: this.getMonerisErrorMessage(status.code),
+        mcode: {
+          iso: status.iso,
+          code: status.code
+        }
       });
     }
     logger.info("processAfterPay");
@@ -491,6 +534,31 @@ export class ClientPaymentController extends Controller {
       code: Code.SUCCESS,
       err: PaymentError.NONE
     });
+  }
+
+  getMonerisErrorMessage(code: string) {
+    let codeTable = {
+      "051": "card_expired",
+      "057": "card_stolen",
+      "058": "card_invalid_status",
+      "059": "card_restricted",
+      "076": "card_low_funds",
+      "105": "card_not_supported",
+      "200": "card_invalid_account",
+      "208": "card_invalid_expiration_date",
+      "408": "card_limited",
+      "475": "card_invalid_expiration_date",
+      "476": "card_declined",
+      "477": "card_invalid_number",
+      "481": "card_declined",
+      "482": "card_expired",
+      "486": "cvv_invalid",
+      "487": "cvv_invalid",
+      "489": "cvv_invalid",
+      "490": "cvv_invalid"
+    };
+    // @ts-ignore
+    return codeTable[code] || "payment_failed"
   }
 
 }
