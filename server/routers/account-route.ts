@@ -27,7 +27,7 @@ export function AccountRouter(db: DB) {
   router.get('/', (req, res) => { controller.list(req, res); });
   router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
   router.post('/googleLogin', (req, res) => { controller.googleLogin(req, res) });
-  router.post('/googleSignup', (req, res) => { controller.googleSignUp(req, res) });
+  router.post('/googleSignUp', (req, res) => { controller.googleSignUp(req, res) });
   // v1
   // router.get('/attributes', (req, res) => { this.attrModel.quickFind(req, res); });
 

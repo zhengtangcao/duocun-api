@@ -20,6 +20,8 @@ export class ApiMiddleWare {
         || req.path === '/api/Accounts/verifyAndLogin'
         || req.path === '/api/Accounts/registerTempAccount'
         || req.path === '/api/Accounts/register'
+        || req.path === '/api/Accounts/googleLogin'
+        || req.path === '/api/Accounts/googleSignUp'
         || req.path.indexOf('/api/Accounts/wechatLoginByOpenId') !== -1
         || req.path.indexOf('/api/Accounts/wechatLoginByCode') !== -1
         || req.path === '/api/Categories/G'
