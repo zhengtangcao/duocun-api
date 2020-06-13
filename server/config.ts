@@ -74,7 +74,7 @@ export class Config {
   public STRIPE: IStripe;
   public SNAPPAY: ISnappay;
   public MONERIS: IMoneris;
-
+  public GOOGLE_AUTH_CLIENT_ID: string = '';
   constructor() {
     this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
     this.JWT = this.cfg.JWT;
@@ -89,6 +89,7 @@ export class Config {
     this.STRIPE = this.cfg.STRIPE;
     this.SNAPPAY = this.cfg.SNAPPAY;
     this.MONERIS = this.cfg.MONERIS;
+    this.GOOGLE_AUTH_CLIENT_ID = this.cfg.GOOGLE_AUTH_CLIENT_ID;
   }
 
 }

@@ -10,6 +10,7 @@ import { Model, Code } from "../models/model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
 import logger from "../lib/logger";
+import { OAuth2Client } from 'google-auth-library';
 export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
@@ -25,7 +26,8 @@ export function AccountRouter(db: DB) {
   router.get('/qFind', (req, res) => { controller.list(req, res); }); // deprecated
   router.get('/', (req, res) => { controller.list(req, res); });
   router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
-
+  router.post('/googleLogin', (req, res) => { controller.googleLogin(req, res) });
+  router.post('/googleSignup', (req, res) => { controller.googleSignUp(req, res) });
   // v1
   // router.get('/attributes', (req, res) => { this.attrModel.quickFind(req, res); });
 
@@ -67,7 +69,7 @@ export class AccountController extends Model {
   merchantStuff: MerchantStuff;
   utils: Utils;
   cfg: Config;
-
+  googleOAuthClient: OAuth2Client;
   constructor(db: DB) {
     super(db, 'users');
     this.accountModel = new Account(db);
@@ -75,6 +77,7 @@ export class AccountController extends Model {
     this.merchantStuff = new MerchantStuff(db);
     this.utils = new Utils();
     this.cfg = new Config();
+    this.googleOAuthClient = new OAuth2Client(this.cfg.GOOGLE_AUTH_CLIENT_ID);
   }
 
   loginByPhone(req: Request, res: Response) {
@@ -168,6 +171,92 @@ export class AccountController extends Model {
     });
   }
 
+
+  async googleLogin(req: Request, res: Response) {
+    logger.info('----- BEGIN GOOGLE LOGIN -----')
+    const token = req.body.token;
+    const googleUserId = req.body.googleUserId;
+    logger.info(`Trying to goolge login. Clamied token: ${token}, googleUserId: ${googleUserId}`)
+    const account = await this.accountModel.findOne({ googleUserId });
+    if (!account) {
+      logger.info('No user found with such google user id')
+      logger.info('----- END GOOGLE LOGIN -----')
+      return res.json({
+        code: Code.FAIL,
+        msg: 'no_such_user'
+      });
+    }
+    logger.info('Verifying id token')
+    const ticket = await this.googleOAuthClient.verifyIdToken({
+      idToken: token,
+      audience: this.cfg.GOOGLE_AUTH_CLIENT_ID
+    });
+    const payload = await ticket.getPayload();
+    const userId = payload?.sub;
+    logger.info('Verified google user id: ' +  userId);
+    if (googleUserId != userId) {
+      logger.info('Google user id mismatch' +  userId);
+      logger.info('----- END GOOGLE LOGIN -----');
+      return res.json({
+        code: Code.FAIL,
+        msg: 'google_user_id_mismatch'
+      });
+    }
+    const tokenId = this.accountModel.jwtSign(account._id.toString());
+    logger.info("Google login successful, account ID: " + account._id + " username: " + account.username);
+    logger.info('----- END GOOGLE LOGIN -----')
+    return res.json({
+      code: Code.SUCCESS,
+      token: tokenId
+    })
+  }
+
+  async googleSignUp(req: Request, res: Response) {
+    logger.info('--- BEGIN GOOGLE REGISTER ---')
+    const token = req.body.token;
+    const googleUserId = req.body.googleUserId;
+    logger.info(`Trying to goolge sign up. Clamied token: ${token}, googleUserId: ${googleUserId}`)
+    let account = await this.accountModel.findOne({ googleUserId });
+    if (account) {
+      logger.info('user already exists');
+      logger.info('--- END GOOGLE REGISTER ---')
+      return res.json({
+        code: Code.SUCCESS,
+        token: this.accountModel.jwtSign(account._id.toString())
+      });
+    }
+    logger.info('Verifying id token')
+    const ticket = await this.googleOAuthClient.verifyIdToken({
+      idToken: token,
+      audience: this.cfg.GOOGLE_AUTH_CLIENT_ID
+    });
+    const payload = await ticket.getPayload();
+    const userId = payload?.sub;
+    logger.info('Verified google user id: ' +  userId);
+    if (googleUserId != userId) {
+      logger.info('Google user id mismatch' +  userId);
+      logger.info('----- END GOOGLE LOGIN -----');
+      return res.json({
+        code: Code.FAIL,
+        msg: 'google_user_id_mismatch'
+      });
+    }
+    account = {
+      googleUserId,
+      username: req.body.username || `user${this.accountModel.getRandomCode()}`,
+      imageurl: req.body.imageurl,
+      type: 'client',
+      sex: 0,
+      balance: 0,
+    };
+    account = await this.accountModel.insertOne(account);
+    logger.info('Created a new user, id: ' + account._id + ', username: ' + account.username);
+    logger.info('--- END GOOGLE REGISTER ---')
+    return res.json({
+      code: Code.SUCCESS,
+      token: this.accountModel.jwtSign(account._id.toString())
+    })
+  }
 
   // req --- require accountId, username and phone fields
   sendVerifyMsg(req: Request, res: Response) {
