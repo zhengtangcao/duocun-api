@@ -12,20 +12,23 @@ export class Utils {
   }
 
   genWechatToken(req: Request, res: Response) {
-    let token = this.cfg.WECHAT.TOKEN;
+    const token = this.cfg.WECHAT.TOKEN;
     const timestamp = req.query.timestamp;
     const nonce = req.query.nonce;
-    const signature = req.query.signature; // involves token, timestamp and nonce
+    const signature = req.query.signature;
     const echostr = req.query.echostr;
 
-    let list = [token, timestamp, nonce].sort();
-    let sha1 = crypto.createHash('sha1');
-    let s = list.join('');
-    let hash = sha1.update(s).digest('hex');
-    // console.log(hash);
-    if (hash === signature) {
-      res.send(echostr);
-    } else {
+    try {
+      const list = [token, timestamp, nonce].sort();
+      const sha1 = crypto.createHash('sha1');
+      const s = list.join('');
+      const hash = sha1.update(s).digest('hex');
+      if (hash === signature) {
+        res.send(echostr);
+      } else {
+        res.send('failed');
+      }
+    } catch(e){
       res.send('failed');
     }
   }
