@@ -456,7 +456,20 @@ export class ClientPaymentController extends Controller {
     orders.forEach((order: IOrder) => {
       total += order.total;
     });
-    logger.info(`total price: ${total}`);
+    logger.info(`total order price: ${total}`);
+    logger.info(`account balalnce: ${account.balance}`)
+    if (account.balance) {
+      total -= Number(account.balance);
+    }
+    logger.info(`total payable: ${total}`);
+    if (total <= 0) {
+      logger.warning('Total amount is below zero');
+      logger.info("--- END MONERIS HT PAY ---");
+      return res.json({
+        code: Code.FAIL,
+        msg: 'payment_failed'
+      });
+    }
     let cc = {
       accountId: account._id,
       accountName: account.username,
