@@ -486,7 +486,7 @@ export class ClientPaymentController extends Controller {
       resp = await monerisHt.send({
         type: 'purchase',
         crypt_type: 7,
-        order_id: `${orders[0]._id}` + '_' + moment().tz('America/Toronto').format('MM/DD HH:mm:ss'),
+        order_id: paymentId + "_" + moment().tz("America/Toronto").format("MMDDHHmmss"),
         amount: Number(total).toFixed(2),
         pan: req.body.cc,
         expdate: this.convertMMYYtoYYMM(req.body.exp),
