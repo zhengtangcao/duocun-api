@@ -476,7 +476,7 @@ export class ClientPaymentController extends Controller {
         order_id: `${orders[0]._id}` + '_' + moment().tz('America/Toronto').format('MM/DD HH:mm:ss'),
         amount: Number(total).toFixed(2),
         pan: req.body.cc,
-        expdate: req.body.exp,
+        expdate: this.convertMMYYtoYYMM(req.body.exp),
         description: `User: ${account.username}, PaymentID: ${paymentId}, Total: ${total}, Deliver Date: ${orders[0].deliverDate}`,
         cust_id: `${account._id.toString()}`,
         cvd_info: {
@@ -559,6 +559,10 @@ export class ClientPaymentController extends Controller {
     };
     // @ts-ignore
     return codeTable[code] || "payment_failed"
+  }
+
+  convertMMYYtoYYMM(exp: string) {
+    return `${exp.charAt(2)}${exp.charAt(3)}${exp.charAt(0)}${exp.charAt(1)}`
   }
 
 }

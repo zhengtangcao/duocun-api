@@ -539,7 +539,7 @@ export class AccountController extends Model {
     if (account.newPhone == newPhone && account.verificationCode == code) {
       account.phone = account.newPhone;
       delete(account.newPhone);
-      delete(account.verficationCode);
+      delete(account.verificationCode);
       account.verified = true;
       await this.accountModel.updateOne({ _id: accountId }, account);
       return res.send(JSON.stringify({
@@ -611,11 +611,11 @@ export class AccountController extends Model {
         }
         account.phone = newPhone;
         account.newPhone = "";
-        account.verficationCode = this.accountModel.getRandomCode();
-
+        account.verificationCode = this.accountModel.getRandomCode();
+        account.verified = true;
       } else {
         logger.info("verification code mismatch");
-        logger.info(`Verification code is ${account.verficationCode}, but received ${code}`);
+        logger.info(`Verification code is ${account.verificationCode}, but received ${code}`);
         logger.info("--- END ACCOUNT PROFILE CHANGE ---");
         return res.json({
           code: Code.FAIL,
