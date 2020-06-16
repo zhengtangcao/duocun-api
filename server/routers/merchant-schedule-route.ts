@@ -123,8 +123,8 @@ export class MerchantScheduleController extends Model {
   }
 
   gv1_getSchedules(req: Request, res: Response) {
-    const lat = +req.query.lat; // mandatory
-    const lng = +req.query.lng; // mandatory
+    const lat = req.query.lat? +req.query.lat : 0;
+    const lng = req.query.lng? +req.query.lng : 0;
     const merchantId = req.query.merchantId;
     const query = req.query.status ? {status: req.query.status} : {};
 
