@@ -781,7 +781,7 @@ export class Order extends Model {
         
       }
     } else { // add credit for Wechat
-      logger.info("orders not found. Add credit for wechat");
+      logger.info("orders not found. Add credit to duocun account");
       const credit = await this.clientCreditModel.findOne({ paymentId }); // .then((credit) => {
       
       if (credit) {

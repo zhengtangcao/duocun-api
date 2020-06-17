@@ -12,6 +12,12 @@ import { ClientCredit } from "../models/client-credit";
 import logger from "../lib/logger";
 import MonerisHt from 'moneris-node';
 import moment from 'moment-timezone';
+import Alphapay from 'alphapay';
+import { CurrencyType, ChannelType } from "alphapay/dist/types/global";
+import { QRCode } from "alphapay/dist/types/qrcode";
+import { SuccessNotification } from "alphapay/dist/types/success-notification";
+import { H5 } from "alphapay/dist/types/h5";
+import { readlink } from "fs";
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
 
@@ -31,6 +37,8 @@ export const monerisHt = new MonerisHt({
   test: false
 });
 
+export const alphapay = new Alphapay(cfg.ALPHAPAY.PARTNER_CODE, cfg.ALPHAPAY.CREDENTIAL_CODE);
+
 // export const monerisHt = new MonerisHt({
 //   app_name: 'Duocun Inc',
 //   store_id: 'store5',
@@ -46,7 +54,6 @@ export function ClientPaymentRouter(db: DB) {
   const router = express.Router();
   const model = new ClientPayment(db);
   const controller = new ClientPaymentController(db);
-
   //yaml api
   router.post('/snappay', (req, res) => { controller.gv1_payBySnappay(req, res) });
   router.post('/stripe', (req, res) => { controller.gv1_payByStripe(req, res); });
@@ -107,6 +114,12 @@ export function ClientPaymentRouter(db: DB) {
   router.post('/moneris/htpay', (req, res) => { controller.monerisPay(req, res) });
   router.post('/moneris/preload', (req, res) => { controller.preload(req, res) });
   router.post('/moneris/receipt', (req, res) => { controller.receipt(req, res) });
+
+  router.post('/alphapay/qrcode', (req, res) => { controller.alphaPayQRCode(req, res) })
+  router.post('/alphapay/h5', (req, res) => { controller.alphaPayH5(req, res) })
+  router.post('/alphapay/jsapi', (req, res) => { controller.alphaPayJsApi(req, res) })
+  router.post('/alphapay/success', (req, res) => { controller.handleAlphapayNotification(req, res) })
+  router.post('/check-payment', (req, res) => { controller.checkPayment(req, res) })
 
 
   router.get('/', (req, res) => { model.list(req, res); });
@@ -547,6 +560,212 @@ export class ClientPaymentController extends Controller {
       code: Code.SUCCESS,
       err: PaymentError.NONE
     });
+  }
+
+  async alphaPayQRCode(req: Request, res: Response) {
+    return this.alphaPay(req, res, "qrcode");
+  }
+
+  async alphaPayH5(req: Request, res: Response) {
+    return this.alphaPay(req, res, "h5");
+  }
+
+  async alphaPayJsApi(req: Request, res: Response) {
+    return this.alphaPay(req, res, "jsapi");
+  }
+
+  async alphaPay(req: Request, res: Response, gateway: "qrcode" | "jsapi" | "h5") {
+    logger.info("--- BEGIN ALPHA PAY---");
+    const account = await this.getCurrentUser(req, res);
+    if (!account) {
+      logger.info("authentication failed");
+      logger.info('---  END ALPHAPAY  ---');
+      return res.json({
+        code: Code.FAIL,
+        message: "authentication failed"
+      });
+    }
+    const paymentId = req.body.paymentId;
+    let channel;
+    switch (req.body.channel) {
+      case 'alipay':
+        channel = ChannelType.ALIPAY;
+        break;
+      case 'unionpay':
+        channel = ChannelType.UNION_PAY;
+        break;
+      default:
+        channel = ChannelType.UNION_PAY;
+    }
+    logger.info("paymentId: " + paymentId + " " + "Channel: " + channel + " " + "Gateway: " + gateway);
+    const orders: Array<IOrder> = await this.orderModel.find({
+      paymentId,
+      status: OrderStatus.TEMP
+    });
+    if (!orders || !orders.length) {
+      logger.info("orders empty");
+      logger.info('---  END ALPHAPAY  ---');
+      return res.json({
+        code: Code.FAIL,
+        msg: "cannot find orders"
+      });
+    }
+    try {
+      await this.orderModel.validateOrders(orders);
+    } catch (e) {
+      logger.info('---  END ALPHAPAY  ---');
+      return res.json({
+        code: Code.FAIL,
+        data: e
+      });
+    }
+    let total = 0;
+    orders.forEach((order: IOrder) => {
+      total += order.total;
+    });
+    logger.info(`total order price: ${total}`);
+    logger.info(`account balalnce: ${account.balance}`)
+    if (account.balance) {
+      total -= Number(account.balance);
+    }
+    logger.info(`total payable: ${total}`);
+    if (total <= 0) {
+      logger.warning('Total amount is below zero');
+      logger.info('---  END ALPHAPAY  ---');
+      return res.json({
+        code: Code.FAIL,
+        msg: 'payment_failed'
+      });
+    }
+    let cc = {
+      accountId: account._id,
+      accountName: account.username,
+      total,
+      paymentMethod: PaymentMethod.CREDIT_CARD,
+      note: "",
+      paymentId,
+      status: PaymentStatus.UNPAID
+    };
+    logger.info("inserting client credit");
+    await this.clientCreditModel.insertOne(cc);
+    let resp;
+    try {
+      const reqData = {
+        description: `User: ${account.username}, PaymentID: ${paymentId}, Total: ${total}, Deliver Date: ${orders[0].deliverDate}`,
+        price: Number((total * 100).toFixed(0)),
+        currency: CurrencyType.CAD,
+        notify_url: "https://duocun.com.cn/api/ClientPayments/alphapay/success",
+        //@ts-ignore
+        channel
+      };
+      try {
+        switch(gateway) {
+          case "qrcode":
+            resp = await alphapay.createQRCodePayment(paymentId, reqData);
+            break;
+          case "h5":
+            //@ts-ignore
+            resp = await alphapay.createH5Payment(paymentId, reqData);
+            break;
+          case "jsapi":
+            //@ts-ignore
+            resp = await alphapay.createJSAPIPayment(paymentId, reqData);
+            break;
+        }
+      } catch(e) {
+        logger.error(e);
+        logger.info('---  END ALPHAPAY  ---');
+        return res.json({
+          code: Code.FAIL,
+          msg: 'payment_failed'
+        })
+      }
+      if (resp.return_code != 'SUCCESS') {
+        // @ts-ignore
+        logger.error("alphapay failed, return code: " + resp.return_code + ", message: "  + resp.return_msg)
+        logger.info('---  END ALPHAPAY  ---');
+        return res.json({
+          code: Code.FAIL,
+          msg: 'payment_failed'
+        });
+      }
+      let redirectUrl;
+      let successUrl = `https://duocun.ca/payment-success?channel=${channel}&paymentId=${paymentId}`;
+      switch(gateway) {
+        case "qrcode":
+          redirectUrl = alphapay.getQRCodePaymentPageUrl(paymentId, successUrl);
+          break;
+        case "h5":
+          redirectUrl = alphapay.getH5PaymentPage(paymentId, successUrl);
+          break;
+        case "jsapi":
+          if (channel == ChannelType.ALIPAY) {
+            redirectUrl = alphapay.getAlipayJSAPIPaymentPageUrl(paymentId, successUrl);
+          } else {
+            redirectUrl = alphapay.getWechatJSAPIPaymentPageUrl(paymentId, successUrl);
+          }
+          break;
+        default: break;
+      }
+      return res.json({
+        code: Code.SUCCESS,
+        data: resp,
+        redirect_url: redirectUrl
+      });
+    } catch(e) {
+      logger.error(e);
+      logger.info('---  END ALPHAPAY H5  ---');
+      return res.json({
+        code: Code.FAIL,
+        msg: 'payment_failed'
+      });
+    }
+  }
+
+  async handleAlphapayNotification(req: Request, res: Response) {
+    logger.info("--- BEGIN ALPHAPAY SUCCESS NOTIFICATION ---");
+    const notification: SuccessNotification = req.body;
+    if (!alphapay.isNotificationValid(notification)) {
+      logger.info("---  END ALPHAPAY SUCCESS NOTIFICATION  ---");
+      logger.info("Alphapay notification is invalid");
+      logger.info(JSON.stringify(notification));
+      return;
+    }
+    const paymentId = notification.partner_order_id;
+    await this.orderModel.processAfterPay(paymentId, PaymentAction.PAY.code, Number(notification.real_fee) / 100, '');
+    logger.info("---  END ALPHAPAY SUCCESS NOTIFICATION  ---");
+  }
+
+  async checkPayment(req: Request, res: Response) {
+    const paymentId = req.body.paymentId;
+    const account = await this.getCurrentUser(req, res);
+    if (!account) {
+      return res.json({
+        code: Code.FAIL
+      });
+    }
+    if (!paymentId) {
+      return res.json({
+        code: Code.FAIL
+      });
+    }
+    const orders = await this.orderModel.find({ paymentId, clientId: account._id.toString() });
+    if (!orders || !orders.length) {
+      console.log('order empty');
+      return res.json({
+        code: Code.FAIL
+      });
+    }
+    if (orders[0].paymentStatus == PaymentStatus.PAID) {
+      return res.json({
+        code: Code.SUCCESS
+      });
+    } else {
+      console.log('order unpaid');
+      return res.json({
+        code: Code.FAIL
+      });
+    }
   }
 
   getMonerisErrorMessage(code: string) {

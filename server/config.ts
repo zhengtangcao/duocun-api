@@ -49,6 +49,11 @@ export interface ISnappay {
   MD5_KEY: string;
 }
 
+export interface IAlphapay {
+  PARTNER_CODE: string;
+  CREDENTIAL_CODE: string;
+}
+
 export interface IStripe{
   API_KEY: string;
 }
@@ -75,6 +80,7 @@ export class Config {
   public SNAPPAY: ISnappay;
   public MONERIS: IMoneris;
   public GOOGLE_AUTH_CLIENT_ID: string = '';
+  public ALPHAPAY: IAlphapay;
   constructor() {
     this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
     this.JWT = this.cfg.JWT;
@@ -90,6 +96,7 @@ export class Config {
     this.SNAPPAY = this.cfg.SNAPPAY;
     this.MONERIS = this.cfg.MONERIS;
     this.GOOGLE_AUTH_CLIENT_ID = this.cfg.GOOGLE_AUTH_CLIENT_ID;
+    this.ALPHAPAY = this.cfg.ALPHAPAY;
   }
 
 }

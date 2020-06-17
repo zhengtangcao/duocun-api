@@ -38,6 +38,7 @@ export class ApiMiddleWare {
         || req.path === '/api/Products' || req.path === '/api/Products/qFind' || req.path === '/api/Products/categorize'
         || req.path === '/api/Ranges' || req.path === '/api/Ranges/overRange' || req.path === '/api/Ranges/inRange'
         || req.path === '/api/ClientPayments/notify'
+        || req.path === '/api/ClientPayments/alphapay/success'
         || req.path.includes('.jpeg') || req.path.includes('.jpg') || req.path.includes('.png')){
         next();
       }else{
