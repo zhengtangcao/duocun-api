@@ -595,7 +595,7 @@ export class ClientPaymentController extends Controller {
         channel = ChannelType.UNION_PAY;
         break;
       default:
-        channel = ChannelType.UNION_PAY;
+        channel = ChannelType.WECHAT;
     }
     logger.info("paymentId: " + paymentId + " " + "Channel: " + channel + " " + "Gateway: " + gateway);
     const orders: Array<IOrder> = await this.orderModel.find({
