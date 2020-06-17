@@ -210,8 +210,8 @@ export class MerchantController extends Model {
 
     const merchantId = `${req.query.merchantId}`;
 
-    const lat = +req.query.lat;
-    const lng = +req.query.lng;
+    const lat = req.query.lat? +req.query.lat : 0;
+    const lng = req.query.lng? +req.query.lng : 0;
 
     this.model.getDeliverSchedule(localTime, merchantId, lat, lng).then(schedules => {
       res.setHeader('Content-Type', 'application/json');
@@ -223,8 +223,8 @@ export class MerchantController extends Model {
   }
 
   gv1_getAvailableMerchants(req: Request, res: Response) {
-    const lat = +req.query.lat;
-    const lng = +req.query.lng;
+    const lat = req.query.lat? +req.query.lat : 0;
+    const lng = req.query.lng? +req.query.lng : 0;
     const status = `${req.query.status}`;
     const query = status ? {status}: {};
     this.model.getAvailableMerchants(lat, lng, query).then((ms: any[]) => {
@@ -238,8 +238,8 @@ export class MerchantController extends Model {
 
   // ?query={where:{}, options}
   fv1_getAvailableMerchants(req: Request, res: Response) {
-    const lat = +req.query.lat;
-    const lng = +req.query.lng;
+    const lat = req.query.lat? +req.query.lat : 0;
+    const lng = req.query.lng? +req.query.lng : 0;
     const deliverDate = `${req.query.deliverDate}`;
     const status = `${req.query.status}`;
     const query = status ? {status}: {};
