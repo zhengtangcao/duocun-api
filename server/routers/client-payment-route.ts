@@ -732,6 +732,12 @@ export class ClientPaymentController extends Controller {
       return;
     }
     const paymentId = notification.partner_order_id;
+    const order:IOrder = await this.orderModel.findOne({ paymentId });
+    if (order && order.paymentStatus == PaymentStatus.PAID) {
+      logger.info(`Payment ID: ${paymentId} already paid`);
+      logger.info("---  END ALPHAPAY SUCCESS NOTIFICATION  ---");
+      return ;
+    }
     await this.orderModel.processAfterPay(paymentId, PaymentAction.PAY.code, Number(notification.real_fee) / 100, '');
     logger.info("---  END ALPHAPAY SUCCESS NOTIFICATION  ---");
   }
