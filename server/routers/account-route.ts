@@ -601,7 +601,14 @@ export class AccountController extends Model {
           existingAccount.balance = (existingAccount.balance || 0) + (account.balance || 0);
           existingAccount.sex = existingAccount.sex === undefined ? account.sex : existingAccount.sex;
           existingAccount.attributes = existingAccount.attributes || account.attributes;
-          existingAccount.type = existingAccount.type || account.type;
+          if (existingAccount.type && existingAccount.type != 'client' && existingAccount.type != 'user') {
+
+          } else {
+            existingAccount.type = existingAccount.type || account.type;
+          }
+          if (account.type && account.type != 'client' && account.type != 'user') {
+            existingAccount.type = account.type;
+          }
           logger.info("Disabling old account: " + accountId);
           account.openId = account.openId + "_disabled";
           account.unionId = account.unionId + "_disabled";
