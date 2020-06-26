@@ -606,7 +606,7 @@ export class AccountController extends Model {
           } else {
             existingAccount.type = existingAccount.type || account.type;
           }
-          if (account.type && account.type != 'client' && account.type != 'user') {
+          if (account.type && account.type != 'client' && account.type != 'user' && account.type != 'tmp') {
             existingAccount.type = account.type;
           }
           logger.info("Disabling old account: " + accountId);
