@@ -609,10 +609,11 @@ export class AccountController extends Model {
           if (account.type && account.type != 'client' && account.type != 'user' && account.type != 'tmp') {
             existingAccount.type = account.type;
           }
-          logger.info("Disabling old account: " + accountId);
+          logger.info("Disabling new account: " + accountId);
           account.openId = account.openId + "_disabled";
           account.unionId = account.unionId + "_disabled";
           account.phone = account.phone + "_disabled";
+          account.type = "tmp";
           await this.accountModel.updateOne({ _id: account._id }, account);
           account = existingAccount;
         }
