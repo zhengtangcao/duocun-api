@@ -102,18 +102,18 @@ const ROUTE_PREFIX = SERVER.ROUTE_PREFIX;
 
 const app = express();
 
-// logger middleware
-app.use((req, res, next) => {
-  // const ip = req.headers['x-forward-for'] || req.connection.remoteAddress;
-  if (req.path && req.path.match(/\.(png|jpg|jpeg|tiff|jfif)/)) {
+// // logger middleware
+// app.use((req, res, next) => {
+//   // const ip = req.headers['x-forward-for'] || req.connection.remoteAddress;
+//   if (req.path && req.path.match(/\.(png|jpg|jpeg|tiff|jfif)/)) {
 
-  } else {
-    if (req.method !== "OPTIONS") {
-      log.info(`[${req.method}] ${req.path}`);
-    }
-  }
-  next();
-});
+//   } else {
+//     if (req.method !== "OPTIONS") {
+//       log.info(`[${req.method}] ${req.path}`);
+//     }
+//   }
+//   next();
+// });
 
 const dbo = new DB();
 const storage = multer.diskStorage({
