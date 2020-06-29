@@ -1,8 +1,7 @@
-
-import fs from 'fs';
-
+import fs from "fs";
+import path from "path";
 export interface IJWT {
-  EXPIRY: string;   // eg. '365 days'
+  EXPIRY: string; // eg. '365 days'
   ALGORITHM: string;
   SECRET: string;
 }
@@ -54,7 +53,7 @@ export interface IAlphapay {
   CREDENTIAL_CODE: string;
 }
 
-export interface IStripe{
+export interface IStripe {
   API_KEY: string;
 }
 
@@ -62,16 +61,16 @@ export interface IMoneris {
   STORE_ID: string;
   API_TOKEN: string;
   CHECKOUT_ID: string;
-  ENVIRONMENT: "qa"|"prod";
+  ENVIRONMENT: "qa" | "prod";
 }
 
 export class Config {
   private cfg: any;
   public JWT: IJWT;
-  public GEOCODE_KEY: string = '';
-  public GOOGLE_PLACE_KEY: string = '';
-  public GOOGLE_MAP_KEY: string = '';
-  public GOOGLE_DISTANCE_KEY: string = '';
+  public GEOCODE_KEY: string = "";
+  public GOOGLE_PLACE_KEY: string = "";
+  public GOOGLE_MAP_KEY: string = "";
+  public GOOGLE_DISTANCE_KEY: string = "";
   public API_SERVER: IApiServer;
   public DATABASE: IDatabase;
   public TWILIO: ISmsProvider;
@@ -79,10 +78,15 @@ export class Config {
   public STRIPE: IStripe;
   public SNAPPAY: ISnappay;
   public MONERIS: IMoneris;
-  public GOOGLE_AUTH_CLIENT_ID: string = '';
+  public GOOGLE_AUTH_CLIENT_ID: string = "";
   public ALPHAPAY: IAlphapay;
   constructor() {
-    this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
+    this.cfg = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "..", "..", "duocun.cfg.json"),
+        "utf-8"
+      )
+    );
     this.JWT = this.cfg.JWT;
     this.GEOCODE_KEY = this.cfg.GEOCODE.KEY;
     this.GOOGLE_PLACE_KEY = this.cfg.GOOGLE_PLACE.KEY;
@@ -98,6 +102,4 @@ export class Config {
     this.GOOGLE_AUTH_CLIENT_ID = this.cfg.GOOGLE_AUTH_CLIENT_ID;
     this.ALPHAPAY = this.cfg.ALPHAPAY;
   }
-
 }
-  

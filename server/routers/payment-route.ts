@@ -16,7 +16,7 @@ export function PaymentRouter(db: DB) {
 
 
 export class PaymentController extends Model {
-  model: Payment;
+  // model: Payment;
 
   constructor(db: DB) {
     super(db, 'payments');
