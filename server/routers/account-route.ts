@@ -176,31 +176,42 @@ export class AccountController extends Model {
     logger.info('----- BEGIN GOOGLE LOGIN -----')
     const token = req.body.token;
     const googleUserId = req.body.googleUserId;
-    logger.info(`Trying to goolge login. Clamied token: ${token}, googleUserId: ${googleUserId}`)
-    const account = await this.accountModel.findOne({ googleUserId });
-    if (!account) {
-      logger.info('No user found with such google user id')
-      logger.info('----- END GOOGLE LOGIN -----')
-      return res.json({
-        code: Code.FAIL,
-        msg: 'no_such_user'
-      });
-    }
-    logger.info('Verifying id token')
+    logger.info(`Trying to goolge login. Clamied token: ${token}, googleUserId: ${googleUserId}`);
+    logger.info("Verifying id token");
     const ticket = await this.googleOAuthClient.verifyIdToken({
       idToken: token,
-      audience: this.cfg.GOOGLE_AUTH_CLIENT_ID
+      audience: this.cfg.GOOGLE_AUTH_CLIENT_ID,
     });
     const payload = await ticket.getPayload();
     const userId = payload?.sub;
-    logger.info('Verified google user id: ' +  userId);
+    logger.info("Verified google user id: " + userId);
     if (googleUserId != userId) {
-      logger.info('Google user id mismatch' +  userId);
-      logger.info('----- END GOOGLE LOGIN -----');
+      logger.info("Google user id mismatch" + userId);
+      logger.info("----- END GOOGLE LOGIN -----");
       return res.json({
         code: Code.FAIL,
-        msg: 'google_user_id_mismatch'
+        msg: "google_user_id_mismatch",
       });
+    }
+    let account = await this.accountModel.findOne({ googleUserId });
+    if (!account) {
+      logger.info('No user found with such google user id')
+      account = {
+        googleUserId,
+        username:
+          payload?.name || `user${this.accountModel.getRandomCode()}`,
+        imageurl: payload?.picture,
+        type: "client",
+        sex: 0,
+        balance: 0,
+      };
+      account = await this.accountModel.insertOne(account);
+      logger.info(
+        "Created a new user, id: " +
+          account._id +
+          ", username: " +
+          account.username
+      );
     }
     const tokenId = this.accountModel.jwtSign(account._id.toString());
     logger.info("Google login successful, account ID: " + account._id + " username: " + account.username);
