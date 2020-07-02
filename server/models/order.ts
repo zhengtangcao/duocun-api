@@ -2049,7 +2049,7 @@ export class Order extends Model {
       if (!product.stock || !product.stock.enabled) {
         logger.info("product stock option is not enabled");
         logger.info(`=== END Product: ${product.name} ===`);
-        break;
+        continue;
       }
       let productQuantity = product.stock.quantity || 0;
       logger.info(`product qunantity: ${productQuantity}`);
