@@ -11,6 +11,7 @@ import { ObjectId } from "mongodb";
 import moment from "moment";
 import logger from "../lib/logger";
 import { OAuth2Client } from 'google-auth-library';
+import https from 'https';
 export function AccountRouter(db: DB) {
   const router = express.Router();
   const controller = new AccountController(db);
@@ -27,6 +28,7 @@ export function AccountRouter(db: DB) {
   router.get('/', (req, res) => { controller.list(req, res); });
   router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
   router.post('/googleLogin', (req, res) => { controller.googleLogin(req, res) });
+  router.post('/fbLogin', (req, res) => { controller.fbLogin(req, res) });
   router.post('/googleSignUp', (req, res) => { controller.googleSignUp(req, res) });
   // v1
   // router.get('/attributes', (req, res) => { this.attrModel.quickFind(req, res); });
@@ -218,11 +220,78 @@ export class AccountController extends Model {
     }
     const tokenId = this.accountModel.jwtSign(account._id.toString());
     logger.info("Google login successful, account ID: " + account._id + " username: " + account.username);
-    logger.info('----- END GOOGLE LOGIN -----')
+    logger.info('----- END GOOGLE LOGIN -----');
     return res.json({
       code: Code.SUCCESS,
       token: tokenId
     })
+  }
+
+  async fbLogin(req: Request, res: Response) {
+    logger.info("----- BEGIN FACEBOOK LOGIN -----");
+    const { accessToken, userId } = req.body;
+    if (!accessToken || !userId) {
+      return res.json({
+        code: Code.FAIL
+      });
+    }
+    logger.info(`Access token: ${accessToken}, User ID: ${userId}`);
+
+    https
+      .get(
+        `https://graph.facebook.com/${userId}?access_token=${accessToken}&locale=en_US`,
+        (response) => {
+          let fbResponse = '';
+          response.on('data', (d) => {
+            fbResponse += d;
+          });
+          response.on('end', async () => {
+            const fbUser = JSON.parse(fbResponse);
+            if (!fbUser || !fbUser.id) {
+              logger.info("User info is not correct");
+              logger.info(fbResponse);
+              logger.info("-----  END FACEBOOK LOGIN  -----");
+              return res.json({
+                code: Code.FAIL
+              });
+            }
+            let account = await this.accountModel.findOne({
+              fbUserId: fbUser.id,
+              type: { $ne: 'tmp' },
+            });
+            if (!account) {
+              logger.info("No such user with that facebook user id");
+              account = {
+                fbUserId: fbUser.id,
+                username: fbUser.name,
+                imageurl: fbUser.profile_pic,
+                type: "client",
+                sex: 0,
+                balance: 0,
+              };
+              account = await this.accountModel.insertOne(account);
+              logger.info(
+                "Created a new user, id: " +
+                  account._id +
+                  ", username: " +
+                  account.username
+              );
+            }
+            const tokenId = this.accountModel.jwtSign(account._id.toString());
+            logger.info("Facebook login successful, account ID: " + account._id + " username: " + account.username);
+            logger.info('----- END FACEBOOK LOGIN -----');
+            return res.json({
+              code: Code.SUCCESS,
+              token: tokenId
+            });
+          });
+        }
+      )
+      .on('error', (e) => {
+        logger.error(e);
+        logger.info("-----  END FACEBOOK LOGIN  -----");
+      })
+    logger.info("-----  END FACEBOOK LOGIN  -----");
   }
 
   async googleSignUp(req: Request, res: Response) {
