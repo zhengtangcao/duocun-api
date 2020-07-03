@@ -193,7 +193,10 @@ export class AccountController extends Model {
         msg: "google_user_id_mismatch",
       });
     }
-    let account = await this.accountModel.findOne({ googleUserId });
+    let account = await this.accountModel.findOne({
+      googleUserId,
+      type: { $ne: "tmp" },
+    });
     if (!account) {
       logger.info('No user found with such google user id')
       account = {
@@ -227,7 +230,11 @@ export class AccountController extends Model {
     const token = req.body.token;
     const googleUserId = req.body.googleUserId;
     logger.info(`Trying to goolge sign up. Clamied token: ${token}, googleUserId: ${googleUserId}`)
-    let account = await this.accountModel.findOne({ googleUserId });
+    let account = await this.accountModel.findOne({
+      googleUserId,
+      type: { $ne: "tmp" },
+      verified: true,
+    });
     if (account) {
       logger.info('user already exists');
       logger.info('--- END GOOGLE REGISTER ---')

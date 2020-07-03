@@ -674,7 +674,7 @@ export class Account extends Model {
   ): Promise<IAccount> {
     return new Promise((resolve, reject) => {
       if (openId) {
-        this.findOne({ openId: openId }).then((x: IAccount) => {
+        this.findOne({ openId: openId, type: { $ne: "tmp" },  }).then((x: IAccount) => {
           if (x) {
             const updates = {
               username: username,
