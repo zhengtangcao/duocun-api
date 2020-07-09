@@ -23,7 +23,9 @@ dbo.init(config.DATABASE).then(async () => {
 });
 
 const writeSitemap = async () => {
-  const writeStream = fs.createWriteStream("./sitemap.xml");
+  const writeStream = fs.createWriteStream(
+    "/home/ubuntu/duocun-api/sitemap.xml"
+  );
   smStream.pipe(writeStream);
   await addStaticPages();
   await addCategoryPages();
