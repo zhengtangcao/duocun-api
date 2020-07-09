@@ -111,7 +111,8 @@ const addProductPages = async () => {
     if (product.pictures) {
       product.pictures.forEach((picture) => {
         img.push({
-          url: "https://duocun.com.cn/media/" + picture.url,
+          url:
+            "https://s3.amazonaws.com/pictures.duocun.ca/media/" + picture.url,
           title: product.name + " | " + "多村 - Duocun",
         });
       });
