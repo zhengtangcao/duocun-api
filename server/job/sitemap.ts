@@ -16,6 +16,10 @@ const dbo = new DB();
 dbo.init(config.DATABASE).then(async () => {
   console.log("Begin writing sitemap");
   await writeSitemap();
+  console.log("End writing");
+  setTimeout(() => {
+    process.exit(0);
+  }, 5000);
 });
 
 const writeSitemap = async () => {
