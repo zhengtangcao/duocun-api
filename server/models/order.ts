@@ -549,7 +549,8 @@ export class Order extends Model {
         let savedOrder: IOrder|null = null;
         try {
           savedOrder = await this.doInsertOneV2(order);
-        } catch(e) {
+        } catch (e) {
+          console.log(e);
           throw {
             orderIdx: i, ...e
           };

@@ -747,19 +747,21 @@ export class ClientPaymentController extends Controller {
     const account = await this.getCurrentUser(req, res);
     if (!account) {
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'account_empty'
       });
     }
     if (!paymentId) {
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'payment_id_empty'
       });
     }
     const orders = await this.orderModel.find({ paymentId, clientId: account._id.toString() });
     if (!orders || !orders.length) {
-      console.log('order empty');
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'order_empty'
       });
     }
     if (orders[0].paymentStatus == PaymentStatus.PAID) {
@@ -767,9 +769,9 @@ export class ClientPaymentController extends Controller {
         code: Code.SUCCESS
       });
     } else {
-      console.log('order unpaid');
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'order_unpaid'
       });
     }
   }
