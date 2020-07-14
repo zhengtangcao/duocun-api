@@ -474,6 +474,8 @@ export class Entity {
           items.push({ toId: new ObjectID(it.toId) });
         } else if (it && it.hasOwnProperty('fromId') && typeof it.fromId === 'string' && it.fromId.length === 24) {
           items.push({ fromId: new ObjectID(it.fromId) });
+        } else {
+          items.push(it);
         }
       });
       doc['$or'] = items;

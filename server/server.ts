@@ -19,6 +19,7 @@ import { DB } from "./db";
 import { Utils } from "./utils";
 import { Socket } from "./socket";
 
+
 import { AccountRouter } from "./routers/account-route";
 import { DistanceRouter } from "./routers/distance-route";
 import { OrderRouter } from "./routers/order-route";
@@ -49,6 +50,7 @@ import { LogRouter } from "./routers/log-route";
 import { EventLogRouter } from "./routers/event-log-route";
 import { PageRouter } from "./routers/page-route";
 import { ToolRouter } from "./routers/tool-route";
+import { ChatMessageRouter} from "./routers/message-route";
 
 import { CellApplicationRouter } from "./routers/cell-application-route";
 
@@ -249,6 +251,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use("/" + ROUTE_PREFIX + "/DriverSchedules", DriverScheduleRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/Logs", LogRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/EventLogs", EventLogRouter(dbo));
+  app.use("/" + ROUTE_PREFIX + "/Messages", ChatMessageRouter(dbo));
 
   app.use("/" + ROUTE_PREFIX + "/CellApplications", CellApplicationRouter(dbo));
 
@@ -259,7 +262,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
     console.log("API is running on :%d/n", app.get("port"));
   });
 
-  // setupSocket(server);
+  // setupSocket(server);  
 });
 
 app.use(cors());

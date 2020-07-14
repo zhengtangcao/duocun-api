@@ -50,6 +50,7 @@ export class ApiMiddleWare {
       req.path === "/api/Ranges/inRange" ||
       req.path === "/api/ClientPayments/notify" ||
       req.path === "/api/ClientPayments/alphapay/success" ||
+      req.path.indexOf("/api/Messages") !== -1 ||
       (req.path.includes("/api/Categories/G") && req.method == "GET") ||
       req.path.includes(".jpeg") ||
       req.path.includes(".jpg") ||
