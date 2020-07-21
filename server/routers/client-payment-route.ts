@@ -690,7 +690,7 @@ export class ClientPaymentController extends Controller {
         });
       }
       let redirectUrl;
-      let successUrl = `https://duocun.ca/test/payment-success?channel=${channel}&paymentId=${paymentId}`;
+      let successUrl = `https://test.duocun.ca/payment-success?channel=${channel}&paymentId=${paymentId}`;
       switch(gateway) {
         case "qrcode":
           redirectUrl = alphapay.getQRCodePaymentPageUrl(paymentId, successUrl);
