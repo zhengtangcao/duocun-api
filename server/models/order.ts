@@ -807,7 +807,7 @@ export class Order extends Model {
     for (let order of orders) {
       if (order.paymentMethod === PaymentMethod.CREDIT_CARD || order.paymentMethod === PaymentMethod.WECHAT) {
         logger.info(`Change product quantity after payment (type: ${order.paymentMethod}). Client Name: ${order.clientName} Payment ID: ${order.paymentId} Order ID: ${order._id}`);
-        await this.changeProductQuantity(order);
+        await this.changeProductQuantity(order, true);
       }
     }
     logger.info("--- END PROCESS AFTER PAY ---");
@@ -2022,7 +2022,7 @@ export class Order extends Model {
     }
   }
 
-  async changeProductQuantity(order: IOrder) {
+  async changeProductQuantity(order: IOrder, force: boolean = false) {
     logger.info("--- BEGIN CHANGE PRODUCT QUANTITY ---");
     logger.info(`order id: ${order._id}`);
     const items = order.items;
@@ -2060,17 +2060,20 @@ export class Order extends Model {
       productQuantity = productQuantity - Math.abs(itemQuantity);
       logger.info(`new quantity: ${productQuantity}`);
       if (productQuantity < 0 && !product.stock.allowNegative) {
-        logger.error("product quantity is below zero.");
-        logger.info(`=== END Product: ${product.name} ===`);
-        logger.info("--- END CHANGE PRODUCT QUANTITY ---");
-        throw {
-          message: OrderExceptionMessage.OUT_OF_STOCK,
-          product: {
-            _id: productId,
-            name: product.name,
-            nameEN: product.nameEN,
-            quantity: product.stock.quantity
-          }
+        logger.warn("product quantity is below zero");
+        if (!force) {
+          logger.error("product quantity is below zero.");
+          logger.info(`=== END Product: ${product.name} ===`);
+          logger.info("--- END CHANGE PRODUCT QUANTITY ---");
+          throw {
+            message: OrderExceptionMessage.OUT_OF_STOCK,
+            product: {
+              _id: productId,
+              name: product.name,
+              nameEN: product.nameEN,
+              quantity: product.stock.quantity,
+            },
+          };
         }
       }
       logger.info("saving product");
