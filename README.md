@@ -3,11 +3,15 @@
 duocun-api is a delivery service server
 
 # Dependencies
+
 Nodejs
+
   You need to install node.js version 10.16.3 on your local machine. You can use nvm to install nodejs on your mac:
   `brew install nvm`
-  `nvm install 10.16.3`
+  `nvm install v10.16.3`
+  
   If you don't have nvm, try:
+  
     `brew update`
     `brew install nvm`
     `mkdir ~/.nvm`
