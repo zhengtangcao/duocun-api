@@ -26,9 +26,12 @@ Mongodb
 
 # Install
 
-git clone project
+## clone project from git
+`git clone https://<git project>`
 
-cd to the project folder duocun-api, (remove package-lock.json), then run `npm install`
+## install libs
+cd to the project folder duocun-api, (remove package-lock.json), then run:
+`npm install`
 
 
 ## Config
