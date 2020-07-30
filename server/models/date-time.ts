@@ -1,4 +1,5 @@
-import moment from 'moment-timezone/moment-timezone';
+
+import moment from 'moment-timezone';
 
 export class DateTime {
   constructor() {

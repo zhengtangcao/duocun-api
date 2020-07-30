@@ -1,5 +1,5 @@
-import express, { Request, Response } from "express";
 
+import express, { Request, Response } from "express";
 import { DB } from "../db";
 import { ClientPayment, PaymentAction, PaymentError } from "../models/client-payment";
 import { Model, Code } from "../models/model";
