@@ -16,10 +16,16 @@ const dbo = new DB();
 dbo.init(config.DATABASE).then(async () => {
   console.log("Begin writing sitemap");
   await writeSitemap();
+  console.log("End writing");
+  setTimeout(() => {
+    process.exit(0);
+  }, 5000);
 });
 
 const writeSitemap = async () => {
-  const writeStream = fs.createWriteStream("./sitemap.xml");
+  const writeStream = fs.createWriteStream(
+    "/home/ubuntu/duocun-api/sitemap.xml"
+  );
   smStream.pipe(writeStream);
   await addStaticPages();
   await addCategoryPages();
@@ -105,7 +111,7 @@ const addProductPages = async () => {
     if (product.pictures) {
       product.pictures.forEach((picture) => {
         img.push({
-          url: "https://duocun.com.cn/media/" + picture.url,
+          url: "https://d27ftifr2ocsa6.cloudfront.net/media/" + picture.url,
           title: product.name + " | " + "多村 - Duocun",
         });
       });

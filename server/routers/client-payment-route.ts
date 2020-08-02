@@ -1,5 +1,5 @@
-import express, { Request, Response } from "express";
 
+import express, { Request, Response } from "express";
 import { DB } from "../db";
 import { ClientPayment, PaymentAction, PaymentError } from "../models/client-payment";
 import { Model, Code } from "../models/model";
@@ -18,6 +18,9 @@ import { QRCode } from "alphapay/dist/types/qrcode";
 import { SuccessNotification } from "alphapay/dist/types/success-notification";
 import { H5 } from "alphapay/dist/types/h5";
 import { readlink } from "fs";
+import { Product } from "../models/product";
+import { ObjectID } from "mongodb";
+
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
 
@@ -139,11 +142,13 @@ export class ClientPaymentController extends Controller {
   public model: ClientPayment;
   orderModel: Order;
   clientCreditModel: ClientCredit;
+  productModel: Product;
   constructor(db: DB) {
     super(new ClientPayment(db), db);
     this.orderModel = new Order(db);
     this.model = new ClientPayment(db);
     this.clientCreditModel = new ClientCredit(db);
+    this.productModel = new Product(db);
   }
 
   // input --- appCode, accountId, amount
@@ -634,7 +639,7 @@ export class ClientPaymentController extends Controller {
       logger.info('---  END ALPHAPAY  ---');
       return res.json({
         code: Code.FAIL,
-        msg: 'payment_failed'
+        msg: 'total_amount_is_below_zero'
       });
     }
     let cc = {
@@ -649,9 +654,30 @@ export class ClientPaymentController extends Controller {
     logger.info("inserting client credit");
     await this.clientCreditModel.insertOne(cc);
     let resp;
+
+    let description = "";
+    for (let order of orders) {
+      for (let item of (order.items || [])) {
+        let productName = "";
+        try {
+          productName = (await this.productModel.findOne({ _id: new ObjectID(item.productId) })).name;
+        } catch (e) {
+          console.log(e);
+          logger.error(e);
+        }
+        description += `${productName || "Unknown"} x ${item.quantity} `;
+      }
+    }
+
+    if (description.length > 90) {
+      description = description.substring(0, 90) + "...";
+    }
+
+    console.log(description);
+
     try {
       const reqData = {
-        description: `User: ${account.username}, PaymentID: ${paymentId}, Total: ${total}, Deliver Date: ${orders[0].deliverDate}`,
+        description,
         price: Number((total * 100).toFixed(0)),
         currency: CurrencyType.CAD,
         notify_url: "https://duocun.com.cn/api/ClientPayments/alphapay/success",
@@ -686,11 +712,11 @@ export class ClientPaymentController extends Controller {
         logger.info('---  END ALPHAPAY  ---');
         return res.json({
           code: Code.FAIL,
-          msg: 'payment_failed'
+          msg: 'alphapay_failed'
         });
       }
       let redirectUrl;
-      let successUrl = `https://duocun.ca/test/payment-success?channel=${channel}&paymentId=${paymentId}`;
+      let successUrl = `https://test.duocun.ca/payment-success?channel=${channel}&paymentId=${paymentId}`;
       switch(gateway) {
         case "qrcode":
           redirectUrl = alphapay.getQRCodePaymentPageUrl(paymentId, successUrl);
@@ -747,19 +773,21 @@ export class ClientPaymentController extends Controller {
     const account = await this.getCurrentUser(req, res);
     if (!account) {
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'account_empty'
       });
     }
     if (!paymentId) {
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'payment_id_empty'
       });
     }
     const orders = await this.orderModel.find({ paymentId, clientId: account._id.toString() });
     if (!orders || !orders.length) {
-      console.log('order empty');
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'order_empty'
       });
     }
     if (orders[0].paymentStatus == PaymentStatus.PAID) {
@@ -767,9 +795,9 @@ export class ClientPaymentController extends Controller {
         code: Code.SUCCESS
       });
     } else {
-      console.log('order unpaid');
       return res.json({
-        code: Code.FAIL
+        code: Code.FAIL,
+        msg: 'order_unpaid'
       });
     }
   }
