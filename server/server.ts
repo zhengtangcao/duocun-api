@@ -18,7 +18,7 @@ import { Config } from "./config";
 import { DB } from "./db";
 import { Utils } from "./utils";
 import { Socket } from "./socket";
-
+import socketio from './socketio';
 
 import { AccountRouter } from "./routers/account-route";
 import { DistanceRouter } from "./routers/distance-route";
@@ -262,7 +262,8 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
     console.log("API is running on :%d/n", app.get("port"));
   });
 
-  // setupSocket(server);  
+  // setupSocket(server);
+  socketio(server, dbo);
 });
 
 app.use(cors());

@@ -27,6 +27,7 @@
     "@types/node-cron": "^2.0.2",
     "@types/socket.io": "^2.1.2",
     "@types/twilio": "0.0.10",
+    "aws-sdk": "^2.709.0",
     "alphapay": "^0.2.3",
     "babel": "^6.23.0",
     "bcrypt": "^3.0.6",

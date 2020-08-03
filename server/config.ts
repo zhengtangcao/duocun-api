@@ -64,6 +64,12 @@ export interface IMoneris {
   ENVIRONMENT: "qa" | "prod";
 }
 
+export interface IAwsS3 {
+  ACCESS_ID: string,
+  ACCESS_KEY: string;
+  BUCKET_NAME: string;
+}
+
 export class Config {
   private cfg: any;
   public JWT: IJWT;
@@ -80,6 +86,8 @@ export class Config {
   public MONERIS: IMoneris;
   public GOOGLE_AUTH_CLIENT_ID: string = "";
   public ALPHAPAY: IAlphapay;
+  public AWS_S3: IAwsS3;
+  
   constructor() {
     this.cfg = JSON.parse(
       fs.readFileSync(
@@ -101,5 +109,6 @@ export class Config {
     this.MONERIS = this.cfg.MONERIS;
     this.GOOGLE_AUTH_CLIENT_ID = this.cfg.GOOGLE_AUTH_CLIENT_ID;
     this.ALPHAPAY = this.cfg.ALPHAPAY;
+    this.AWS_S3 = this.cfg.AWS_S3;
   }
 }
