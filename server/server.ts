@@ -18,7 +18,7 @@ import { Config } from "./config";
 import { DB } from "./db";
 import { Utils } from "./utils";
 import { Socket } from "./socket";
-import socketio from './socketio';
+import socketio from "./socketio";
 
 import { AccountRouter } from "./routers/account-route";
 import { DistanceRouter } from "./routers/distance-route";
@@ -50,7 +50,7 @@ import { LogRouter } from "./routers/log-route";
 import { EventLogRouter } from "./routers/event-log-route";
 import { PageRouter } from "./routers/page-route";
 import { ToolRouter } from "./routers/tool-route";
-import { ChatMessageRouter} from "./routers/message-route";
+import { ChatMessageRouter } from "./routers/message-route";
 
 import { CellApplicationRouter } from "./routers/cell-application-route";
 
@@ -206,7 +206,9 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
       res.send("upload file success");
     }
   );
-
+  app.post("/alphatest", (res) => {
+    const room = "payment:5cba947eca9f641b677138ef";
+  });
   // disable auth token for testing
   if (process.env.ENV != "dev") {
     app.use(apimw.auth);
@@ -244,7 +246,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use("/" + ROUTE_PREFIX + "/ClientPayments", ClientPaymentRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverPayments", DriverPaymentRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverBalances", DriverBalanceRouter(dbo));
-  
+
   app.use("/" + ROUTE_PREFIX + "/OrderSequences", OrderSequenceRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverHours", DriverHourRouter(dbo));
   app.use("/" + ROUTE_PREFIX + "/DriverShifts", DriverShiftRouter(dbo));

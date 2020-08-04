@@ -6,8 +6,9 @@ import { Category } from "../models/category";
 import { DB } from "../db";
 import slugify from "slugify";
 import fs from "fs";
+require('dotenv').config();
 const smStream = new SitemapStream({
-  hostname: "https://duocun.ca",
+  hostname: process.env.FRONTEND_URL,
 });
 
 const config = new Config();

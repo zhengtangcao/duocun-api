@@ -6,6 +6,7 @@ import AWS from "aws-sdk";
 import { ChatMessage } from "../models/messages";
 import { DB } from "../db";
 import jwt from "jsonwebtoken";
+import logger from "../lib/logger";
 
 const cfg = new Config();
 const s3 = new AWS.S3({
@@ -16,6 +17,9 @@ const s3 = new AWS.S3({
 export let SocketIO: socketio.Server|null = null;
 
 export default (server: any, db: DB) => {
+  if (SocketIO) {
+    return SocketIO;
+  }
   const io = socketio.listen(server);
   io.on("connection", (socket) => {
     // socket id when user reconnected
@@ -42,6 +46,8 @@ export default (server: any, db: DB) => {
       const { token } = data;
       let { accountId } = <any> jwt.verify(token, cfg.JWT.SECRET);
       const room = `payment:${accountId}`;
+      logger.info("Payment socket inited, Room ID: " + room);
+      socket.join(room);
       const payload = { foo: "bar" };
     });
 

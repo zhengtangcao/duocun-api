@@ -18,6 +18,7 @@ import { SuccessNotification } from "alphapay/dist/types/success-notification";
 import { Product } from "../models/product";
 import { ObjectID } from "mongodb";
 import { SocketIO } from '../socketio';
+require('dotenv').config()
 
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
@@ -671,14 +672,12 @@ export class ClientPaymentController extends Controller {
       description = description.substring(0, 90) + "...";
     }
 
-    console.log(description);
-
     try {
       const reqData = {
         description,
         price: Number((total * 100).toFixed(0)),
         currency: CurrencyType.CAD,
-        notify_url: "https://duocun.com.cn/api/ClientPayments/alphapay/success",
+        notify_url: `${process.env.BACKEND_URL}/api/ClientPayments/alphapay/success`,
         //@ts-ignore
         channel
       };
@@ -714,7 +713,7 @@ export class ClientPaymentController extends Controller {
         });
       }
       let redirectUrl;
-      let successUrl = `https://test.duocun.ca/payment-success?channel=${channel}&paymentId=${paymentId}`;
+      let successUrl = `${process.env.FRONTEND_URL}/payment-success?channel=${channel}&paymentId=${paymentId}`;
       switch(gateway) {
         case "qrcode":
           redirectUrl = alphapay.getQRCodePaymentPageUrl(paymentId, successUrl);
@@ -769,7 +768,8 @@ export class ClientPaymentController extends Controller {
       logger.warn('SocketIO is not inited ');
     } else {
       const room = `payment:${order.clientId}`;
-      SocketIO.in(room).emit('alphapay', {
+      logger.info(`RoomID: ${room}`);
+      SocketIO.to(room).emit('alphapay', {
         paymentId,
         success: true
       });
