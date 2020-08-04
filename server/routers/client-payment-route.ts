@@ -2,7 +2,7 @@
 import express, { Request, Response } from "express";
 import { DB } from "../db";
 import { ClientPayment, PaymentAction, PaymentError } from "../models/client-payment";
-import { Model, Code } from "../models/model";
+import { Code } from "../models/model";
 import { Order, IOrder, OrderStatus, PaymentMethod, PaymentStatus } from "../models/order";
 import MonerisCheckout from "moneris-checkout";
 import { EnvironmentType, BooleanType } from "moneris-checkout/dist/types/global";
@@ -14,12 +14,10 @@ import MonerisHt from 'moneris-node';
 import moment from 'moment-timezone';
 import Alphapay from 'alphapay';
 import { CurrencyType, ChannelType } from "alphapay/dist/types/global";
-import { QRCode } from "alphapay/dist/types/qrcode";
 import { SuccessNotification } from "alphapay/dist/types/success-notification";
-import { H5 } from "alphapay/dist/types/h5";
-import { readlink } from "fs";
 import { Product } from "../models/product";
 import { ObjectID } from "mongodb";
+import { SocketIO } from '../socketio';
 
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
@@ -736,7 +734,8 @@ export class ClientPaymentController extends Controller {
       return res.json({
         code: Code.SUCCESS,
         data: resp,
-        redirect_url: redirectUrl
+        redirect_url: redirectUrl,
+        total
       });
     } catch(e) {
       logger.error(e);
@@ -765,6 +764,16 @@ export class ClientPaymentController extends Controller {
       return ;
     }
     await this.orderModel.processAfterPay(paymentId, PaymentAction.PAY.code, Number(notification.real_fee) / 100, '');
+    logger.info('Payment successful notify to customer');
+    if (!SocketIO) {
+      logger.warn('SocketIO is not inited ');
+    } else {
+      const room = `payment:${order.clientId}`;
+      SocketIO.in(room).emit('alphapay', {
+        paymentId,
+        success: true
+      });
+    }
     logger.info("---  END ALPHAPAY SUCCESS NOTIFICATION  ---");
   }
 
