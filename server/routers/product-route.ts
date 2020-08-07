@@ -47,7 +47,7 @@ class ProductController extends Model{
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
     } else {
       query = req.query;
-      if (query) {
+      if (query && query.query) {
         query = JSON.parse(query.query);
         query.type = 'G';
       } else {
