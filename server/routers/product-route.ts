@@ -32,6 +32,41 @@ export function ProductRouter(db: DB){
   return router;
 };
 
+function propReplace(obj: any, key: string) {
+  const f: any = (v: string)=> { return new RegExp(v, 'i')};
+  if (Object.prototype.toString.call(obj) === '[object Array]') {
+      const rs = [];
+      const vs = obj
+      for (let i = 0; i < vs.length; i++) {
+          // console.log(obj[k][i]);
+          const it: any = propReplace(vs[i], key);
+          rs.push(it);
+      }
+      // console.log(rs);
+      return rs;
+  } else {
+      if (typeof obj === 'object' && obj !== null) {
+          const r: any = {};
+          Object.keys(obj).forEach(k => {
+              //         // console.log(k);
+              //         // console.log(obj[k]);
+              const v = obj[k];
+              if (k == key) {
+                  r[k] = f(v);
+                  // console.log(f(v));
+              } else {
+                  r[k] = propReplace(v, key);
+              }
+          });
+          // console.log(r);
+          return r;
+      } else {
+          // console.log(obj);
+          return obj;
+      }
+  }
+}
+
 class ProductController extends Model{
   model: Product;
 
@@ -49,6 +84,7 @@ class ProductController extends Model{
       query = req.query;
       if (query && query.query) {
         query = JSON.parse(query.query);
+        query = propReplace(query, '$regex');
         query.type = 'G';
       } else {
         query = {type: 'G'};
