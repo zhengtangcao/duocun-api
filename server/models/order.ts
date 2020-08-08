@@ -2018,7 +2018,7 @@ export class Order extends Model {
         }
       }
       product.stock.quantity = productQuantity;
-      return product;
+      continue;
     }
   }
 
